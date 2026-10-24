@@ -1,0 +1,122 @@
+/* ================= ROSTER =================
+   Every character card. Stats here are the source of truth (the stats spreadsheet is generated from them). */
+const ROSTER = [];
+function add(c){ c.fam = c.fam || c.id; c.sk = c.sk || c.fam; ROSTER.push(c); return c; }
+// Mark-awakened version of a character: its own card in the same family (only one version per draft pool)
+function markOf(base, o){
+  return add(Object.assign({}, base, {
+    id: base.id+'_mark', name: base.name+' (Mark)', short: base.short+' ✦', mark:true, fam: base.fam, sk: base.sk,
+    hp: base.hp+8, pow: base.pow+4, spd: base.spd+2, def: base.def+1,
+    sig: Object.assign({}, base.sig, {cd: Math.max(1, base.sig.cd-1)})
+  }, o));
+}
+
+// Legends
+add({id:'yoriichi',name:'Yoriichi Tsugikuni',short:'Yoriichi',g:'陽',type:'Sun Breathing · Legend',legend:true,cost:18,hp:50,pow:15,spd:12,def:7,
+  strikes:2,cap:18,
+  passive:'Transparent World: strikes twice every Attack and never takes more than 18 damage in a round.',
+  sig:{name:'Sun Breathing: Thirteenth Form',desc:'Every enemy takes PWR, ignores DEF. Demons it hits lose their regeneration for good.',cd:3,kind:'all'}});
+add({id:'yoriichi_old',fam:'yoriichi',sk:'yoriichi_old',name:'Yoriichi (Age 85)',short:'Old Yoriichi',g:'老',type:'Sun Breathing · Legend',legend:true,cost:15,hp:44,pow:13,spd:11,def:5,
+  strikes:2,cap:12,
+  passive:'Still the Strongest: strikes twice every Attack and never takes more than 12 damage in a round.',
+  sig:{name:'The Last Strike',desc:'Strike for PWR+10, ignores DEF.',cd:3,kind:'single'}});
+
+// Demons
+add({id:'muzan',name:'Muzan Kibutsuji',short:'Muzan',g:'鬼',type:'Demon King',demon:true,cost:16,hp:54,pow:17,spd:11,def:8,regen:4,
+  sig:{name:'Blood Whips',desc:'Every enemy takes PWR−4, and Muzan heals 2 for each enemy hit.',cd:3,kind:'all'}});
+add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:52,pow:17,spd:11,def:8,regen:3,
+  sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
+add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:8,hp:37,pow:11,spd:9,def:5,regen:2,
+  sig:{name:'Frozen Lotus',desc:'Every enemy takes 8, ignores DEF.',cd:3,kind:'all'}});
+add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:40,pow:13,spd:10,def:5,regen:2,
+  sig:{name:'Destructive Death',desc:'Strike for PWR+6.',cd:3,kind:'single'}});
+add({id:'gyutaro',name:'Gyutaro & Daki',short:'Gyutaro',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:9,spd:8,def:4,regen:2,
+  sig:{name:'Flying Blood Sickles',desc:'Every enemy takes 4 and is poisoned 2/round for 2 rounds.',cd:3,kind:'all'}});
+// Hantengu splits when knocked out: Hantengu → Sekido + Karaku, then Sekido → Aizetsu and Karaku → Urogi.
+// The split-off forms (spawn:true) are never dealt in the draft; they only appear in battle.
+add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:20,pow:8,spd:9,def:4,regen:1,
+  splits:['sekido','karaku'],
+  passive:'Splitting Emotions: when Hantengu falls he splits into Sekido and Karaku. When Sekido falls, Aizetsu takes his place; when Karaku falls, Urogi does. Beat all five to win.',
+  sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
+add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu split · Anger',demon:true,cost:0,hp:14,pow:7,spd:8,def:3,regen:1,
+  splits:['aizetsu'],
+  sig:{name:'Lightning Staff',desc:'Every enemy takes 4, ignores DEF.',cd:3,kind:'all'}});
+add({id:'karaku',spawn:true,name:'Karaku (Joy)',short:'Karaku',g:'楽',type:'Hantengu split · Joy',demon:true,cost:0,hp:14,pow:7,spd:10,def:3,regen:1,
+  splits:['urogi'],
+  sig:{name:'Gale Fan',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
+add({id:'aizetsu',spawn:true,name:'Aizetsu (Sorrow)',short:'Aizetsu',g:'哀',type:'Hantengu split · Sorrow',demon:true,cost:0,hp:10,pow:7,spd:9,def:3,regen:1,
+  sig:{name:'Cross Spear',desc:'Strike for PWR+4.',cd:3,kind:'single'}});
+add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'Hantengu split · Pleasure',demon:true,cost:0,hp:10,pow:6,spd:11,def:2,regen:1,
+  sig:{name:'Sky Dive',desc:'Moves early. Swoops down for PWR+2.',cd:2,kind:'single',prio:1}});
+add({id:'kaigaku',name:'Kaigaku',short:'Kaigaku',g:'獪',type:'Upper Moon 6 · fallen Thunder',demon:true,upper:true,cost:5,hp:26,pow:9,spd:10,def:3,regen:1,
+  passive:'Rival: an enemy Zenitsu gets +2 PWR against him.',
+  sig:{name:'Black Thunder',desc:'Strike for PWR+3, and a second random enemy takes 4.',cd:3,kind:'single'}});
+add({id:'enmu',name:'Enmu',short:'Enmu',g:'夢',type:'Lower Moon 1',demon:true,cost:4,hp:28,pow:8,spd:8,def:3,regen:1,
+  sig:{name:'Forced Sleep',desc:'Every enemy has to wait 2 more rounds for their special.',cd:3,kind:'all'}});
+add({id:'rui',name:'Rui',short:'Rui',g:'糸',type:'Lower Moon 5',demon:true,cost:4,hp:24,pow:7,spd:7,def:4,regen:1,
+  sig:{name:'Cutting Thread Cage',desc:'Strike for PWR and stun the target next round.',cd:3,kind:'single'}});
+add({id:'kyogai',name:'Kyogai',short:'Kyogai',g:'鼓',type:'Former Lower Moon',demon:true,cost:3,hp:22,pow:6,spd:6,def:3,regen:1,
+  sig:{name:'Drum Room Spin',desc:'Flip the room. The target is stunned next round.',cd:4,kind:'single'}});
+add({id:'hand',name:'Hand Demon',short:'Hand Demon',g:'手',type:'Final Selection',demon:true,cost:2,hp:16,pow:5,spd:4,def:3,regen:1,
+  sig:{name:'Grasping Arms',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
+add({id:'swamp',name:'Swamp Demon',short:'Swamp Demon',g:'沼',type:'Lesser demon',demon:true,cost:3,hp:16,pow:5,spd:8,def:2,regen:1,
+  sig:{name:'Swamp Dive',desc:'Moves early. Sinks out of reach this round and strikes for PWR+1.',cd:2,kind:'single',prio:1}});
+
+// Hashira (+ Marks)
+const giyu = add({id:'giyu',name:'Giyu Tomioka',short:'Giyu',g:'水',type:'Water Hashira',hashira:true,cost:8,hp:32,pow:10,spd:8,def:5,
+  sig:{name:'Dead Calm',desc:'Moves first. Your whole team takes no damage this round.',cd:4,kind:'self',prio:3}});
+markOf(giyu,{cost:10});
+const gyomei = add({id:'gyomei',name:'Gyomei Himejima',short:'Gyomei',g:'岩',type:'Stone Hashira',hashira:true,cost:8,hp:42,pow:13,spd:7,def:7,
+  sig:{name:'Volcanic Rock',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
+markOf(gyomei,{cost:12});
+const sanemi = add({id:'sanemi',name:'Sanemi Shinazugawa',short:'Sanemi',g:'風',type:'Wind Hashira',hashira:true,cost:6,hp:34,pow:11,spd:9,def:5,
+  sig:{name:'Black Wind Mountain Mist',desc:'Strike your target and one other enemy for PWR.',cd:3,kind:'single'}});
+markOf(sanemi,{cost:10});
+const muichiro = add({id:'muichiro',name:'Muichiro Tokito',short:'Muichiro',g:'霞',type:'Mist Hashira',hashira:true,cost:6,hp:26,pow:10,spd:11,def:4,
+  sig:{name:'Obscuring Clouds',desc:'Moves early. Vanishes into mist (attacks miss him this round) and strikes for PWR+2.',cd:3,kind:'single',prio:1}});
+markOf(muichiro,{cost:10});
+const mitsuri = add({id:'mitsuri',name:'Mitsuri Kanroji',short:'Mitsuri',g:'恋',type:'Love Hashira',hashira:true,cost:5,hp:28,pow:9,spd:9,def:4,
+  sig:{name:'Catlove Shower',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
+markOf(mitsuri,{cost:8});
+const obanai = add({id:'obanai',name:'Obanai Iguro',short:'Obanai',g:'蛇',type:'Serpent Hashira',hashira:true,cost:5,hp:26,pow:9,spd:10,def:4,
+  sig:{name:'Twin-Headed Reptile',desc:'Strike for PWR+4. Slips past guards (Defend does nothing).',cd:3,kind:'single'}});
+markOf(obanai,{cost:8});
+add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:34,pow:11,spd:7,def:5,
+  sig:{name:'Ninth Form: Rengoku',desc:'Strike for PWR+8.',cd:3,kind:'single'}});
+add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:8,def:5,
+  sig:{name:'Constant Resounding Slashes',desc:'Every enemy takes PWR−2.',cd:3,kind:'all'}});
+add({id:'shinobu',name:'Shinobu Kocho',short:'Shinobu',g:'蟲',type:'Insect Hashira',hashira:true,cost:5,hp:24,pow:6,spd:10,def:3,
+  passive:'Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match.',
+  sig:{name:'Wisteria Poison',desc:'Poison a target for 3 rounds: 6/round to demons, 3/round to humans.',cd:3,kind:'single'}});
+
+// Main cast (+ Marks)
+const tanjiro = add({id:'tanjiro',name:'Tanjiro Kamado',short:'Tanjiro',g:'日',type:'Sun & Water',cost:5,hp:28,pow:8,spd:7,def:4,
+  sig:{name:'Hinokami Kagura',desc:'Strike for PWR+5, ignores DEF.',cd:3,kind:'single'}});
+markOf(tanjiro,{cost:8});
+add({id:'nezuko',name:'Nezuko Kamado',short:'Nezuko',g:'血',type:'Demon ally',demon:true,cost:4,hp:24,pow:7,spd:7,def:3,regen:1,
+  sig:{name:'Exploding Blood',desc:'Every enemy takes 5, ignores DEF.',cd:3,kind:'all'}});
+add({id:'zenitsu',name:'Zenitsu Agatsuma',short:'Zenitsu',g:'雷',type:'Thunder',cost:4,hp:22,pow:7,spd:10,def:2,
+  sig:{name:'Thunderclap and Flash',desc:'Always moves first. Strike for PWR×2.',cd:3,kind:'single',prio:2}});
+add({id:'inosuke',name:'Inosuke Hashibira',short:'Inosuke',g:'獣',type:'Beast',cost:4,hp:28,pow:8,spd:8,def:3,
+  sig:{name:'Fang Frenzy',desc:'Two wild strikes of PWR−1 at random enemies.',cd:2,kind:'auto'}});
+add({id:'kanao',name:'Kanao Tsuyuri',short:'Kanao',g:'花',type:'Flower',cost:4,hp:24,pow:7,spd:10,def:3,
+  sig:{name:'Equinoctial Vermilion Eye',desc:'Moves early. Strike for PWR+4.',cd:3,kind:'single',prio:1}});
+add({id:'genya',name:'Genya Shinazugawa',short:'Genya',g:'銃',type:'Demon eater',cost:3,hp:24,pow:7,spd:6,def:3,
+  sig:{name:'Demon Consumption',desc:'Heal 8 and gain +2 PWR for the rest of the match.',cd:3,kind:'self'}});
+add({id:'tamayo',name:'Tamayo',short:'Tamayo',g:'薬',type:'Physician · Demon ally',demon:true,cost:3,hp:22,pow:5,spd:7,def:3,regen:2,
+  passive:"Anti-Muzan Medicine: an enemy Muzan's regeneration drops by 2.",
+  sig:{name:'Healing Blood Art',desc:'Heal an ally (or herself) for 10 and cure poison.',cd:2,kind:'ally'}});
+add({id:'yushiro',name:'Yushiro',short:'Yushiro',g:'紙',type:'Tamayo\'s guardian · Demon ally',demon:true,cost:3,hp:20,pow:6,spd:9,def:3,regen:1,
+  sig:{name:'Concealment Talisman',desc:'Moves first. Hide an ally (or himself): attacks against them miss this round.',cd:3,kind:'ally',prio:3}});
+add({id:'urokodaki',name:'Sakonji Urokodaki',short:'Urokodaki',g:'師',type:'Former Water Hashira',cost:4,hp:26,pow:7,spd:7,def:4,
+  passive:'Mentor: Tanjiro and Giyu on his team get +1 DEF.',
+  sig:{name:'Water Wheel',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
+add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:14,pow:2,spd:5,def:1,
+  passive:'Master of the Corps: every Hashira on his team gets +1 DEF.',
+  sig:{name:'Words of Resolve',desc:'Every ally, himself included, heals 4.',cd:3,kind:'self'}});
+add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and file',cost:2,hp:10,pow:4,spd:6,def:2,
+  passive:'Somehow Survives: the first hit that would knock him out leaves him at 1 HP instead.',
+  sig:{name:'Water Surface Slash',desc:'Strike for PWR+2.',cd:2,kind:'single'}});
+
+const BYID = Object.fromEntries(ROSTER.map(c=>[c.id,c]));
+const MARK_PASSIVE = 'Mark awakened: boosted stats and the special recharges 1 round faster.';

@@ -1,0 +1,16 @@
+{
+  "name": "Squad Draft",
+  "short_name": "Squad Draft",
+  "description": "A Demon Slayer squad battler for two players or vs the computer.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1714",
+  "theme_color": "#1a1714",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
