@@ -260,6 +260,12 @@ details ul b{color:var(--fg)}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
 .tile{display:flex;gap:9px;align-items:flex-start;padding:9px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:10px;min-width:0}
 .tile.dead{opacity:.35;filter:grayscale(1)}
+.tiles.simple{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.tiles.simple .tile{align-items:center}
+.tiles.simple .nm{white-space:normal;line-height:1.2}
+.hprow{display:flex;align-items:center;gap:7px}
+.hprow .bar{flex:1}
+.hprow .hp{font-size:.95rem}
 /* round playback: who was just hit, healed or knocked out */
 .tile.hit{animation:hit .45s ease-out}
 .tile.heal{animation:heal .6s ease-out}

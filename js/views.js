@@ -24,8 +24,12 @@ function health(u, o={}){
   const live=o.hp===undefined, hp=live?u.hp:o.hp, up=live?u.alive:hp>0;
   const h=up?pct(u,hp):0, low=up && h<=LOW ? ' low' : '';
   const from=o.from===undefined ? h : Math.max(0,pct(u,o.from));
-  return `<span class="un"><span class="nm">${esc(u.name)}</span><span class="hp${low}">${up?h+'%':'KO'}</span></span>
-    <span class="bar${low}" role="img" aria-label="${h}% health"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span>`;
+  const bar=`<span class="bar${low}" role="img" aria-label="${h}% health"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span>`;
+  const pctTag=`<span class="hp${low}">${up?h+'%':'KO'}</span>`;
+  // simple tiles: name on its own line, percent beside the bar, so narrow tiles don't cut the name off
+  if(o.simple) return `<span class="un"><span class="nm">${esc(u.name)}</span></span><span class="hprow">${bar}${pctTag}</span>`;
+  return `<span class="un"><span class="nm">${esc(u.name)}</span>${pctTag}</span>
+    ${bar}`;
 }
 const meta = u => `<div class="meta">PWR ${u.pow} · DEF ${u.def} · SPD ${u.spd}${u.regen?` · Regen ${pct(u,u.regen)}%`:''}</div>`;
 function statusChips(u, showSpecial){
@@ -43,19 +47,20 @@ function statusChips(u, showSpecial){
 }
 const synChips = p => S.syn[p].length ? `<div class="chips">${S.syn[p].map(s=>s[0]==='!'?`<span class="chip bad">${esc(s.slice(1))}</span>`:`<span class="chip s">${esc(s)}</span>`).join('')}</div>` : '';
 
-// Compact fighter card: enemies, results and the end screen. `o` is the playback moment (see health()), plus o.flash.
+// Fighter tile: enemies, results and the end screen. `o` is the playback moment (see health()), plus o.flash.
+// o.simple = just the picture, name and health (the opponent's team while you choose moves).
 function tile(u, o={}){
   if(o.hidden) return '';
   const playing=o.hp!==undefined, up=playing?o.hp>0:u.alive;
   return `<div class="tile${up?'':' dead'}${o.flash?' '+o.flash:''}" style="--tc:${pc(u.p)}">${seal(u)}
-    <div class="tb">${health(u,o)}${up?meta(u)+(playing?'':statusChips(u,true)):''}</div></div>`;
+    <div class="tb">${health(u,o)}${up&&!o.simple?meta(u)+(playing?'':statusChips(u,true)):''}</div></div>`;
 }
-function teamBlock(p, label, moment){
-  const os=S.teams[p].map(u=>moment?moment(u):{}), shown=S.teams[p].filter((u,i)=>!os[i].hidden);
+function teamBlock(p, label, moment, simple){
+  const os=S.teams[p].map(u=>Object.assign(moment?moment(u):{}, simple?{simple:true}:{})), shown=S.teams[p].filter((u,i)=>!os[i].hidden);
   const up=S.teams[p].filter((u,i)=>!os[i].hidden && (os[i].hp===undefined?u.alive:os[i].hp>0)).length;
   return `<section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">${label||nm(p)}</span>
     <span class="muted">${up} of ${shown.length} standing</span></div>
-    ${synChips(p)}<div class="tiles">${S.teams[p].map((u,i)=>tile(u,os[i])).join('')}</div></section>`;
+    ${simple?'':synChips(p)}<div class="tiles${simple?' simple':''}">${S.teams[p].map((u,i)=>tile(u,os[i])).join('')}</div></section>`;
 }
 
 /* ---------- setup ---------- */
@@ -251,7 +256,7 @@ function vPass(){
 function vPlan(){
   const p=S.planFor, open=focusOf(p), ready=planReady(p), mine=alive(p);
   return `${topbar(`Round ${S.round} · secret moves`, `<span style="color:${pc(p)}">${nm(p)}</span>, choose`)}
-    ${teamBlock(1-p)}
+    ${teamBlock(1-p,null,null,true)}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span><span class="muted">Tap a fighter to change</span></div>
       ${synChips(p)}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
     ${actionbar(`<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
