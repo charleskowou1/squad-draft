@@ -323,7 +323,8 @@ function cpuPlan(p, level='hard'){
 /* ---------- resolving a round ---------- */
 // Each log line keeps everyone's HP at that moment, so the round can be played back step by step
 // What a line shows on the fight stage during playback: effect type, who did it (by) and who it landed on (on)
-const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null});
+// move = 'attack' or 'special' while a fighter is acting (null for end-of-round effects), for the breathing-style effects and grouping
+const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, move:S.curMove||null});
 function L(t,c='',extra){ const hp={}; S.teams[0].concat(S.teams[1]).forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive){ const a=alive(1-u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',fx('revive',null,t)); return; }
@@ -444,6 +445,27 @@ function cpuBothSides(l0='hard', l1='hard'){
   cpuPlan(0,l0); cpuPlan(1,l1); cpuHelpers(0); cpuHelpers(1);
   [0,1].forEach(p=>{ if(S.helperPlan[p].includes('crow')) cpuScout(p); });
 }
+// Playback steps for a round's log: [first line, last line] per beat. A special that hits several enemies plays as
+// one beat: its hits (and any knockouts it causes) go together. Everything else is one line per beat.
+const GROUP_FX = ['hit','miss','block'];
+function playSteps(log){
+  const steps=[[0,0]];   // the "Round N · Fight!" intro
+  for(let i=1;i<log.length;){
+    const l=log[i];
+    if(GROUP_FX.includes(l.fx) && l.by && l.move==='special'){
+      const seen=new Set([l.on]); let j=i+1;
+      while(j<log.length){
+        const m=log[j];
+        if(GROUP_FX.includes(m.fx) && m.by===l.by && m.move==='special' && !seen.has(m.on)){ seen.add(m.on); j++; continue; }
+        if((m.fx==='ko'||m.fx==='burn') && m.by===l.by){ j++; continue; }
+        break;
+      }
+      if(seen.size>=2){ steps.push([i,j-1]); i=j; continue; }
+    }
+    steps.push([i,i]); i++;
+  }
+  return steps;
+}
 // Match stats for the win screen, counted from each log line's HP snapshot (no extra bookkeeping in the rules):
 // damage dealt and biggest hit (hit lines), knockouts (ko lines with an attacker), healing given to others (heal lines with a healer)
 function tallyRound(){
@@ -468,6 +490,7 @@ function resolve(){
   acts.sort((a,b)=> prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
   for(const x of acts){
     const u=x.u; if(!u.alive) continue;
+    S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
@@ -475,6 +498,7 @@ function resolve(){
     if(x.pl.type==='special') special(u,x.pl);
     if(!alive(0).length||!alive(1).length) break;
   }
+  S.curMove=null;
   // end of round: poison, Shinobu's devour damage, regeneration, cooldowns
   [0,1].forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }

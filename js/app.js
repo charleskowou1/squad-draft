@@ -27,20 +27,26 @@ function animateSpin(){
   clearTimeout(S._t); S._t=setTimeout(()=>{ S.spin.state='done'; sfx('ding'); render(); }, quickMotion()?300:4300);
 }
 // How long a playback line stays up: enough to read it, longer for long lines and knockouts
-const readTime = line => quickMotion() ? 300 : 2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0);
+// Playback speed (Settings): Slow / Normal / Fast multiply how long each action stays up
+const SPEEDS = {slow:1.4, normal:1, fast:.55};
+function loadSpeed(){ try{ const v=localStorage.getItem('squad-draft-speed'); return v in SPEEDS ? v : 'normal' }catch(e){ return 'normal' } }
+const pace = () => SPEEDS[S.speed]||1;
+const readTime = line => quickMotion() ? 300 : (2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0)) * pace();
+// a grouped special (several targets in one beat): longer for more targets and any knockouts
+const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GROUP_FX.includes(l.fx)).length + (lines.some(l=>l.ko) ? 1100 : 0)) * pace();
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
 function playRound(){
-  S.play={k:0, done:false};
+  S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
     if(S.info){ S._t=setTimeout(step,300); return; }   // paused while a fighter's info card is open
-    if(S.play.k>=S.log.length-1){ S.play.done=true; render(); return; }
-    S.play.k++; const line=S.log[S.play.k];
-    if(line.ko && navigator.vibrate) navigator.vibrate([90,50,160]);
-    sfxForLine(line);
+    if(S.play.k>=S.play.steps.length-1){ S.play.done=true; render(); return; }
+    S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
+    if(lines.some(l=>l.ko) && navigator.vibrate) navigator.vibrate([90,50,160]);
+    if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else sfxForLine(line);
     render();
-    S._t=setTimeout(step, readTime(line));
+    S._t=setTimeout(step, b>a ? groupTime(lines) : readTime(line));
   };
-  sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500);   // the "Round N · Fight!" intro
+  sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
 function startDraft(){
   const n0 = document.getElementById('n0').value.trim()||'Player 1';
@@ -70,7 +76,7 @@ function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='r
 const ACTIONS = {
   mode(v){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value; S.mode=v; if(v==='2p'){ const s=loadNames(); S.names[1]=(s&&s[1])||'Mia'; } },
   start: startDraft,
-  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:loadBudget(),poolType:S.poolType,soundOn:S.soundOn,names:vsCpu()?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
+  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:loadBudget(),poolType:S.poolType,soundOn:S.soundOn,speed:S.speed,names:vsCpu()?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
   level(v){ S.level=v; saveLevel(v); },
   rematch: toSpin,
   spin(){ if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -88,6 +94,7 @@ const ACTIONS = {
   confirmPick(){ if(!canPick(turn(),S.sel)) return; sfx('pick'); doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
   undo(){ undoPick(); },
   repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
+  speed(v){ S.speed=v; try{ localStorage.setItem('squad-draft-speed',v) }catch(e){} },
   sound(v){ S.soundOn=v==='on'; saveSoundOn(S.soundOn); if(S.soundOn) sfx('pick'); },
   storymap(){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value.trim()||S.names[0]; clearTimeout(S._t); S.budget=loadBudget(); S.phase='story'; window.scrollTo(0,0); },
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); window.scrollTo(0,0); },
@@ -139,7 +146,7 @@ function findArt(){
     tryNext();
   });
 }
-S.soundOn=loadSoundOn();
+S.soundOn=loadSoundOn(); S.speed=loadSpeed();
 render();
 findArt();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)

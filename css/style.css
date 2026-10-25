@@ -385,6 +385,55 @@ details ul b{color:var(--fg)}
 .tile.dead .gl{transform:rotate(90deg) scale(.88)}
 @keyframes tipover{0%{transform:none}70%{transform:rotate(100deg) scale(.88)}85%{transform:rotate(85deg) scale(.88)}100%{transform:rotate(90deg) scale(.88)}}
 @media (prefers-reduced-motion:reduce){.stage *,.stage .gl,.tile.ko .gl{animation:none!important}.stage .pop{opacity:1}}
+/* breathing-style effects on the fight stage (drawings from js/effects.js) */
+.sty-water{--sc:#5fb4ff} .sty-flame{--sc:#ff8a2a} .sty-thunder{--sc:#ffe14d} .sty-darkthunder{--sc:#b07cff} .sty-sun{--sc:#ffc13b}
+.sty-mist{--sc:#d7e6f2} .sty-wind{--sc:#7ee0a3} .sty-stone{--sc:#c9a27a} .sty-love{--sc:#ff8cc6} .sty-serpent{--sc:#9fd8c8}
+.sty-sound{--sc:#c99bff} .sty-insect{--sc:#b98cff} .sty-beast{--sc:#d7a46b} .sty-flower{--sc:#ffb0d0} .sty-moon{--sc:#c6a6ff}
+.sty-ice{--sc:#a9e6ff} .sty-blood{--sc:#ff4d5e} .sty-compass{--sc:#7ff0ff} .sty-thread{--sc:#f2f2f2} .sty-drum{--sc:#e0a060}
+.sty-claw{--sc:#ff6b5c} .sty-dream{--sc:#d48cff} .sty-slash{--sc:#ffffff}
+.stage.sty .st-mark{color:var(--sc);text-shadow:0 0 20px var(--sc)}
+.stage.sty .st-on::after{display:none}   /* the style drawing replaces the plain slash streak */
+.stage.sty.fx-ko .st-mark{color:#fff;text-shadow:none}
+.fxl{position:absolute;left:50%;top:36px;width:120px;height:120px;margin:-60px 0 0 -60px;pointer-events:none;z-index:3;overflow:visible;color:var(--sc,#fff);filter:drop-shadow(0 0 6px var(--sc,#fff))}
+.stage.rev .fxl{transform:scaleX(-1)}
+.fxl *{fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.fxl .solid,.fxl .spray,.fxl .burst,.fxl .drift{fill:currentColor;stroke:none}
+.fxl .thick{stroke-width:8} .fxl .thin{stroke-width:2.5}
+.fxl .draw{stroke-dasharray:180;stroke-dashoffset:180;animation:fxdraw .45s .26s ease-out forwards, fxfade .45s .85s forwards}
+.fxl .d2{animation-delay:.36s,.95s}
+.fxl .spray{opacity:0;animation:fxspray .7s .32s ease-out forwards}
+.fxl .burst{opacity:0;transform-box:fill-box;transform-origin:50% 100%;animation:fxburst .7s calc(.26s + var(--d,0s)) ease-out forwards}
+.fxl .flick{opacity:0;animation:fxflick .55s .26s steps(1) forwards}
+.fxl .f2{animation-delay:.32s}
+.fxl .spin{transform-origin:50px 50px;opacity:0;animation:fxspin .85s .24s ease-out forwards}
+.fxl .ringx{transform-box:fill-box;transform-origin:50% 50%;opacity:0;animation:fxring .75s calc(.26s + var(--d,0s)) ease-out forwards}
+.fxl .flutter{opacity:0;animation:fxflutter 1.1s calc(.26s + var(--d,0s)) ease-out forwards}
+.fxl .drift{opacity:0;filter:blur(3px);animation:fxdrift 1s calc(.22s + var(--d,0s)) ease-out forwards}
+.fxl .slice{opacity:0;transform-box:fill-box;transform-origin:50% 50%;animation:fxslice .6s calc(.26s + var(--d,0s)) ease-out forwards}
+.fxl.aura{top:36px;width:140px;height:140px;margin:-70px 0 0 -70px;opacity:.9}
+.fxl.aura *{animation-delay:.05s!important}
+@keyframes fxdraw{to{stroke-dashoffset:0}}
+@keyframes fxfade{to{opacity:0}}
+@keyframes fxspray{0%{opacity:1;transform:none}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
+@keyframes fxburst{0%{opacity:0;transform:scale(.2)}35%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:scale(1.3) translateY(-10px)}}
+@keyframes fxflick{0%{opacity:1}15%{opacity:.15}30%{opacity:1}50%{opacity:.3}65%{opacity:1}100%{opacity:0}}
+@keyframes fxspin{0%{opacity:0;transform:scale(.3) rotate(-60deg)}40%{opacity:1;transform:scale(1.05) rotate(0)}100%{opacity:0;transform:scale(1.3) rotate(30deg)}}
+@keyframes fxring{0%{opacity:1;transform:scale(.25)}100%{opacity:0;transform:scale(1.5)}}
+@keyframes fxflutter{0%{opacity:0;transform:translateY(10px) scale(.5)}30%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1)}}
+@keyframes fxdrift{0%{opacity:0;transform:translateX(-16px)}40%{opacity:.85}100%{opacity:0;transform:translateX(18px)}}
+@keyframes fxslice{0%{opacity:0;transform:translateX(-30px) rotate(-30deg)}40%{opacity:1}100%{opacity:0;transform:translateX(30px) rotate(10deg)}}
+/* group attacks: one attacker, a row of targets hit together */
+.stage.group{height:auto;min-height:104px;gap:18px;padding:6px 0}
+.st-targets{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 10px;max-width:220px}
+.stage.group .st-targets .gl.stg{width:46px;height:56px;font-size:1.5rem}
+.stage.group .st-targets .fxl{top:28px;width:90px;height:90px;margin:-45px 0 0 -45px}
+.stage.group .st-on .pop{font-size:.95rem}
+.stage.group .st-on.koed{animation:recoil .45s .2s ease-out, topple .7s .55s cubic-bezier(.5,0,.75,1) forwards}
+.stage.group.rev .st-on.koed{animation:recoil-l .45s .2s ease-out, topple-l .7s .55s cubic-bezier(.5,0,.75,1) forwards}
+.stage.group .st-on.missed{animation:dodge .6s .25s ease-in-out}
+.stage.group .st-on .pop:not(.dmg){color:var(--muted);font-size:.75rem}
+.glines{display:flex;flex-direction:column;gap:2px;font-size:.86rem}
+@media (prefers-reduced-motion:reduce){.fxl{display:none}}
 /* back-pocket helpers */
 .pocket{display:flex;flex-direction:column;gap:8px}
 .pockethead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:.76rem}

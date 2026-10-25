@@ -2,7 +2,7 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'notes.js', 'views.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'notes.js', 'effects.js', 'views.js'], `
 function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
@@ -19,7 +19,7 @@ function check(games){
         if(!planReady(0)) throw new Error('plan not ready after choosing every move');
         cpuPlan(1,level); cpuHelpers(0); cpuHelpers(1); S.scoutP=0; S.phase='scout'; vScout(); S.scouting=true; vPlan(); S.scouting=false; S.phase='ready'; vReady(); S.teams[0].concat(S.teams[1]).forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
         resolve(); const ph=S.phase; S.phase='result';
-        for(let i=0;i<S.log.length;i++){ S.play={k:i,done:false}; vResult(); }
+        const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; vResult(); }
         S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
       }
       vOver(); recordMatch(); vSetup();

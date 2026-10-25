@@ -300,6 +300,9 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Character pool</div>
       <div class="seg">${[['random','Random'],['all','All']].map(([k,l])=>`<button data-a="pooltype" data-v="${k}" class="${S.poolType===k?'on':''}">${l}${k==='random'?' <small>default</small>':''}</button>`).join('')}</div>
       <div class="hint">${S.poolType==='all'?'Every character is available to draft. Each one can still only be picked once (taking Giyu also rules out Giyu ✦).':`A random hand of ${poolSize()} characters is dealt each draft.`}</div></div>
+    <div class="setgroup"><div class="tlabel">Playback speed</div>
+      <div class="seg">${[['slow','Slow'],['normal','Normal'],['fast','Fast']].map(([k,l])=>`<button data-a="speed" data-v="${k}" class="${S.speed===k?'on':''}">${l}${k==='normal'?' <small>default</small>':''}</button>`).join('')}</div>
+      <div class="hint">How long each action stays on screen during a round.</div></div>
     <div class="setgroup"><div class="tlabel">Sound effects</div>
       <div class="seg"><button data-a="sound" data-v="on" class="${S.soundOn?'on':''}">On <small>default</small></button><button data-a="sound" data-v="off" class="${S.soundOn?'':'on'}">Off</button></div></div>
     <div class="hint">Saved on this phone. Points and pool apply from the next draft.</div>
@@ -398,37 +401,54 @@ function vPlan(){
 const FX_MARK = {hit:'斬', miss:'避', block:'防', ko:'KO', heal:'癒', revive:'蘇', poison:'毒', stun:'眠', guard:'守', buff:'鍛', special:'技', burn:'陽', spawn:'分'};
 function stage(line){
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), type=line.fx||'', duo=by&&on&&by!==on;
+  // breathing style of the fighter acting (their Attack or Special look): colour, kanji mark and drawing
+  const style = by && ['hit','ko','burn','special','miss','block'].includes(type) ? styleOf(by, line.move) : null;
+  const art = style && ['hit','ko','burn'].includes(type) ? fxArt(style) : '';
   // Teams keep their side of the stage (player 1 left, player 2 right), so a hit back swings the other way
   // instead of the two cards swapping places. "rev" = the actor is on the right, attacking leftwards.
   const rev = duo && by.p!==on.p && by.p===1;
   const amt=line.t.match(/\[([+-])(\d+%)\]/);
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
-  const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?pop:''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?art+pop:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
-  const mark=`<span class="st-mark">${FX_MARK[type]||''}</span>`;
+  const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
   const solo=on||by;
-  return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}${rev?' rev':''}" aria-hidden="true">
+  return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
     ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
+}
+// One beat for a special that hits several enemies: the attacker strikes once, every target recoils together with
+// its own damage number, and any it knocks out topple over
+function stageGroup(lines){
+  const by=findU(lines[0].by), style=styleOf(by,'special'), rev=by.p===1;
+  const hits=lines.filter(l=>GROUP_FX.includes(l.fx));
+  const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
+    return `<div class="st-on${ko?' koed':''}${l.fx!=='hit'?' missed':''}">${seal(t,'stg')}${l.fx==='hit'?fxArt(style):''}${amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
+  const attacker=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
+  const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
+  return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}</div>`;
 }
 // Knockouts and hits of 30%+ shake the stage
 const bigHit = line => line.fx==='ko' || (/\[-(\d+)%\]/.exec(line.t)||[])[1] >= 30;
 const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<div class="${l.c}">${fmtLog(l.t)}</div>`).join('')}</div>`;
 // The round plays back one log line at a time (S.play.k = the line being shown); tiles show HP at that moment
 function vResult(){
-  const done=!S.play||S.play.done, k=done?S.log.length-1:S.play.k, cur=S.log[k], prev=S.log[Math.max(0,k-1)];
-  // the fighter acting on this line: the one whose name starts it
-  const actor=done?null:S.teams[0].concat(S.teams[1]).filter(u=>cur.t.startsWith(u.name)).sort((a,b)=>b.name.length-a.name.length)[0];
+  const done=!S.play||S.play.done, steps=S.play&&S.play.steps;
+  const [from,to]=done?[S.log.length-1,S.log.length-1]:steps[S.play.k], k=to, cur=S.log[to], prev=S.log[Math.max(0,from-1)];
+  const lines=S.log.slice(from,to+1), group=to>from;
+  // the fighter acting: the line's attacker, or the one whose name starts it
+  const actor=done?null:(cur.by&&findU(lines[0].by))||S.teams[0].concat(S.teams[1]).filter(u=>cur.t.startsWith(u.name)).sort((a,b)=>b.name.length-a.name.length)[0];
   const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
-    flash: cur.ko===u.uid ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
-  const step=S.log.slice(1,k+1).length, total=S.log.length-1;
+    flash: lines.some(l=>l.ko===u.uid) ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
+  const step=done?0:S.play.k, total=done?0:steps.length-1;
   // vs computer the screen is yours, so label the teams from your side; two players share it, so keep names
   const solo=vsCpu();
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>' : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
     ${strengthBar(0, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
     ${teamBlock(1,solo?'Opponent':null,moment,!done)}
-    ${done?vsDivider():k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}${cur.fx==='special'&&findU(cur.by)&&findU(cur.by).sig.quote?`<span class="quote">“${esc(findU(cur.by).sig.quote)}”</span>`:''}<span>${fmtLog(cur.t)}</span></div>`
+    ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span class="glines">${lines.map(l=>`<span>${fmtLog(l.t)}</span>`).join('')}</span></div>`
+      :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}${cur.fx==='special'&&findU(cur.by)&&findU(cur.by).sig.quote?`<span class="quote">“${esc(findU(cur.by).sig.quote)}”</span>`:''}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
     ${teamBlock(0,solo?'Your team':null,moment,!done)}
     ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
