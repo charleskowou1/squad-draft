@@ -17,7 +17,15 @@ function topbar(eyebrow, title, quit=true){
 }
 const actionbar = inner => `<div class="actionbar"><div class="in">${inner}</div></div>`;
 const statCells = c => `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
-const fmtLog = t => esc(t).replace(/(\d+%)/g,'<b>$1</b>');
+// A battle log line for the screen: each fighter's picture before their name, damage in red (−17%),
+// healing in green (+5%), other percents in bold. Engine lines tag health changes as [-17%] / [+5%].
+function fmtLog(t){
+  const byName={}; (S.teams?S.teams[0].concat(S.teams[1]):[]).forEach(u=>{ byName[esc(u.name)]=u; });
+  const names=Object.keys(byName).sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+  const re=new RegExp('\\[([+-])(\\d+%)\\]|(\\d+%)'+(names.length?'|('+names.join('|')+')':''),'g');
+  return esc(t).replace(re,(m,sign,n,plain,name)=> sign ? `<b class="${sign==='-'?'dmg':'gain'}">${sign==='-'?'−':'+'}${n}</b>`
+    : plain ? `<b>${plain}</b>` : `<span class="who">${seal(byName[name],'ls')}${name}</span>`);
+}
 
 // Name, percent and health bar. During round playback `o.hp` is the HP at that moment and `o.from` the HP a step earlier.
 function health(u, o={}){
@@ -256,7 +264,7 @@ function vPass(){
 function vPlan(){
   const p=S.planFor, open=focusOf(p), ready=planReady(p), mine=alive(p);
   return `${topbar(`Round ${S.round} · secret moves`, `<span style="color:${pc(p)}">${nm(p)}</span>, choose`)}
-    ${teamBlock(1-p,null,null,true)}
+    ${teamBlock(1-p,'Opponent',null,true)}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span><span class="muted">Tap a fighter to change</span></div>
       ${synChips(p)}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
     ${actionbar(`<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
@@ -270,11 +278,13 @@ function vResult(){
   const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
     flash: cur.ko===u.uid ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : ''};
   const step=S.log.slice(1,k+1).length, total=S.log.length-1;
+  // vs computer the screen is yours, so label the teams from your side; two players share it, so keep names
+  const vsCpu=S.mode==='cpu';
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>' : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
-    ${teamBlock(1,null,moment)}
-    ${done?'':`<div class="now ${cur.c}" aria-live="polite">${k?fmtLog(cur.t):'…'}</div>`}
-    ${teamBlock(0,null,moment)}
+    ${teamBlock(1,vsCpu?'Opponent':null,moment)}
+    ${done?'':`<div class="now ${cur.c}" aria-live="polite"><span>${k?fmtLog(cur.t):'…'}</span></div>`}
+    ${teamBlock(0,vsCpu?'Your team':null,moment)}
     ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
     ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }

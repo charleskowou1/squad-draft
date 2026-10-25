@@ -23,7 +23,7 @@ function animateSpin(){
   clearTimeout(S._t); S._t=setTimeout(()=>{ S.spin.state='done'; render(); }, quickMotion()?300:4300);
 }
 // How long a playback line stays up: enough to read it, longer for long lines and knockouts
-const readTime = line => quickMotion() ? 300 : 1400 + line.t.length*22 + (line.ko||line.spawn ? 900 : 0);
+const readTime = line => quickMotion() ? 300 : 2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0);
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
 function playRound(){
   S.play={k:0, done:false};

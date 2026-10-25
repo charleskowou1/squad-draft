@@ -278,6 +278,13 @@ details ul b{color:var(--fg)}
 .now{min-height:3.4em;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px 14px;border-radius:12px;
   background:var(--bg-2);border:1px solid var(--line);font-size:1rem;font-weight:700;color:var(--ink-2);animation:fade .25s ease-out}
 .now b{color:var(--fg)}
+.now > span{display:block}
+/* fighter pictures and coloured health changes inside battle log lines */
+.who{white-space:nowrap}
+.gl.ls{display:inline-grid;width:20px;height:24px;font-size:.78rem;border-radius:4px;vertical-align:-6px;margin-right:4px}
+.now .gl.ls{width:24px;height:29px;font-size:.9rem;vertical-align:-8px}
+.log b.dmg,.now b.dmg{color:#ff6b5c}
+.log b.gain,.now b.gain{color:#5fd39a}
 .now.k{border-color:rgba(255,93,76,.5);color:#ff9488}
 .now.h{border-color:rgba(82,179,136,.5);color:#8fd3b2}
 .now.x{border-color:rgba(214,165,77,.6);color:var(--gold);font-family:var(--display);font-size:1.15rem}
