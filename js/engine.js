@@ -1,6 +1,12 @@
 /* ================= ENGINE =================
    Game state, draft rules and battle rules. No DOM in this file: tools/balance-sim.js runs it in Node. */
-const BUDGET = 20, MAXTEAM = 6, POOL_SIZE = 10;
+const MAXTEAM = 6, POOL_SIZE = 10;
+// Points per team: chosen in Settings (10, 20 or 30) and remembered on this phone
+const BUDGETS = [10, 20, 30], DEFAULT_BUDGET = 20;
+const budget = () => S.budget || DEFAULT_BUDGET;
+// Most a single card may cost to be dealt. In 10-point games it's 6, so every team gets at least two fighters
+// (one 9–10 point card alone against two or three cheap ones was a coin flip decided by matchups).
+const maxCardCost = () => budget() <= 10 ? 6 : budget();
 const SNAKE = [0,1,1,0];
 
 /* ---------- state / storage ---------- */
@@ -18,10 +24,12 @@ function recordMatch(){
   try{ localStorage.setItem(RECORDS_KEY,JSON.stringify(rec)) }catch(e){}
 }
 
+function loadBudget(){ try{ const b=+localStorage.getItem('squad-draft-budget'); return BUDGETS.includes(b)?b:DEFAULT_BUDGET }catch(e){ return DEFAULT_BUDGET } }
+function saveBudget(v){ try{ localStorage.setItem('squad-draft-budget',v) }catch(e){} }
 function loadLevel(){ try{ return localStorage.getItem('squad-draft-level')||'normal' }catch(e){ return 'normal' } }
 function saveLevel(v){ try{ localStorage.setItem('squad-draft-level',v) }catch(e){} }
 
-let S = {phase:'setup', mode:'2p', level: loadLevel(), names: loadNames() || ['CK','Mia']};
+let S = {phase:'setup', mode:'2p', level: loadLevel(), budget: loadBudget(), names: loadNames() || ['CK','Mia']};
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Health is shown as a percent of each fighter's own max HP (display only; the engine keeps raw HP)
 const pct = (u,n=u.hp) => Math.round(n/u.max*100);
@@ -41,9 +49,9 @@ function takeWeighted(list, w){
   return list.splice(i,1)[0];
 }
 // Deal 10 random characters, one version each (base OR Mark OR old/young Yoriichi). Always at least 3 cheap (≤4) picks.
-// Split-off forms (Hantengu's emotions) are never dealt.
+// Split-off forms (Hantengu's emotions) are never dealt, nor is anything over maxCardCost().
 function buildPool(){
-  const cards=ROSTER.filter(c=>!c.spawn), fams=[...new Set(cards.map(c=>c.fam))];
+  const cards=ROSTER.filter(c=>!c.spawn && c.cost<=maxCardCost()), fams=[...new Set(cards.map(c=>c.fam))];
   for(let tries=0;tries<200;tries++){
     const left=fams.slice(), f=[];
     while(f.length<POOL_SIZE) f.push(takeWeighted(left, x=>FAMILY_ODDS[x]??1));
@@ -67,7 +75,7 @@ function spinWheel(){
 const spent = p => S.picks[p].reduce((a,id)=>a+BYID[id].cost,0);
 const famTaken = fam => S.picks[0].concat(S.picks[1]).some(id=>BYID[id].fam===fam);
 const taken = id => famTaken(BYID[id].fam);
-function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && S.picks[p].length<MAXTEAM && c.cost <= BUDGET-spent(p); }
+function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && S.picks[p].length<MAXTEAM && c.cost <= budget()-spent(p); }
 const canAny = p => S.pool.some(id=>canPick(p,id));
 // Whose pick it is: snake order, skipping a player who has locked
 function turn(){ return turnAt(S.k); }
@@ -92,7 +100,7 @@ const PAIRS = [['urokodaki','sabito'],['sabito','tanjiro'],['tanjiro','nezuko'],
 const LEVELS = {easy:{label:'Easy', draftNoise:12}, normal:{label:'Normal', draftNoise:6, noise:22}, hard:{label:'Hard', draftNoise:3, noise:4}};
 function cpuDraftStep(level='hard'){
   const p=turn();
-  const left=BUDGET-spent(p);
+  const left=budget()-spent(p);
   if(S.picks[p].length && left<=2 && Math.random()<.5){ doLock(p); return; }
   const mine=S.picks[p].map(id=>BYID[id]);
   const ok=S.pool.map(id=>BYID[id]).filter(c=>canPick(p,c.id));

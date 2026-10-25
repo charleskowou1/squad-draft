@@ -107,9 +107,10 @@ function vSetup(){
   const sc = loadScore();
   const seg=(k,v,l)=>`<button data-a="${k}" data-v="${v}" class="${S[k]===v?'on':''}">${l}</button>`;
   return `
+  <div class="setbar"><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
-    <p class="muted">Draft a squad on 20 points. Pick secret moves each round. Last team standing wins.</p></div>
+    <p class="muted">Draft a squad on ${budget()} points. Pick secret moves each round. Last team standing wins.</p></div>
   <div class="panel">
     <div class="seg">${seg('mode','2p','2 players, one phone')}${seg('mode','cpu','Vs computer')}</div>
     <div class="row">
@@ -126,7 +127,7 @@ function vSetup(){
   ${recordsPanel()}
   <details class="panel" id="howto"><summary>How to play</summary><ul>
     <li><b>The pool:</b> each draft deals 10 random characters, one version of each (base, Mark-awakened, or Yoriichi young or old). Every card shows its cost and stats before you pick.</li>
-    <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A, A, B…) on a 20-point budget, up to 6 fighters. Tap <b>Lock team</b> when you're done; the other player keeps drafting until they lock or run out of points.</li>
+    <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A, A, B…) on a ${budget()}-point budget (change it in ⚙ Settings: 10, 20 or 30), up to 6 fighters. Tap <b>Lock team</b> when you're done; the other player keeps drafting until they lock or run out of points.</li>
     <li><b>Pool notes</b> list the synergies and matchups possible with the characters dealt.</li>
     <li><b>Legends:</b> Yoriichi (18) and Yoriichi at 85 (15) strike twice per Attack and cap the damage they take each round. They're rare: Yoriichi is dealt in about 1 draft in 8.</li>
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
@@ -167,15 +168,15 @@ function cardHTML(c,p){
     ${statCells(c)}${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:''}</button>`;
 }
 function teamBox(q,p){
-  const left=BUDGET-spent(q);
+  const left=budget()-spent(q);
   return `<div class="tbox${p===q&&!S.locked[q]?' active':''}" style="--tc:${pc(q)}">
     <div class="tn"><span>${nm(q)}</span><span>${S.locked[q]?'Locked':left+' pts left'}</span></div>
-    <div class="meter" role="img" aria-label="${spent(q)} of ${BUDGET} points spent"><i style="width:${spent(q)/BUDGET*100}%"></i></div>
+    <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${spent(q)/budget()*100}%"></i></div>
     <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&S.picks[q].length<MAXTEAM?'<span class="slot empty"></span>':''}</div></div>`;
 }
 function vDraft(){
   const p = turn(), cpuTurn = S.mode==='cpu' && p===1;
-  const fresh = !S.picks[0].length && !S.picks[1].length, left=BUDGET-spent(p);
+  const fresh = !S.picks[0].length && !S.picks[1].length, left=budget()-spent(p);
   // second pick in a row (snake order), or the other player has locked and this one keeps going
   const again = S.lastPicker===p && !S.locked[1-p];
   const verb = S.locked[1-p] && S.picks[1-p].length ? 'keeps picking' : again ? 'picks again' : cpuTurn ? 'is picking' : 'picks';
@@ -248,8 +249,22 @@ function vReady(){
     <p class="muted">Put the phone where you can both see it.</p>
     <button class="btn" data-a="fight">Start the battle</button></div>`;
 }
+// Settings (gear on the main screen): points per team
+function vSettings(){
+  const blurb={10:'Quick, chaotic games with 2–3 fighters each. Only cards costing 6 or less are dealt.',20:'The standard game.',30:'Bigger squads, or a Legend with a real team behind them. Still up to 6 fighters.'};
+  return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in" role="dialog" aria-modal="true" aria-label="Settings">
+    <button class="x" data-a="unsel" aria-label="Close">×</button>
+    <h2>Settings</h2>
+    <div class="setgroup"><div class="tlabel">Points per team</div>
+      <div class="seg">${BUDGETS.map(b=>`<button data-a="budget" data-v="${b}" class="${budget()===b?'on':''}">${b}${b===DEFAULT_BUDGET?' <small>default</small>':''}</button>`).join('')}</div>
+      <div class="hint">${blurb[budget()]}</div></div>
+    <div class="hint">Saved on this phone. Applies from the next draft.</div>
+    <div class="row"><button class="btn" data-a="unsel">Done</button></div>
+  </div></div>`;
+}
 // Card detail, centred on screen, when a card is tapped during the draft (or a fighter's info card in battle)
 function vSheet(){
+  if(S.settings) return vSettings();
   if(S.info) return vInfo();
   if(S.phase!=='draft' || !S.sel) return '';
   const c=BYID[S.sel], p=turn(), ok=canPick(p,c.id);

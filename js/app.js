@@ -53,7 +53,7 @@ function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='r
 const ACTIONS = {
   mode(v){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value; S.mode=v; if(v==='2p'){ const s=loadNames(); S.names[1]=(s&&s[1])||'Mia'; } },
   start: startDraft,
-  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,names:S.mode==='cpu'?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
+  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:S.budget,names:S.mode==='cpu'?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
   level(v){ S.level=v; saveLevel(v); },
   rematch: toSpin,
   spin(){ if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -61,7 +61,9 @@ const ACTIONS = {
   redeal(){ S.pool=buildPool(); S.sel=null; },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
   sel(v){ if(S.mode==='cpu' && turn()===1) return; if(S.pool.includes(v)) S.sel=v; },
-  unsel(){ S.sel=null; S.info=null; },
+  unsel(){ S.sel=null; S.info=null; S.settings=false; },
+  settings(){ S.settings=true; },
+  budget(v){ S.budget=+v; saveBudget(S.budget); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },
@@ -86,7 +88,7 @@ document.addEventListener('click',e=>{
   const fn=ACTIONS[b.dataset.a]; if(!fn) return;
   fn(b.dataset.v,b); render();
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info)){ S.sel=null; S.info=null; render(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||S.settings)){ S.sel=null; S.info=null; S.settings=false; render(); } });
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.

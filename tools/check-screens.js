@@ -1,4 +1,4 @@
-// Smoke test: plays 300 computer-vs-computer games and draws every screen along the way.
+// Smoke test: plays 300 computer-vs-computer games (all difficulty levels and point budgets) and draws every screen along the way.
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
@@ -7,7 +7,7 @@ function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
     try{
-      const level=['easy','normal','hard'][g%3]; S={phase:'setup',mode:'cpu',level,names:['A','B']}; vSetup();
+      const level=['easy','normal','hard'][g%3]; S={phase:'setup',mode:'cpu',level,budget:[10,20,30][Math.floor(g/3)%3],names:['A','B']}; vSetup(); S.settings=true; vSheet(); S.settings=false;
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');

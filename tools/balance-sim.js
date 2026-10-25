@@ -2,6 +2,7 @@
 // Runs the real game logic (js/roster.js + js/engine.js) with two computer players and prints win rates.
 // Usage:  node tools/balance-sim.js            (random 10-card drafts, win rate per character)
 //         node tools/balance-sim.js yoriichi,murata vs tanjiro,zenitsu,inosuke,nezuko,genya
+//         BUDGET=30 node tools/balance-sim.js   (draft with 10 or 30 points instead of 20)
 //         node tools/balance-sim.js --ai     (computer difficulty levels against each other)
 const { loadGame } = require('./load-game');
 const ctx = loadGame(['roster.js', 'engine.js'], `
@@ -9,7 +10,7 @@ function battle(a,b){ S.mode='cpu'; S.names=['A','B']; S.picks=[a,b]; startBattl
   while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1); resolve(); if(S.phase==='result') S.round++; } return S.winner; }
 function vs(a,b,n){ const w=[0,0,0]; for(let i=0;i<n;i++){ const r=battle(a,b); w[r<0?2:r]++; }
   return 'A '+(w[0]/n*100).toFixed(0)+'%  B '+(w[1]/n*100).toFixed(0)+'%  draw '+(w[2]/n*100).toFixed(0)+'%'; }
-function draftSim(n){ const st={};
+function draftSim(n){ const st={}; S.budget=${+process.env.BUDGET||20};
   for(let i=0;i<n;i++){ S.mode='cpu'; newDraft(); let g=0; while(S.phase==='draft'&&g++<50) cpuDraftStep();
     const t=[S.picks[0].slice(),S.picks[1].slice()], w=battle(t[0],t[1]);
     t.forEach((team,p)=>team.forEach(id=>{ st[id]=st[id]||[0,0]; st[id][0]++; if(w===p) st[id][1]++; })); }
