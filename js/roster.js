@@ -90,7 +90,7 @@ const obanai = add({id:'obanai',name:'Obanai Iguro',short:'Obanai',g:'蛇',type:
 markOf(obanai,{cost:8});
 add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:34,pow:11,spd:7,def:5,
   sig:{name:'Ninth Form: Rengoku',desc:'Strike for PWR+8.',cd:3,kind:'single'}});
-add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:8,def:5,
+add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:9,def:5,
   sig:{name:'Constant Resounding Slashes',desc:'Every enemy takes PWR−2.',cd:3,kind:'all'}});
 // Retired Tengen: the other version of Tengen (one or the other is dealt). Lost a hand and an eye, no longer a Hashira.
 add({id:'tengen_retired',fam:'tengen',sk:'tengen_retired',name:'Tengen Uzui (Retired)',short:'Retired Tengen',g:'譜',type:'Former Sound Hashira',cost:4,hp:28,pow:8,spd:7,def:4,
