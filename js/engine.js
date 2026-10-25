@@ -219,7 +219,7 @@ const SIG_EST = {
   swamp: u=>({base:u.pow+1}),
   gyutaro: ()=>({all:true, base:8, o:{ignoreDef:true}}),   // 4 now plus 4 of poison
   akaza: u=>({base:u.pow+6}),
-  doma: ()=>({all:true, base:8, o:{ignoreDef:true}}),
+  doma: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
   kokushibo: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
   muzan: u=>({all:true, base:u.pow-7, o:{ignoreDef:true}}),
   muzan_final: u=>({all:true, base:u.pow-6, o:{ignoreDef:true}}),
@@ -356,7 +356,7 @@ function special(u,pl){
     case 'swamp': hit(u,target(u,pl.t),u.pow+1); break;
     case 'gyutaro': en().forEach(e=>{ hit(u,e,4,{ignoreDef:true,counter:false}); if(e.alive&&!S.shield[e.p]&&!e.evade&&(!e.poison||e.poison.dmg<2)) e.poison={dmg:2,turns:2}; }); break;
     case 'akaza': hit(u,target(u,pl.t),u.pow+6); break;
-    case 'doma': en().forEach(e=>hit(u,e,8,{ignoreDef:true,counter:false})); break;
+    case 'doma': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'kokushibo': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'sekido': en().forEach(e=>hit(u,e,4,{ignoreDef:true,counter:false})); break;
     case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;

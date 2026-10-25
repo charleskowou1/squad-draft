@@ -31,8 +31,8 @@ add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final 
   sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−6, ignores DEF, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
 add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:50,pow:17,spd:11,def:8,regen:3,
   sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
-add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:8,hp:37,pow:11,spd:9,def:5,regen:2,
-  sig:{name:'Frozen Lotus',desc:'Every enemy takes 8, ignores DEF.',cd:3,kind:'all'}});
+add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:11,hp:44,pow:14,spd:11,def:6,regen:3,
+  sig:{name:'Frozen Lotus',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:40,pow:13,spd:10,def:5,regen:2,
   sig:{name:'Destructive Death',desc:'Strike for PWR+6.',cd:3,kind:'single'}});
 add({id:'gyutaro',name:'Gyutaro & Daki',short:'Gyutaro',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:9,spd:8,def:4,regen:2,
