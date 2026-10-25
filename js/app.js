@@ -176,7 +176,7 @@ async function firebaseNet(role){
       const v=snap.val(); if(v.guest && v.guest.on) throw new Error('That game already has two players.');
       await room.child('guest').set({name, on:true}); room.child('guest/on').onDisconnect().set(false); return v; },
     publish(json){ room.child('state').set(json); },
-    send(msg){ room.child('acts').push(msg); },
+    send(msg){ room.child('acts').push(JSON.parse(JSON.stringify(msg))); },   // Firebase rejects undefined (e.g. a Defend move's empty target)
     onState(cb){ listen(room.child('state'),'value',s=>{ if(s.exists()) cb(s.val()); }); },
     onAction(cb){ listen(room.child('acts'),'child_added',s=>{ cb(s.val()); s.ref.remove(); }); },
     onPeer(cb){ listen(room.child(role==='host'?'guest':'host'),'value',s=>cb(s.val())); },
