@@ -46,7 +46,9 @@ function saveLevel(v){ try{ localStorage.setItem('squad-draft-level',v) }catch(e
 let S = {phase:'setup', mode:'2p', level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), soundOn: true, names: loadNames() || ['CK','Mia']};
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Playing against the computer (normal vs-computer games and story mode); the screen belongs to player 1
-const vsCpu = () => S.mode!=='2p';
+const vsCpu = () => S.mode==='cpu' || S.mode==='story';
+// One person per screen (vs computer, story, online): label sides "You" / "Opponent" from that person's view
+const soloView = () => S.mode!=='2p';
 // Health is shown as a percent of each fighter's own max HP (display only; the engine keeps raw HP)
 const pct = (u,n=u.hp) => Math.round(n/u.max*100);
 const LOW = 25;
@@ -188,7 +190,8 @@ function startBattle(){
   S.teams=[fighterIds(0).map(id=>mkUnit(id,0)), fighterIds(1).map(id=>mkUnit(id,1))];
   S.helpers=[S.picks[0].filter(isHelper), S.picks[1].filter(isHelper)]; S.helperPlan=[[],[]]; S.scoutQueue=[]; S.scouting=false;
   S.sib=[false,false]; S.syn=[synergies(0),synergies(1)];
-  S.round=1; S.plans=[{},{}]; S.lastPlans=[null,null]; S.log=[]; S.planFor=0; S.focus=null; S.stats={};
+  S.round=1; S.plans=[{},{}]; S.lastPlans=[null,null]; S.log=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
+  S.movesLocked=[false,false]; S.readyNext=[false,false]; S.roundId=0;   // online play
   S.phase = S.mode==='2p' ? 'pass' : 'plan';
 }
 const alive = p => S.teams[p].filter(u=>u.alive);

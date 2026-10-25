@@ -457,7 +457,22 @@ details ul b{color:var(--fg)}
 .artstrip .track{display:flex;gap:8px;width:max-content;animation:marquee 60s linear infinite}
 .artstrip img{width:64px;height:78px;object-fit:cover;object-position:50% 20%;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 @keyframes marquee{to{transform:translateX(-50%)}}
-.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.modes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:520px){.modes{grid-template-columns:repeat(4,1fr)}}
+/* online: create / join, lobby, waiting for the other phone */
+.onlinebox{display:flex;flex-direction:column;gap:10px}
+.joinrow{display:flex;gap:8px}
+.joinrow input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.35em;font-weight:800;text-align:center;font-size:1.1rem}
+.onlinemsg{color:var(--accent)}
+.lobby{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:24px 0}
+.roomcode{font-family:var(--display);font-weight:800;font-size:3.4rem;letter-spacing:.25em;color:var(--fg);background:var(--surface);border:1.5px dashed var(--line-2);border-radius:16px;padding:6px 18px 6px 30px}
+.lobbyteams{display:flex;gap:14px;align-items:center;font-family:var(--display);font-weight:800;font-size:1.2rem}
+.waiting{display:flex;flex-direction:column;align-items:center;gap:14px;padding:60px 0;text-align:center}
+.dots{display:flex;gap:8px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:dotpulse 1.2s ease-in-out infinite}
+.dots i:nth-child(2){animation-delay:.2s} .dots i:nth-child(3){animation-delay:.4s}
+@keyframes dotpulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.dots i{animation:none;opacity:.7}}
 .mode{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:12px 10px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;color:inherit;font:inherit;transition:border-color .15s,transform .15s}
 .mode .mk{font-family:var(--display);font-size:1.5rem;line-height:1;color:var(--accent);margin-bottom:4px}
 .mode b{font-size:.92rem}

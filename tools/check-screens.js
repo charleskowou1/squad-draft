@@ -2,7 +2,7 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'notes.js', 'effects.js', 'views.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'online.js', 'notes.js', 'effects.js', 'views.js'], `
 function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
