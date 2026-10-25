@@ -85,6 +85,10 @@ add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Has
   sig:{name:'Ninth Form: Rengoku',desc:'Strike for PWR+8.',cd:3,kind:'single'}});
 add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:8,def:5,
   sig:{name:'Constant Resounding Slashes',desc:'Every enemy takes PWR−2.',cd:3,kind:'all'}});
+// Retired Tengen: the other version of Tengen (one or the other is dealt). Lost a hand and an eye, no longer a Hashira.
+add({id:'tengen_retired',fam:'tengen',sk:'tengen_retired',name:'Tengen Uzui (Retired)',short:'Retired Tengen',g:'譜',type:'Former Sound Hashira',cost:4,hp:28,pow:8,spd:7,def:4,
+  passive:'Retired: lost a hand and an eye, so he no longer counts as a Hashira.',
+  sig:{name:'Bodyguard',desc:'Moves first. Shields an ally (or himself): they count as Defending this round and take half damage.',cd:2,kind:'ally',prio:3}});
 add({id:'shinobu',name:'Shinobu Kocho',short:'Shinobu',g:'蟲',type:'Insect Hashira',hashira:true,cost:5,hp:24,pow:6,spd:10,def:3,
   passive:'Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match.',
   sig:{name:'Wisteria Poison',desc:'Poison a target for 3 rounds: 6/round to demons, 3/round to humans.',cd:3,kind:'single'}});

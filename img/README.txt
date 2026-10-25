@@ -45,6 +45,7 @@ mitsuri            Mitsuri Kanroji
 obanai             Obanai Iguro
 rengoku            Kyojuro Rengoku                  <-- last name
 tengen             Tengen Uzui
+tengen_retired     Tengen Uzui (Retired)  - eye patch, one hand; borrows tengen's picture if missing
 shinobu            Shinobu Kocho
 
 EVERYONE ELSE

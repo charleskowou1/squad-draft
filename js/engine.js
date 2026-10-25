@@ -238,6 +238,7 @@ function cpuPlan(p, level='hard'){
           case 'genya': sp={type:'special', v: S.round<=3 ? 40 : u.hp<u.max*.6 ? 30 : 12}; break;
           case 'tamayo': { const sick=mine.find(m=>m.poison), t=sick||hurt; sp={type:'special', t:t.uid, v:Math.min(10,t.max-t.hp)/t.max*100+(sick?20:0)}; break; }
           case 'yushiro': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.4 ? 45 : 0}; break;
+          case 'tengen_retired': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.5 ? 30 : 0}; break;
           case 'hantengu': sp={type:'special', v: u.hp<u.max*.7 ? 35 : 10}; break;
           case 'kagaya': sp={type:'special', v: mine.reduce((a,m)=>a+Math.min(4,m.max-m.hp)/m.max*100,0)}; break;
           case 'enmu': sp={type:'special', v: foes.filter(f=>f.cd<=1).length*14}; break;
@@ -299,6 +300,7 @@ function special(u,pl){
     case 'kanao': hit(u,target(u,pl.t),u.pow+4); break;
     case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h'); break; }
     case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h'); break; }
+    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h'); break; }
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h'); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
     case 'giyu': S.shield[u.p]=true; L(`${S.names[u.p]}'s team can't be hurt this round.`,'h'); break;

@@ -86,12 +86,12 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && S.sel){ S.sel=null; render(); } });
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
-// borrows its base character's (giyu_mark → giyu). Characters with no picture keep their kanji.
+// borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id);
   let waiting=ids.length;
   const finish=()=>{ if(--waiting>0) return;
-    ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]; if(src) ART[c.id]=src; });
+    ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
     if(Object.keys(ART).length) render(); };
   ids.forEach(id=>{
     const exts=['jpg','png','webp'];
