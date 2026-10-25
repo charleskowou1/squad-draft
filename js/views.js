@@ -293,6 +293,19 @@ function vPlan(){
 }
 
 /* ---------- results ---------- */
+// The fight stage for one playback line: the attacker's picture lunges at the target's, a mark flashes on impact,
+// and the health change floats up. Lines with one fighter (regen, poison, specials…) animate just that fighter.
+const FX_MARK = {hit:'斬', miss:'避', block:'防', ko:'KO', heal:'癒', revive:'蘇', poison:'毒', stun:'眠', guard:'守', buff:'鍛', special:'技', burn:'陽', spawn:'分'};
+function stage(line){
+  const by=line.by&&findU(line.by), on=line.on&&findU(line.on), type=line.fx||'', duo=by&&on&&by!==on;
+  const amt=line.t.match(/\[([+-])(\d+%)\]/);
+  const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
+  const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?pop:''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const mark=`<span class="st-mark">${FX_MARK[type]||''}</span>`;
+  const solo=on||by;
+  return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}" aria-hidden="true">
+    ${duo ? who(by,'by')+mark+who(on,'on') : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
+}
 const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<div class="${l.c}">${fmtLog(l.t)}</div>`).join('')}</div>`;
 // The round plays back one log line at a time (S.play.k = the line being shown); tiles show HP at that moment
 function vResult(){
@@ -307,9 +320,9 @@ function vResult(){
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>' : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
     ${strengthBar(0, done?undefined:u=>cur.hp[u.uid])}
-    ${teamBlock(1,vsCpu?'Opponent':null,moment)}
-    ${done?vsDivider():`<div class="now ${cur.c}" aria-live="polite"><span>${k?fmtLog(cur.t):'…'}</span></div>`}
-    ${teamBlock(0,vsCpu?'Your team':null,moment)}
+    ${teamBlock(1,vsCpu?'Opponent':null,moment,!done)}
+    ${done?vsDivider():`<div class="now ${cur.c}" aria-live="polite">${k?stage(cur):''}<span>${k?fmtLog(cur.t):'…'}</span></div>`}
+    ${teamBlock(0,vsCpu?'Your team':null,moment,!done)}
     ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
     ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }

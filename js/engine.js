@@ -260,40 +260,42 @@ function cpuPlan(p, level='hard'){
 
 /* ---------- resolving a round ---------- */
 // Each log line keeps everyone's HP at that moment, so the round can be played back step by step
+// What a line shows on the fight stage during playback: effect type, who did it (by) and who it landed on (on)
+const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null});
 function L(t,c='',extra){ const hp={}; S.teams[0].concat(S.teams[1]).forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive){ const a=alive(1-u.p); t=a.length?rnd(a):null; } return t; }
-function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h'); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x'); return; }
-  t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid});
-  if(t.fam==='shinobu' && a && a.alive && a.demon){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h'); }
+function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',fx('revive',null,t)); return; }
+  t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ...fx('ko',a,t)});
+  if(t.fam==='shinobu' && a && a.alive && a.demon){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
   if(t.splits) split(t); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
 function split(t){
   const kids=t.splits.map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...kids);
-  L(`${t.name} splits! ${kids.map(k=>k.name).join(' and ')} ${kids.length>1?'appear':'appears'}.`,'x',{spawn:kids.map(k=>k.uid)});
+  L(`${t.name} splits! ${kids.map(k=>k.name).join(' and ')} ${kids.length>1?'appear':'appears'}.`,'x',{spawn:kids.map(k=>k.uid), ...fx('spawn',null,t)});
 }
 function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;
-  if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x'); return 0; }
-  if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x'); return 0; }
+  if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
+  if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',fx('miss',a,t)); return 0; }
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
   const guarded = t.defending && !o.pierce;
   if(guarded) d = Math.ceil(d/2);
   let note = guarded?' (guarded)':'';
-  if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x'); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
+  if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
   d=Math.max(0,d); const before=t.hp; t.hp = Math.max(0, t.hp - d);
-  L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`);
-  if(o.sun && t.demon && t.regen){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h'); }
+  L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',fx('hit',a,t));
+  if(o.sun && t.demon && t.regen){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
   fall(t,a);
   if(o.counter!==false && S.sib[t.p] && a.alive && (t.fam==='tanjiro'||t.fam==='nezuko')){
     const partner = S.teams[t.p].find(u=>u.alive && u!==t && (u.fam==='tanjiro'||u.fam==='nezuko'));
-    if(partner && !(a.cap && a.taken>=a.cap)){ let cd=3; if(a.cap){ cd=Math.min(cd,a.cap-a.taken); a.taken+=cd; } a.hp=Math.max(0,a.hp-cd); L(`${partner.name} counters ${a.name} ${lost(a,cd)} to protect ${t.fam==='tanjiro'?'her brother':'his sister'}.`,'h'); fall(a,partner); }
+    if(partner && !(a.cap && a.taken>=a.cap)){ let cd=3; if(a.cap){ cd=Math.min(cd,a.cap-a.taken); a.taken+=cd; } a.hp=Math.max(0,a.hp-cd); L(`${partner.name} counters ${a.name} ${lost(a,cd)} to protect ${t.fam==='tanjiro'?'her brother':'his sister'}.`,'h',fx('hit',partner,a)); fall(a,partner); }
   }
   return d;
 }
-function stunT(t){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade){ t.stunNext=true; L(`${t.name} will lose next round.`,'k'); } }
+function stunT(t){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade){ t.stunNext=true; L(`${t.name} will lose next round.`,'k',fx('stun',null,t)); } }
 function special(u,pl){
   const s=u.sig, en=()=>alive(1-u.p);
-  L(`${u.name}: ${s.name}!`,'x');
+  L(`${u.name}: ${s.name}!`,'x',fx('special',u,null));
   switch(u.sk){
     case 'yoriichi': en().forEach(e=>hit(u,e,u.pow,{ignoreDef:true,sun:true,counter:false})); break;
     case 'yoriichi_old': hit(u,target(u,pl.t),u.pow+10,{ignoreDef:true}); break;
@@ -302,22 +304,22 @@ function special(u,pl){
     case 'zenitsu': hit(u,target(u,pl.t),u.pow*2); break;
     case 'inosuke': for(let i=0;i<2;i++){ const e=en(); if(e.length) hit(u,rnd(e),u.pow-1); } break;
     case 'kanao': hit(u,target(u,pl.t),u.pow+4); break;
-    case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h'); break; }
-    case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h'); break; }
+    case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h',fx('heal',null,u)); break; }
+    case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h',fx('heal',u,t)); break; }
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t); } break; }
-    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito & Makomo train ${t===u?'themselves':t.name}: +2 PWR for the rest of the match.`,'h'); break; }
-    case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-3,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k'); } break; }
-    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h'); break; }
-    case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h'); break; }
+    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito & Makomo train ${t===u?'themselves':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
+    case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-3,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
+    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
+    case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'giyu': S.shield[u.p]=true; L(`${S.names[u.p]}'s team can't be hurt this round.`,'h'); break;
+    case 'giyu': S.shield[u.p]=true; L(`${S.names[u.p]}'s team can't be hurt this round.`,'h',fx('guard',u,null)); break;
     case 'gyomei': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'sanemi': { const t=target(u,pl.t); hit(u,t,u.pow); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow); break; }
     case 'muichiro': hit(u,target(u,pl.t),u.pow+2); break;
     case 'mitsuri': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'obanai': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
     case 'rengoku': hit(u,target(u,pl.t),u.pow+8); break;
-    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade){L(`The poison misses.`,'x');break;} t.poison={dmg:t.demon?6:3,turns:3}; L(`${t.name} is poisoned.`,'h'); } break; }
+    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade){L(`The poison misses.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t); break; }
     case 'kyogai': stunT(target(u,pl.t)); break;
@@ -331,13 +333,13 @@ function special(u,pl){
     case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;
     case 'aizetsu': hit(u,target(u,pl.t),u.pow+4); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h'); break; }
+    case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',fx('heal',null,u)); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
-    case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k'); break;
+    case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
     case 'kagaya': { const healed=alive(u.p).map(m=>{ const h=Math.min(4,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
-      L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h'); break; }
-    case 'muzan': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-4,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(2*n,u.max-u.hp); u.hp+=h; L(`Muzan heals ${gained(u,h)}.`,'k'); } break; }
+      L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
+    case 'muzan': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-4,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(2*n,u.max-u.hp); u.hp+=h; L(`Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
   }
   u.cd = s.cd + 1;
 }
@@ -351,8 +353,8 @@ function resolve(){
   acts.sort((a,b)=> prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
   for(const x of acts){
     const u=x.u; if(!u.alive) continue;
-    if(x.pl.type==='stunned'){ L(`${u.name} can't move.`); continue; }
-    if(x.pl.type==='defend'){ L(`${u.name} braces.`); continue; }
+    if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
+    if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
     if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!alive(1-u.p).length) break; hit(u,target(u,x.pl.t),u.pow); }
     if(x.pl.type==='special') special(u,x.pl);
@@ -360,9 +362,9 @@ function resolve(){
   }
   // end of round: poison, Shinobu's devour damage, regeneration, cooldowns
   [0,1].forEach(p=>S.teams[p].forEach(u=>{
-    if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k'); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
-    if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k'); fall(u); }
-    if(u.alive && u.regen && u.hp<u.max){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`); }
+    if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
+    if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
+    if(u.alive && u.regen && u.hp<u.max){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',fx('heal',null,u)); }
     if(u.cd>0) u.cd--;
     u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false;
   }));
