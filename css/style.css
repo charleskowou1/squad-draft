@@ -330,7 +330,6 @@ details ul b{color:var(--fg)}
 .stage.fx-hit .st-on,.stage.fx-poison .st-on{animation:recoil .5s .3s ease-out}
 .stage .pop{animation:floatup 1.5s .35s ease-out both}
 /* knockout: target recoils hard and goes grey under a KO stamp */
-.stage.fx-ko .st-on{animation:recoil .5s .2s ease-out, fadegrey .8s .5s forwards}
 .stage.fx-ko .st-mark{font-family:var(--body);font-size:1.6rem;color:#fff;background:var(--low);padding:2px 10px;border-radius:6px;text-shadow:none;animation:stamp .5s .45s ease-out both}
 .stage.duo.fx-ko .st-by{animation:lunge .6s ease-in-out}
 /* miss / blocked */
@@ -365,7 +364,27 @@ details ul b{color:var(--fg)}
 @keyframes shield{0%,100%{box-shadow:0 6px 16px rgba(0,0,0,.45)}40%{box-shadow:0 0 0 3px #8fb6ff,0 0 26px rgba(143,182,255,.7)}}
 @keyframes poisoned{0%,100%{filter:none}40%{filter:hue-rotate(250deg) saturate(1.8)}}
 @keyframes charge{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(214,165,77,0)}40%{transform:scale(1.12);box-shadow:0 0 0 4px var(--gold),0 0 34px rgba(214,165,77,.8)}100%{transform:scale(1);box-shadow:0 6px 16px rgba(0,0,0,.45)}}
-@media (prefers-reduced-motion:reduce){.stage *,.stage .gl{animation:none!important}.stage .pop{opacity:1}}
+/* mirrored when the attacker is on the right (opponent's turn): lunge, recoil, dodge and slash go the other way */
+.stage.rev.duo.fx-hit .st-by,.stage.rev.duo.fx-ko .st-by,.stage.rev.duo.fx-miss .st-by,.stage.rev.duo.fx-block .st-by{animation:lunge-l .6s ease-in-out}
+.stage.rev.duo.fx-buff .st-by,.stage.rev.duo.fx-heal .st-by{animation:nudge-l .6s ease-in-out}
+.stage.rev.fx-hit .st-on,.stage.rev.fx-poison .st-on{animation:recoil-l .5s .3s ease-out}
+.stage.rev.fx-miss .st-on{animation:dodge-l .6s .25s ease-in-out}
+.stage.rev.fx-hit .st-on::after,.stage.rev.fx-ko .st-on::after{transform:rotate(32deg) scaleX(0);animation-name:streak-l}
+/* knockout: the card topples onto its side, away from the hit, and stays down */
+.stage.fx-ko .st-on{animation:recoil .45s .2s ease-out, topple .7s .55s cubic-bezier(.5,0,.75,1) forwards}
+.stage.rev.fx-ko .st-on{animation:recoil-l .45s .2s ease-out, topple-l .7s .55s cubic-bezier(.5,0,.75,1) forwards}
+@keyframes lunge-l{0%{transform:none}40%{transform:translateX(-52px) rotate(-5deg) scale(1.06)}55%{transform:translateX(-44px) rotate(-3deg)}100%{transform:none}}
+@keyframes nudge-l{0%,100%{transform:none}45%{transform:translateX(-18px)}}
+@keyframes recoil-l{0%{transform:none}20%{transform:translateX(-10px) rotate(-4deg)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}100%{transform:none}}
+@keyframes dodge-l{0%,100%{transform:none;opacity:1}40%{transform:translateX(-26px) skewX(8deg);opacity:.55}}
+@keyframes streak-l{0%{transform:rotate(32deg) scaleX(0);opacity:1}60%{transform:rotate(32deg) scaleX(1);opacity:1}100%{transform:rotate(32deg) scaleX(1.05);opacity:0}}
+@keyframes topple{0%{transform:none}70%{transform:translate(10px,14px) rotate(96deg);filter:grayscale(.6)}85%{transform:translate(9px,12px) rotate(86deg)}100%{transform:translate(10px,14px) rotate(90deg);filter:grayscale(1) brightness(.6);opacity:.7}}
+@keyframes topple-l{0%{transform:none}70%{transform:translate(-10px,14px) rotate(-96deg);filter:grayscale(.6)}85%{transform:translate(-9px,12px) rotate(-86deg)}100%{transform:translate(-10px,14px) rotate(-90deg);filter:grayscale(1) brightness(.6);opacity:.7}}
+/* team cards: a knocked-out fighter's picture tips over and stays on its side */
+.tile.ko .gl{animation:tipover .7s .2s cubic-bezier(.5,0,.75,1) both}
+.tile.dead .gl{transform:rotate(90deg) scale(.88)}
+@keyframes tipover{0%{transform:none}70%{transform:rotate(100deg) scale(.88)}85%{transform:rotate(85deg) scale(.88)}100%{transform:rotate(90deg) scale(.88)}}
+@media (prefers-reduced-motion:reduce){.stage *,.stage .gl,.tile.ko .gl{animation:none!important}.stage .pop{opacity:1}}
 /* special quote on the fight stage */
 .now .quote{font-family:var(--display);font-style:italic;font-size:1.05rem;color:var(--fg);animation:dropin .4s .35s ease-out both}
 /* match MVP and awards on the win screen */

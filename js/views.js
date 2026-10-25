@@ -360,13 +360,16 @@ function vPlan(){
 const FX_MARK = {hit:'斬', miss:'避', block:'防', ko:'KO', heal:'癒', revive:'蘇', poison:'毒', stun:'眠', guard:'守', buff:'鍛', special:'技', burn:'陽', spawn:'分'};
 function stage(line){
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), type=line.fx||'', duo=by&&on&&by!==on;
+  // Teams keep their side of the stage (player 1 left, player 2 right), so a hit back swings the other way
+  // instead of the two cards swapping places. "rev" = the actor is on the right, attacking leftwards.
+  const rev = duo && by.p!==on.p && by.p===1;
   const amt=line.t.match(/\[([+-])(\d+%)\]/);
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
   const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?pop:''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   const mark=`<span class="st-mark">${FX_MARK[type]||''}</span>`;
   const solo=on||by;
-  return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}" aria-hidden="true">
-    ${duo ? who(by,'by')+mark+who(on,'on') : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
+  return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}${rev?' rev':''}" aria-hidden="true">
+    ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
 }
 // Knockouts and hits of 30%+ shake the stage
 const bigHit = line => line.fx==='ko' || (/\[-(\d+)%\]/.exec(line.t)||[])[1] >= 30;
