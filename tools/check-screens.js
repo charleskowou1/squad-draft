@@ -11,7 +11,7 @@ function check(games){
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
-      let k=0; while(S.phase==='draft'&&k++<50){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
+      let k=0; while(S.phase==='draft'&&k++<50){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.helpers=[['crow'],[]]; S.helperPlan=[[],[]]; S.sel=null; cpuDraftStep(level); }
       vPass();
       while(S.phase!=='over'){
         S.planFor=0; S.focus=null; vPlan();

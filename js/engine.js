@@ -108,8 +108,8 @@ function spinWheel(){
 const spent = p => S.picks[p].reduce((a,id)=>a+BYID[id].cost,0);
 const famTaken = fam => S.picks[0].concat(S.picks[1]).some(id=>BYID[id].fam===fam);
 const taken = id => famTaken(BYID[id].fam);
-// helpers don't take one of the 6 fighter slots
-function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && (c.helper || fighterIds(p).length<MAXTEAM) && c.cost <= budget()-spent(p); }
+// helpers don't take one of the 6 fighter slots, but each player may have only one helper
+function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<MAXTEAM) && c.cost <= budget()-spent(p); }
 const canAny = p => S.pool.some(id=>canPick(p,id));
 // Whose pick it is: snake order, skipping a player who has locked
 function turn(){ return turnAt(S.k); }

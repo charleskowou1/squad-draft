@@ -69,7 +69,8 @@ function tile(u, o={}){
   const body=`<div class="tb">${health(u,o)}${aimed}${up&&!o.simple?meta(u)+(playing?'':statusChips(u,true)):''}</div>`;
   // the picture opens the info card; when targeting, the rest of the tile is the target button
   const main = tap ? `<button class="tilebtn" data-a="tgt" data-u="${o.tgtFor}" data-v="${u.uid}" aria-pressed="${!!o.picked}" aria-label="Target ${esc(u.name)}">${body}</button>` : body;
-  return `<div class="${cls}" style="--tc:${pc(u.p)};--i:${o.i||0}">${sealBtn(u)}${main}</div>`;
+  const art=ART[u.id]?`;--art:url('${ART[u.id]}')`:'';
+  return `<div class="${cls}${art?' hasart':''}" style="--tc:${pc(u.p)};--i:${o.i||0}${art}">${sealBtn(u)}${main}</div>`;
 }
 // One bar split between both sides' remaining health (all fighters' HP ÷ all max HP), so you can see who's ahead.
 // hpOf(u) = HP to count (playback passes the HP at that moment; undefined = not on the field yet).
@@ -111,8 +112,10 @@ function vSetup(){
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
     <p class="muted">Draft a squad on ${budget()} points. Pick secret moves each round. Last team standing wins.</p></div>
+  ${artStrip()}
+  <div class="modes">${[['2p','二','2 Players','One phone, secret moves'],['cpu','機','Vs Computer',`${LEVELS[S.level].label} difficulty`],['story','物','Story',`${loadStory().cleared.length} of ${STAGES.length} stages`]]
+    .map(([k,kj,t,sub])=>`<button class="mode${S.mode===k?' on':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}"><span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`).join('')}</div>
   <div class="panel">
-    <div class="seg">${seg('mode','2p','2 players')}${seg('mode','cpu','Vs computer')}${seg('mode','story','Story')}</div>
     <div class="row">
       <label for="n0">${S.mode==='story'?'Your name':'Player 1'}<input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
       ${S.mode==='story'?'':`<label for="n1">${S.mode==='cpu'?'Opponent':'Player 2'}<input id="n1" type="text" maxlength="14" value="${esc(S.mode==='cpu'?'Muzan AI':S.names[1])}" ${S.mode==='cpu'?'disabled':''}></label>`}
@@ -135,7 +138,7 @@ function vSetup(){
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
     <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat last round copies your previous moves.</li>
-    <li><b>Back pocket:</b> Chachamaru, Kasugai Crow and Muscle Mice cost 1 pt, don't fight and don't take a fighter slot. Use each once, on the round you choose: Chachamaru heals your most hurt fighter by half their current health, the Crow shows you the enemy's moves so you can change yours, the Mice give your team +2 PWR for that round.</li>
+    <li><b>Back pocket:</b> you may draft one helper: Chachamaru, Kasugai Crow or Muscle Mice (1 pt). It doesn't fight or take a fighter slot. Use it once, on the round you choose, with the chip next to Lock in moves: Chachamaru heals your most hurt fighter by half their current health, the Crow shows you the enemy's moves so you can change yours, the Mice give your team +2 PWR for that round.</li>
     <li><b>Story mode:</b> nine stages from Final Selection to Muzan. You see the enemy first, then build a squad from the Corps.</li>
     <li><b>Health</b> is shown as a percent of each fighter's own max. It turns red at 25%.</li>
     <li><b>Damage</b> = PWR − target's DEF, but never less than half the attacker's power. Demons regenerate; poison ticks.</li>
@@ -166,10 +169,13 @@ function cardHTML(c,p){
   const owner=S.picks[0].includes(c.id)?0:S.picks[1].includes(c.id)?1:-1;
   const ok = canPick(p,c.id);
   const badge = c.legend?'Legend':c.mark?'✦ Mark':'';
-  return `<button class="card ${glyphCls(c)}${ok?'':' off'}${S.sel===c.id?' sel':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>
-    <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>${ART[c.id]?`<span class="g art"><img src="${ART[c.id]}" alt=""></span>`:`<span class="g">${c.g}</span>`}
-    ${badge?`<span class="badge">${badge}</span>`:''}<span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>
-    ${statCells(c)}${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:''}</button>`;
+  // picture-first card: art on top (kanji if no picture), name and type over its lower edge, stats below
+  return `<button class="card ${glyphCls(c)}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>
+    <span class="cart">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
+    <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>
+    ${badge?`<span class="badge">${badge}</span>`:''}
+    <span class="cbody"><span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>${statCells(c)}</span>
+    ${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:''}</button>`;
 }
 function teamBox(q,p){
   const left=budget()-spent(q);
@@ -198,23 +204,22 @@ function vDraft(){
     ${lockbar}
     <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:S.poolType==='all'?`All ${n} characters`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!story&&S.poolType!=='all'?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
     ${notesPanel()}
-    ${pocketDraft(p)}
-    <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div></div>`;
+    <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
+    ${pocketDraft(p)}</div>`;
 }
-// The back-pocket helpers in the draft: 1 pt each, offered every draft, one owner each
+// The back-pocket helpers in the draft: a slim optional row at the bottom. 1 pt, one helper per player.
 function pocketDraft(p){
   const hs=S.pool.filter(isHelper); if(!hs.length) return '';
-  return `<section class="pocket"><div class="pockethead"><span class="tlabel">Back pocket</span><span class="muted">1 pt helpers · one use each, then they leave · no fighter slot</span></div>
+  return `<section class="pocket"><div class="pockethead"><span class="tlabel">Back pocket</span><span class="muted">Optional · pick one 1 pt helper · used once in battle</span></div>
     <div class="pocketrow">${hs.map(id=>{ const c=BYID[id], owner=S.picks[0].includes(id)?0:S.picks[1].includes(id)?1:-1, ok=canPick(p,id);
-      return `<button class="hcard${ok?'':' off'}${S.sel===id?' sel':''}" data-a="sel" data-v="${id}" ${ok?'':'aria-disabled="true"'}>${seal(c,'sm')}
-        <span class="hb"><b>${esc(c.short)}</b><small>${esc(c.sig.tag)}</small></span>${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:''}</button>`; }).join('')}</div></section>`;
+      return `<button class="hchip${ok?'':' off'}${S.sel===id?' sel':''}${owner>=0?' owned':''}" data-a="sel" data-v="${id}" ${ok?'':'aria-disabled="true"'} ${owner>=0?`style="--tc:${pc(owner)}"`:''}>${seal(c,'pip')}
+        <span><b>${esc(c.short)}</b><small>${owner>=0?nm(owner):esc(c.sig.tag)}</small></span></button>`; }).join('')}</div></section>`;
 }
-// Move screen: back-pocket helpers still unused, each with a Use toggle for this round
-function pocketPlan(p){
-  const hs=S.helpers&&S.helpers[p]||[]; if(!hs.length) return '';
-  const on=id=>(S.helperPlan[p]||[]).includes(id);
-  return `<div class="pocketuse"><span class="tlabel">Back pocket</span>${hs.map(id=>{ const c=BYID[id];
-    return `<button class="huse${on(id)?' on':''}" data-a="helper" data-v="${id}" aria-pressed="${on(id)}">${seal(c,'sm')}<span class="hb"><b>${esc(c.short)}</b><small>${esc(c.sig.tag)}</small></span><span class="hgo">${on(id)?'Using ✓':'Use'}</span></button>`; }).join('')}</div>`;
+// Move screen: your helper (if not used yet) as a small toggle next to "Lock in moves"
+function pocketChip(p){
+  const id=S.helpers&&S.helpers[p]&&S.helpers[p][0]; if(!id || S.scouting) return '';
+  const c=BYID[id], on=(S.helperPlan[p]||[]).includes(id);
+  return `<button class="pchip${on?' on':''}" data-a="helper" data-v="${id}" aria-pressed="${on}" title="${esc(c.sig.desc)}">${seal(c,'pip')}<span><b>${on?'Using':'Use'} ${esc(c.short)}</b><small>${esc(c.sig.tag)}</small></span></button>`;
 }
 // What the crow saw: the other side's locked-in moves
 function crowReport(p){
@@ -269,6 +274,7 @@ function vInfo(){
   const side = yours===null ? nm(u.p) : yours ? 'Your team' : 'Opponent';
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in info ${glyphCls(u)}" role="dialog" aria-modal="true" aria-label="${esc(u.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
+    ${banner(u)}
     <div class="shead">${seal(u,'lg')}<div><div class="eyebrow" style="color:${pc(u.p)}">${side} · ${esc(c.type)}</div><h2>${esc(c.name)}</h2></div></div>
     <div class="ihp"><span class="tlabel">Health</span>${health(u,{simple:true})}</div>
     <span class="stats"><span><i>PWR</i>${u.pow}</span><span><i>DEF</i>${u.def}</span><span><i>SPD</i>${u.spd}</span><span><i>REGEN</i>${u.regen?pct(u,u.regen)+'%':'–'}</span></span>
@@ -309,6 +315,15 @@ function vSettings(){
     <div class="row"><button class="btn" data-a="unsel">Done</button></div>
   </div></div>`;
 }
+// Wide picture across the top of a detail card (only when the character has a picture)
+const banner = c => ART[c.id] ? `<div class="mbanner" aria-hidden="true"><img src="${ART[c.id]}" alt=""></div>` : '';
+// Main menu: a slowly scrolling strip of character art (only once pictures have loaded)
+function artStrip(){
+  const ids=['tanjiro','nezuko','zenitsu','inosuke','rengoku','giyu','shinobu','mitsuri','tengen','muichiro','akaza','doma','kokushibo','muzan','yoriichi','kanao'].filter(id=>ART[id]);
+  if(ids.length<6) return '';
+  const row=ids.map(id=>`<img src="${ART[id]}" alt="">`).join('');
+  return `<div class="artstrip" aria-hidden="true"><div class="track">${row}${row}</div></div>`;
+}
 // Card detail, centred on screen, when a card is tapped during the draft (or a fighter's info card in battle)
 function vSheet(){
   if(S.settings) return vSettings();
@@ -327,6 +342,7 @@ function vSheet(){
   const rec=loadRecords()[c.id];
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in ${glyphCls(c)}" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
+    ${banner(c)}
     <div class="shead">${seal(c,'lg')}
       <div><div class="eyebrow">${esc(c.type)}</div><h2>${esc(c.name)}</h2></div><span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span></div>
     ${statCells(c)}
@@ -361,12 +377,13 @@ function fighter(u, open){
   const ready=unitReady(u), pl=S.plans[u.p][u.uid]||{};
   const head=`<div class="fhead">${sealBtn(u)}<button class="fmain" data-a="focus" data-v="${u.uid}" aria-expanded="${open}" ${u.stun?'disabled':''}>
     <span class="tb">${health(u)}<span class="sum${ready?' ok':''}">${ready&&!u.stun?'✓ ':''}${moveSummary(u)}</span></span></button></div>`;
-  if(!open) return `<div class="fighter" style="--tc:${pc(u.p)}">${head}</div>`;
+  const art=ART[u.id]?` hasart" style="--tc:${pc(u.p)};--art:url('${ART[u.id]}')`:`" style="--tc:${pc(u.p)}`;
+  if(!open) return `<div class="fighter${art}">${head}</div>`;
   const mv=(v,k,label,sub,dis)=>`<button data-a="act" data-u="${u.uid}" data-v="${v}" class="${pl.type===v?'on':''}" ${dis?'disabled':''}><span class="mk" aria-hidden="true">${k}</span>${label}<small>${sub}</small></button>`;
   const opts=targetOptions(u,pl);
   const tgt=x=>`<button class="tg${x.p===u.p?' ally':''}${pl.t===x.uid?' on':''}" data-a="tgt" data-u="${u.uid}" data-v="${x.uid}">
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
-  return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
+  return `<div class="fighter open${art}">${head}<div class="fbody">
     ${meta(u)}${statusChips(u,false)}
     <div class="moves">${mv('attack','攻','Attack',u.strikes>1?'hits ×'+u.strikes:'hit one enemy')}${mv('defend','守','Defend','half damage')}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,`${esc(u.sig.tag)}${u.cd>0?`</small><small class="cdn">ready in ${u.cd}`:''}`,u.cd>0)}</div>
     ${pl.type==='special'?`<div class="hint"><b>${esc(u.sig.name)}.</b> ${esc(u.sig.desc)}</div>`:''}
@@ -391,8 +408,8 @@ function vPlan(){
     ${teamBlock(1-p,'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')}
     ${vsDivider()}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span>${S.lastPlans&&S.lastPlans[p]?'<button class="btn ghost small" data-a="repeat">↻ Repeat last round</button>':'<span class="muted">Tap a fighter to change</span>'}</div>
-      ${synChips(p)}${S.scouting?crowReport(p):pocketPlan(p)}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
-    ${actionbar(`<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
+      ${synChips(p)}${S.scouting?crowReport(p):''}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
+    ${actionbar(`${pocketChip(p)}<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
 }
 
 /* ---------- results ---------- */

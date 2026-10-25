@@ -48,7 +48,7 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
 .btn.small{padding:8px 12px;font-size:.85rem}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row > .btn{flex:1}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.panel{background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
 .seg{display:flex;background:var(--bg-2);border-radius:10px;padding:3px;gap:3px}
 .seg button{flex:1;background:transparent;color:var(--muted);padding:9px 6px;font-weight:700;font-size:.9rem}
 .seg button.on{background:var(--btn);color:var(--btn-fg)}
@@ -146,22 +146,29 @@ details ul b{color:var(--fg)}
 .dealt{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.82rem;color:var(--muted)}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px;padding-top:4px;align-content:start}
-.card{background:var(--surface-2);color:var(--fg);border:1px solid var(--line-2);border-radius:12px;padding:21px 10px 10px;text-align:left;position:relative;display:flex;flex-direction:column;gap:2px;min-height:134px;
-  box-shadow:var(--shadow);transition:transform .15s,opacity .15s,border-color .15s}
-@media (hover:hover){.card:not(.off):hover{transform:translateY(-2px);border-color:var(--muted)}}
-.card .g{position:absolute;right:10px;top:8px;font-family:var(--display);font-size:2rem;line-height:1;color:var(--paper)}
-.card .cn{font-weight:700;font-size:.92rem;line-height:1.2;padding-right:34px}
-.card .ct{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1.3}
-.card .badge{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mark)}
-.card.mk{border-color:rgba(216,67,79,.7);background:linear-gradient(165deg,rgba(216,67,79,.16) 0%,var(--surface-2) 55%)}
-.card.mk .g{color:#ff8a93}
-.card.leg{border-color:rgba(214,165,77,.8);box-shadow:0 0 22px rgba(214,165,77,.18),var(--shadow);background:linear-gradient(165deg,rgba(214,165,77,.18) 0%,var(--surface-2) 60%)}
-.card.leg .g,.card.leg .badge{color:var(--gold)}
-.card.sel{outline:3px solid var(--accent);outline-offset:2px}
-.card.off{opacity:.3;cursor:not-allowed;box-shadow:none}
-.card .tag{position:absolute;right:8px;top:-9px;font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;color:var(--btn-fg);max-width:calc(100% - 40px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* cost: a small vermilion seal */
-.cost{position:absolute;left:-7px;top:-8px;height:26px;padding:0 8px;border-radius:7px;background:var(--accent);color:#fff8ee;font-weight:800;font-size:.85rem;display:flex;align-items:baseline;justify-content:center;gap:2px;line-height:26px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4);transform:rotate(-3deg)}
+/* picture-first draft cards */
+.card{position:relative;display:flex;flex-direction:column;padding:0;text-align:left;color:var(--fg);background:var(--surface-2);
+  border:1px solid var(--line-2);border-radius:14px;overflow:visible;box-shadow:var(--shadow);transition:transform .15s,opacity .15s,border-color .15s,box-shadow .15s}
+@media (hover:hover){.card:not(.off):hover{transform:translateY(-3px);border-color:var(--muted);box-shadow:var(--shadow),0 12px 26px rgba(0,0,0,.35)}}
+.cart{position:relative;display:block;height:118px;border-radius:13px 13px 0 0;overflow:hidden;background:linear-gradient(160deg,#3a3229,#1d1a16)}
+.cart img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
+.cart::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0) 45%,rgba(26,23,20,.92) 100%)}
+.cart .ck{display:grid;place-items:center;height:100%;font-family:var(--display);font-size:3.2rem;color:var(--paper);opacity:.85}
+.cbody{position:relative;display:flex;flex-direction:column;gap:2px;padding:0 10px 10px;margin-top:-30px;z-index:1}
+.card .cn{font-weight:800;font-size:.95rem;line-height:1.15;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.card .ct{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);line-height:1.3;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.card .stats{padding-top:6px}
+.card .badge{position:absolute;top:8px;right:8px;z-index:2;font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--mark);color:#fff}
+.card.leg .badge{background:var(--gold);color:var(--paper-ink)}
+.card.mk{border-color:rgba(216,67,79,.75);box-shadow:0 0 0 1px rgba(216,67,79,.35) inset,var(--shadow)}
+.card.leg{border-color:rgba(214,165,77,.85);box-shadow:0 0 24px rgba(214,165,77,.22),var(--shadow)}
+.card.sel{outline:3px solid var(--accent);outline-offset:2px}
+.card.off{opacity:.32;cursor:not-allowed;box-shadow:none}
+.card.off .cart img{filter:grayscale(.7)}
+.card .tag{position:absolute;right:8px;top:-9px;z-index:3;font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:4px;color:var(--btn-fg);max-width:calc(100% - 40px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card.taken .badge{display:none}
+.cost{position:absolute;left:-7px;top:-8px;z-index:3;height:26px;padding:0 8px;border-radius:7px;background:var(--accent);color:#fff8ee;font-weight:800;font-size:.85rem;display:flex;align-items:baseline;justify-content:center;gap:2px;line-height:26px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4);transform:rotate(-3deg)}
 .cost small{font-size:.66rem;font-weight:700;opacity:.85}
 .cost.big{background:var(--gold);color:var(--paper-ink)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:auto;padding-top:6px;font-variant-numeric:tabular-nums}
@@ -249,7 +256,6 @@ details ul b{color:var(--fg)}
 /* pin the seal's single grid cell to the seal's own size, so a picture can never stretch a small seal */
 .gl{grid-template-columns:100%;grid-template-rows:100%;overflow:hidden}
 .gl img,.card .g img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
-.card .g.art{width:44px;height:52px;border-radius:6px;overflow:hidden;opacity:1;top:10px}
 .tb{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .un{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .un .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -434,10 +440,50 @@ details ul b{color:var(--fg)}
 .stage.group .st-on .pop:not(.dmg){color:var(--muted);font-size:.75rem}
 .glines{display:flex;flex-direction:column;gap:2px;font-size:.86rem}
 @media (prefers-reduced-motion:reduce){.fxl{display:none}}
+/* artwork: faint picture behind battle tiles, wide banner on detail cards */
+.fighter{position:relative}
+.fighter > *{position:relative}
+.tile.hasart::before,.fighter.hasart::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--art) 70% 22%/cover no-repeat;opacity:.16;pointer-events:none;
+  mask-image:linear-gradient(to left,#000 10%,transparent 85%);-webkit-mask-image:linear-gradient(to left,#000 10%,transparent 85%)}
+.tile.dead.hasart::before{opacity:.06}
+.tile > *{position:relative}
+.mbanner{margin:-20px -18px 0;height:150px;border-radius:18px 18px 0 0;overflow:hidden;position:relative}
+.mbanner img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
+.mbanner::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(35,32,27,0) 40%,var(--surface) 100%)}
+.mbanner + .shead{margin-top:-46px;position:relative;z-index:1}
+.mbanner + .shead .gl.lg{box-shadow:0 0 0 3px var(--surface),0 6px 16px rgba(0,0,0,.5)}
+/* main menu: art strip and mode cards */
+.artstrip{overflow:hidden;margin:0 -16px;mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent)}
+.artstrip .track{display:flex;gap:8px;width:max-content;animation:marquee 60s linear infinite}
+.artstrip img{width:64px;height:78px;object-fit:cover;object-position:50% 20%;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+@keyframes marquee{to{transform:translateX(-50%)}}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mode{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:12px 10px;background:var(--surface);border:1.5px solid var(--line);border-radius:14px;color:inherit;font:inherit;transition:border-color .15s,transform .15s}
+.mode .mk{font-family:var(--display);font-size:1.5rem;line-height:1;color:var(--accent);margin-bottom:4px}
+.mode b{font-size:.92rem}
+.mode small{font-size:.7rem;color:var(--muted);line-height:1.25}
+.mode.on{border-color:var(--paper);background:var(--surface-2);box-shadow:0 0 0 1px var(--paper) inset}
+.mode:active{transform:scale(.98)}
+@media (prefers-reduced-motion:reduce){.artstrip .track{animation:none}}
+/* back-pocket helpers: a slim optional row at the bottom of the draft, and a chip by "Lock in moves" in battle */
+.pocket{margin-top:6px;padding-top:12px;border-top:1px dashed var(--line-2)}
+.pocketrow{display:flex;flex-wrap:wrap;gap:6px}
+.hchip{display:flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;background:transparent;border:1px dashed var(--line-2);border-radius:999px;color:inherit;font:inherit;text-align:left}
+.hchip span{display:flex;flex-direction:column;line-height:1.15}
+.hchip b{font-size:.76rem} .hchip small{font-size:.64rem;color:var(--muted)}
+.hchip .gl.pip,.pchip .gl.pip{width:24px;height:28px;font-size:.8rem;border-radius:999px}
+.hchip.off{opacity:.35;cursor:not-allowed}
+.hchip.owned{border-style:solid;border-color:var(--tc);opacity:1}
+.hchip.owned small{color:var(--tc);font-weight:700}
+.hchip.sel{outline:2px solid var(--accent)}
+.pchip{flex:none;display:flex;align-items:center;gap:7px;max-width:46%;padding:6px 12px 6px 6px;background:var(--surface);border:1.5px dashed var(--line-2);border-radius:999px;color:inherit;font:inherit;text-align:left;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.pchip span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.pchip b{font-size:.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .pchip small{font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pchip.on{border-style:solid;border-color:var(--gold);background:var(--surface-2)}
+.pchip.on b{color:var(--gold)}
 /* back-pocket helpers */
 .pocket{display:flex;flex-direction:column;gap:8px}
 .pockethead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:.76rem}
-.pocketrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .hcard,.huse{position:relative;display:flex;align-items:center;gap:8px;text-align:left;background:var(--surface);border:1px dashed var(--line-2);border-radius:10px;padding:8px;color:inherit;font:inherit;min-width:0}
 .hcard.off{opacity:.35;cursor:not-allowed}
 .hcard.sel{outline:2px solid var(--accent)}
