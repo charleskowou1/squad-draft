@@ -135,7 +135,7 @@ function vSetup(){
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
     <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat last round copies your previous moves.</li>
-    <li><b>Back pocket:</b> Chachamaru, Kasugai Crow and Muscle Mice cost 1 pt, don't fight and don't take a fighter slot. Use each once, on the round you choose: Chachamaru heals your team by half their current health, the Crow shows you the enemy's moves so you can change yours, the Mice give your team +2 PWR for that round.</li>
+    <li><b>Back pocket:</b> Chachamaru, Kasugai Crow and Muscle Mice cost 1 pt, don't fight and don't take a fighter slot. Use each once, on the round you choose: Chachamaru heals your most hurt fighter by half their current health, the Crow shows you the enemy's moves so you can change yours, the Mice give your team +2 PWR for that round.</li>
     <li><b>Story mode:</b> nine stages from Final Selection to Muzan. You see the enemy first, then build a squad from the Corps.</li>
     <li><b>Health</b> is shown as a percent of each fighter's own max. It turns red at 25%.</li>
     <li><b>Damage</b> = PWR − target's DEF, but never less than half the attacker's power. Demons regenerate; poison ticks.</li>

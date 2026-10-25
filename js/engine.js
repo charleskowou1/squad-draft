@@ -409,9 +409,9 @@ function special(u,pl){
 function useHelper(p, id){
   S.helpers[p]=S.helpers[p].filter(h=>h!==id);
   const team=alive(p), tag={fx:id==='chachamaru'?'heal':id==='mice'?'buff':'special', by:null, on:null, helper:id};
-  if(id==='chachamaru'){
-    const healed=team.map(u=>{ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; return h?`${u.name} ${gained(u,h)}`:''; }).filter(Boolean);
-    L(`Chachamaru delivers Tamayo's medicine.${healed.length?' '+healed.join(', ')+'.':''}`,'h',tag);
+  if(id==='chachamaru'){   // the most hurt fighter (lowest health %) heals half of their current HP
+    const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
+    if(u){ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; L(`Chachamaru delivers Tamayo's medicine to ${u.name} ${gained(u,h)}.`,'h',{...tag, on:u.uid}); }
   }
   if(id==='mice'){ team.forEach(u=>{ u.pow+=MICE_PWR; u.miceBoost=(u.miceBoost||0)+MICE_PWR; }); L(`The Muscle Mice flex! ${S.names[p]}'s team gets +${MICE_PWR} PWR this round.`,'h',tag); }
   if(id==='crow') L(`${S.names[p]}'s Kasugai Crow scouted the enemy's moves.`,'x',tag);
@@ -421,7 +421,7 @@ function cpuHelpers(p){
   const team=alive(p), have=S.helpers[p]||[], use=[];
   if(team.length){
     const avg=team.reduce((a,u)=>a+u.hp/u.max,0)/team.length;
-    if(have.includes('chachamaru') && avg<=.6) use.push('chachamaru');
+    if(have.includes('chachamaru') && team.some(u=>u.hp<=u.max*.5)) use.push('chachamaru');
     if(have.includes('mice') && S.round>=2 && team.length>=2) use.push('mice');
     if(have.includes('crow') && S.round>=2) use.push('crow');
   }

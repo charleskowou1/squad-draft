@@ -136,7 +136,7 @@ add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and fi
 // attacked); you choose a round to use each one, it acts first that round, then it leaves. Effects live in useHelper().
 const MICE_PWR = 2;
 add({id:'chachamaru',name:'Chachamaru',short:'Chachamaru',g:'猫',type:"Tamayo's cat · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
-  sig:{name:'Medicine Delivery',desc:'Every fighter on your team heals half of their current health (50% becomes 75%).',kind:'helper'}});
+  sig:{name:'Medicine Delivery',desc:'Your most hurt fighter heals half of their current health (50% becomes 75%).',kind:'helper'}});
 add({id:'crow',name:'Kasugai Crow',short:'Kasugai Crow',g:'烏',type:'Messenger crow · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Scouting Report',desc:"After both sides lock in, the crow shows you the enemy's moves, and you can change yours before the round plays.",kind:'helper'}});
 add({id:'mice',name:'Muscle Mice',short:'Muscle Mice',g:'鼠',type:"Tengen's mice · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
@@ -155,7 +155,7 @@ const SPECIAL_TAGS = {
   tanjiro:'big hit, ignores DEF', nezuko:'hit all enemies', zenitsu:'first, double hit', inosuke:'2 random hits',
   kanao:'early strong hit', genya:'heal + PWR up', tamayo:'heal an ally', yushiro:'hide an ally',
   sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'heal whole team', murata:'strong hit',
-  chachamaru:'team heals ½ current', crow:'see enemy moves', mice:`team +${MICE_PWR} PWR, 1 round`,
+  chachamaru:'most hurt heals ½', crow:'see enemy moves', mice:`team +${MICE_PWR} PWR, 1 round`,
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
 // One short line each fighter says when their special fires (shown on the fight stage)
