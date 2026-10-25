@@ -465,6 +465,31 @@ details ul b{color:var(--fg)}
 .mode.on{border-color:var(--paper);background:var(--surface-2);box-shadow:0 0 0 1px var(--paper) inset}
 .mode:active{transform:scale(.98)}
 @media (prefers-reduced-motion:reduce){.artstrip .track{animation:none}}
+/* playback: slim team rows so the fight stage is the focus */
+.mini{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:2px 0}
+.mini .m{display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.42;transition:opacity .25s,transform .25s}
+.mini .m.inv{opacity:1;transform:scale(1.1)}
+.mini .gl.mini{width:40px;height:40px;border-radius:50%;font-size:1.1rem;box-shadow:0 0 0 2px var(--tc)}
+.mini .m.inv .gl.mini{box-shadow:0 0 0 2px var(--tc),0 0 14px var(--tc)}
+.mini .mb{display:block;width:40px;height:3px;border-radius:2px;background:var(--bg-2);overflow:hidden}
+.mini .mb i{display:block;height:100%;background:var(--hp)}
+.mini .mb i.drain{animation:drain .6s ease-out}
+.mini .mb.low i{background:var(--low)}
+.mini .m.dead{opacity:.3}
+.mini .m.dead .gl.mini{filter:grayscale(1);transform:rotate(90deg) scale(.85);box-shadow:none}
+.mini .m.hit .gl.mini{animation:hit .45s ease-out}
+.mini .m.heal .gl.mini{animation:healglow 1s ease-out}
+.mini .m.ko .gl.mini{animation:tipover .7s .2s cubic-bezier(.5,0,.75,1) both}
+/* the stage is bigger while it's the main thing on screen */
+.now .stage{height:130px}
+.now .gl.stg{width:76px;height:92px;font-size:2.6rem;border-radius:10px}
+.now .stage .fxl{top:46px}
+.now .stage.group{height:auto;min-height:130px}
+.now .stage.group .st-targets .gl.stg{width:54px;height:66px;font-size:1.7rem}
+.now .stage.group .st-targets{max-width:260px;gap:8px}
+.now .stage.group{gap:14px}
+.now .stage.group .st-targets .fxl{top:33px}
+.now{padding:14px}
 /* back-pocket helpers: a slim optional row at the bottom of the draft, and a chip by "Lock in moves" in battle */
 .pocket{margin-top:6px;padding-top:12px;border-top:1px dashed var(--line-2)}
 .pocketrow{display:flex;flex-wrap:wrap;gap:6px}

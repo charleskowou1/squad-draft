@@ -444,6 +444,15 @@ function stageGroup(lines){
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
   return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}</div>`;
 }
+// During playback each team is a slim row of small portraits with a thin health line, so the stage is the focus.
+// `moment` gives HP at this beat; `involved` = uids in the current action.
+function miniTeam(p, moment, involved){
+  const us=S.teams[p].map(u=>({u,o:moment(u)})).filter(x=>!x.o.hidden);
+  return `<div class="mini" style="--tc:${pc(p)}">${us.map(({u,o})=>{
+    const hp=o.hp===undefined?u.hp:o.hp, up=hp>0, h=up?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from));
+    return `<div class="m${up?'':' dead'}${involved.has(u.uid)?' inv':''}${o.flash?' '+o.flash:''}">${sealBtn(u,'mini')}
+      <span class="mb${up&&h<=LOW?' low':''}"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span></div>`; }).join('')}</div>`;
+}
 // One line for a group attack: "Frozen Lotus hits 4 enemies · 1 knocked out"
 function groupSummary(lines){
   const by=findU(lines[0].by), n=lines.filter(l=>l.fx==='hit').length, ko=lines.filter(l=>l.fx==='ko').length;
@@ -462,16 +471,18 @@ function vResult(){
   const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
     flash: lines.some(l=>l.ko===u.uid) ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
   const step=done?0:S.play.k, total=done?0:steps.length-1;
+  // fighters in this beat (attacker and targets) stay bright in the slim team rows; the rest fade back
+  const involved=new Set(lines.flatMap(l=>[l.by,l.on,l.ko]).filter(Boolean));
   // vs computer the screen is yours, so label the teams from your side; two players share it, so keep names
   const solo=vsCpu();
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>' : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
     ${strengthBar(0, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
-    ${teamBlock(1,solo?'Opponent':null,moment,!done)}
+    ${done?teamBlock(1,solo?'Opponent':null,moment):miniTeam(1,moment,involved)}
     ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
       :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}${cur.fx==='special'&&findU(cur.by)&&findU(cur.by).sig.quote?`<span class="quote">“${esc(findU(cur.by).sig.quote)}”</span>`:''}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
-    ${teamBlock(0,solo?'Your team':null,moment,!done)}
+    ${done?teamBlock(0,solo?'Your team':null,moment):miniTeam(0,moment,involved)}
     ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
     ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }
