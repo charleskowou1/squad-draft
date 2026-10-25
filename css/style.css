@@ -242,6 +242,8 @@ details ul b{color:var(--fg)}
 .gl.sm{width:22px;height:26px;font-size:.85rem;border-radius:4px}
 .gl.xs{width:30px;height:36px;font-size:1.05rem}
 .gl.lg{width:56px;height:68px;font-size:2rem}
+/* pin the seal's single grid cell to the seal's own size, so a picture can never stretch a small seal */
+.gl{grid-template-columns:100%;grid-template-rows:100%;overflow:hidden}
 .gl img,.card .g img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}
 .card .g.art{width:44px;height:52px;border-radius:6px;overflow:hidden;opacity:1;top:10px}
 .tb{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
@@ -258,9 +260,30 @@ details ul b{color:var(--fg)}
 
 /* compact fighter tiles (enemies, results) */
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
-.tile{display:flex;gap:9px;align-items:flex-start;padding:9px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:10px;min-width:0}
+.tile{position:relative;display:flex;gap:9px;align-items:flex-start;padding:9px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:10px;min-width:0;width:100%;text-align:left;color:inherit;font:inherit}
+/* opponents you can tap to target */
+.tile.targetable{cursor:pointer;border-color:rgba(224,87,59,.55);border-left-color:var(--tc);animation:aim 1.8s ease-in-out infinite}
+.tile.targetable:active{transform:scale(.98)}
+.tile.picked{border-color:var(--accent);border-left-color:var(--tc);box-shadow:0 0 0 2px var(--accent) inset,0 0 18px rgba(224,87,59,.35);animation:none}
+.tile.picked::after{content:"◎";position:absolute;top:-9px;right:-7px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff8ee;font-size:.95rem;line-height:24px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+@keyframes aim{0%,100%{box-shadow:0 0 0 0 rgba(224,87,59,0)}50%{box-shadow:0 0 0 3px rgba(224,87,59,.25)}}
+.aimed{display:flex;align-items:center;gap:3px;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.aimed > span:first-child{margin-right:2px}
+.tiles .tile .gl.pip{width:16px;height:20px;font-size:.62rem;border-radius:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.taphint{font-size:.78rem;font-weight:700;color:var(--accent);animation:fade .3s ease-out}
+/* who's ahead: one bar split between both teams' remaining health */
+.strength{display:flex;flex-direction:column;gap:5px}
+.strength .sl{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700}
+.strength .sl b{font-variant-numeric:tabular-nums}
+.sbar{display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--bg-2);gap:2px}
+.sbar i{display:block;height:100%;transition:width .5s}
+.vsdiv{display:flex;align-items:center;gap:12px;color:var(--muted);font-family:var(--display);font-weight:800;letter-spacing:.3em;font-size:.85rem}
+.vsdiv::before,.vsdiv::after{content:"";flex:1;height:1px;background:linear-gradient(to right,transparent,var(--line-2),transparent)}
 .tile.dead{opacity:.35;filter:grayscale(1)}
+.tile.acting{box-shadow:0 0 0 2px var(--gold),0 0 20px rgba(214,165,77,.35);transform:translateY(-2px);transition:transform .2s}
 .tiles.simple{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.tiles.simple .gl{width:44px;height:54px;font-size:1.55rem}
 .tiles.simple .tile{align-items:center}
 .tiles.simple .nm{white-space:normal;line-height:1.2}
 .hprow{display:flex;align-items:center;gap:7px}
@@ -288,7 +311,7 @@ details ul b{color:var(--fg)}
 .now.k{border-color:rgba(255,93,76,.5);color:#ff9488}
 .now.h{border-color:rgba(82,179,136,.5);color:#8fd3b2}
 .now.x{border-color:rgba(214,165,77,.6);color:var(--gold);font-family:var(--display);font-size:1.15rem}
-@media (prefers-reduced-motion:reduce){.tile.spawn,.tile.hit,.tile.heal,.tile.ko,.bar i.drain,.now,.modal .in,.scrim{animation:none}}
+@media (prefers-reduced-motion:reduce){.tile.targetable,.tile.acting,.tile.spawn,.tile.hit,.tile.heal,.tile.ko,.bar i.drain,.now,.modal .in,.scrim{animation:none}}
 
 /* your fighters while choosing moves */
 .fighters{display:flex;flex-direction:column;gap:8px}
@@ -301,7 +324,10 @@ details ul b{color:var(--fg)}
 .fhead:disabled .sum{color:var(--muted)}
 .fbody{padding:0 10px 12px;display:flex;flex-direction:column;gap:9px}
 .moves{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.moves button{background:var(--bg-2);border:1.5px solid var(--line);padding:11px 4px;font-weight:700;font-size:.92rem;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:2px}
+.moves button{background:var(--bg-2);border:1.5px solid var(--line);padding:9px 4px 10px;font-weight:700;font-size:.92rem;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.moves .mk{font-family:var(--display);font-size:1.45rem;line-height:1.1;color:var(--accent)}
+.moves button.on .mk{color:#b8331b}
+.moves .spn{font-size:.78rem;line-height:1.15}
 .moves button small{font-size:.68rem;font-weight:500;color:var(--muted)}
 .moves button.on{background:var(--btn);border-color:var(--btn);color:var(--btn-fg)}
 .moves button.on small{color:#5c5246}
