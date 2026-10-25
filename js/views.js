@@ -339,7 +339,7 @@ function vSheet(){
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button>${ok?`<button class="btn team" data-a="confirmPick" style="--bc:${pc(p)}">Confirm ${esc(c.short)}</button>`:''}</div>
   </div></div>`;
   const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean);
-  const notes=poolNotes().filter(n=>n.ids.includes(c.id));
+  const notes=notesForCard(c.id, p);   // only partners this player could afford alongside this card
   const rec=loadRecords()[c.id];
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in ${glyphCls(c)}" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>

@@ -21,7 +21,8 @@ function poolNotes(){
   // state of a note: 'on' (a team has it, p = that team), 'open' (still possible), 'off' (can't happen any more),
   // or 'never' (no team could ever afford it in this match: the note isn't shown)
   // all of these fighters on one team
-  function together(fs){
+  const together = fs => Object.assign(together_(fs), {rule:{type:'all', fams:fs}});
+  function together_(fs){
     if(!fits(fs)) return {state:'never'};
     const o=fs.map(who), owners=[...new Set(o.filter(x=>x>=0))];
     if(owners.length>1) return {state:'off'};
@@ -29,14 +30,16 @@ function poolNotes(){
     return {state: [0,1].some(p=>canAdd(p,fs))?'open':'off'};
   }
   // two or more of these fighters on one team
-  function twoOf(fs){
+  const twoOf = fs => Object.assign(twoOf_(fs), {rule:{type:'two', fams:fs}});
+  function twoOf_(fs){
     if(!fits(cheapest(fs,2))) return {state:'never'};
     for(const p of [0,1]) if(fs.filter(f=>who(f)===p).length>=2) return {state:'on',p};
     const can=[0,1].some(p=>{ const need=2-fs.filter(f=>who(f)===p).length, pick=cheapest(free(fs),need); return pick.length===need && canAdd(p,pick); });
     return {state: can?'open':'off'};
   }
   // `anchor` plus at least one of `others` on one team
-  function withAnchor(anchor, others){
+  const withAnchor = (anchor, others) => Object.assign(withAnchor_(anchor, others), {rule:{type:'anchor', anchor, fams:[anchor,...others]}});
+  function withAnchor_(anchor, others){
     if(!fits([anchor, ...cheapest(others,1)])) return {state:'never'};
     const m=who(anchor);
     if(m>=0 && others.some(f=>who(f)===m)) return {state:'on',p:m};
@@ -90,6 +93,38 @@ function poolNotes(){
   const poison=['shinobu','gyutaro'].filter(has);
   if(has('tamayo')&&poison.length) add('vs', ['tamayo',...poison], 'Antidote', "Tamayo's heal also cures poison, so she can undo Shinobu's and Gyutaro's poison on her team.", facing(['tamayo'],poison));
 
+  // Partner lists in the panel: only list characters that some team could still complete the synergy with, within
+  // its points and slots. "All of these" notes keep every member (they're already off if no team can afford them).
+  N.forEach(n=>{ const r=n.rule; if(!r || r.type==='all') return;
+    // could team t still complete this synergy using f (alongside what t already has, or one more free member)?
+    const couldUse=(t,f)=> r.type==='two'
+      ? (r.fams.some(x=>x!==f && who(x)===t) ? canAdd(t,[f]) : r.fams.some(x=>x!==f && who(x)<0 && canAdd(t,[f,x])))
+      : (who(r.anchor)===t ? canAdd(t,[f]) : who(r.anchor)<0 && canAdd(t,[f,r.anchor]));
+    const keep=f=> f===r.anchor || who(f)>=0 || [0,1].some(t=>couldUse(t,f));
+    n.ids=n.ids.filter(id=>keep(BYID[id].fam)); });
   const rank={on:0, open:1, off:2};
   return N.sort((a,b)=>rank[a.state]-rank[b.state]);
+}
+
+// Notes for one card, from the point of view of the player who'd draft it (p): a "same team" note only appears if p
+// could afford that character together with the partners it needs (points left and fighter slots), and only those
+// partners are listed. Example at 20 pts: viewing Giyu ✦ (10) won't suggest Gyomei ✦ (12) for the Hashira bonus.
+function notesForCard(id, p){
+  const c=BYID[id], f=c.fam, notes=poolNotes().filter(n=>n.ids.includes(id));
+  if(S.picks[1-p].includes(id)) return notes;                       // the other side has it: show as is
+  const owned=S.picks[p].includes(id);
+  const left=budget()-spent(p)-(owned?0:c.cost), slots=MAXTEAM-fighterIds(p).length-(owned||c.helper?0:1);
+  const mine=fam=>S.picks[p].some(x=>BYID[x].fam===fam);
+  const free=fam=>!S.picks[0].concat(S.picks[1]).some(x=>BYID[x].fam===fam);
+  const cost=fam=>Math.min(...S.pool.filter(x=>BYID[x].fam===fam).map(x=>BYID[x].cost));
+  const fits=fams=>{ const need=fams.filter(x=>!mine(x)); return need.every(free) && need.reduce((a,x)=>a+cost(x),0)<=left && need.length<=slots; };
+  return notes.map(n=>{
+    const r=n.rule; if(n.kind!=='team' || !r || n.state==='off') return n;
+    let ok;
+    if(r.type==='all') ok = fits(r.fams.filter(x=>x!==f)) ? r.fams : [];
+    if(r.type==='two') ok = r.fams.filter(x=>x!==f && (mine(x)||fits([x])));
+    if(r.type==='anchor') ok = f===r.anchor ? r.fams.filter(x=>x!==f && (mine(x)||fits([x]))) : (mine(r.anchor)||fits([r.anchor])) ? [r.anchor] : [];
+    if(!ok.length) return null;
+    return Object.assign({}, n, {ids:n.ids.filter(x=>x===id || ok.includes(BYID[x].fam))});
+  }).filter(Boolean);
 }
