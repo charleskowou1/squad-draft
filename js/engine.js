@@ -33,7 +33,7 @@ const lost = (u,n) => `[-${pct(u,n)}%]`, gained = (u,n) => `[+${pct(u,n)}%]`;
 // How likely a character is to be dealt, relative to 1 for everyone else. Yoriichi is rare (about 1 draft in 8),
 // and when he is dealt, the old version is twice as likely as the prime one.
 const FAMILY_ODDS = {yoriichi:.4};
-const VERSION_ODDS = {yoriichi:.5};
+const VERSION_ODDS = {yoriichi:.5, muzan_final:.5};   // the stronger version of these comes up less often
 // Weighted pick without replacement: takes one item out of `list` and returns it
 function takeWeighted(list, w){
   let r=Math.random()*list.reduce((a,x)=>a+w(x),0);
@@ -85,7 +85,7 @@ function doPick(id){
 }
 function doLock(p){ S.locked[p]=true; S.lastPicker=p; S.sel=null; S.k++; afterTurn(); }
 // Two-character synergies the computer drafter looks for
-const PAIRS = [['tanjiro','nezuko'],['tamayo','yushiro'],['yoriichi','tanjiro'],['urokodaki','tanjiro'],['urokodaki','giyu'],
+const PAIRS = [['urokodaki','sabito'],['sabito','tanjiro'],['tanjiro','nezuko'],['tamayo','yushiro'],['yoriichi','tanjiro'],['urokodaki','tanjiro'],['urokodaki','giyu'],
   ['tanjiro','zenitsu'],['tanjiro','inosuke'],['zenitsu','inosuke']];
 // Computer difficulty. Easy plays like the original simple computer; Normal plays smart but with sloppier choices;
 // Hard is the full planner. Noise = random wobble added to every option's score (bigger = more mistakes).
@@ -113,7 +113,7 @@ function cpuDraftStep(level='hard'){
 /* ---------- battle setup ---------- */
 let UID=0;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:c.pow,spd:c.spd,def:c.def,
-  regen:c.regen||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
+  regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -129,7 +129,7 @@ function synergies(p){
   if(has('yoriichi')&&has('tanjiro')){ t.filter(u=>u.fam==='tanjiro').forEach(u=>u.pow+=2); out.push('Sun Lineage: Tanjiro +2 PWR'); }
   if(has('muzan') && e.some(u=>u.fam==='yoriichi')){ t.filter(u=>u.fam==='muzan').forEach(u=>{u.pow-=3; u.spd-=2;}); out.push('!Muzan fears the Sun −3 PWR'); }
   if(has('kokushibo') && e.some(u=>u.fam==='yoriichi')){ t.filter(u=>u.fam==='kokushibo').forEach(u=>u.def-=1); out.push('!Kokushibo shaken −1 DEF'); }
-  const pupils=t.filter(u=>u.fam==='tanjiro'||u.fam==='giyu'); if(has('urokodaki') && pupils.length){ pupils.forEach(u=>u.def+=1); out.push('Mentor: pupils +1 DEF'); }
+  const pupils=t.filter(u=>u.fam==='tanjiro'||u.fam==='giyu'||u.fam==='sabito'); if(has('urokodaki') && pupils.length){ pupils.forEach(u=>u.def+=1); out.push('Mentor: pupils +1 DEF'); }
   if(has('kagaya') && ha.length){ ha.forEach(u=>u.def+=1); out.push('Corps Master: Hashira +1 DEF'); }
   if(has('zenitsu') && e.some(u=>u.fam==='kaigaku')){ t.filter(u=>u.fam==='zenitsu').forEach(u=>u.pow+=2); out.push('Rival: Zenitsu +2 PWR'); }
   return out;
@@ -193,6 +193,8 @@ const SIG_EST = {
   doma: ()=>({all:true, base:8, o:{ignoreDef:true}}),
   kokushibo: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
   muzan: u=>({all:true, base:u.pow-4}),
+  muzan_final: u=>({all:true, base:u.pow-3}),
+  gyokko: u=>({base:u.pow-2, o:{ignoreDef:true}, stun:true}),
   sekido: ()=>({all:true, base:4, o:{ignoreDef:true}}),
   karaku: u=>({base:u.pow+3}),
   aizetsu: u=>({base:u.pow+4}),
@@ -238,6 +240,7 @@ function cpuPlan(p, level='hard'){
           case 'genya': sp={type:'special', v: S.round<=3 ? 40 : u.hp<u.max*.6 ? 30 : 12}; break;
           case 'tamayo': { const sick=mine.find(m=>m.poison), t=sick||hurt; sp={type:'special', t:t.uid, v:Math.min(10,t.max-t.hp)/t.max*100+(sick?20:0)}; break; }
           case 'yushiro': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.4 ? 45 : 0}; break;
+          case 'sabito': { const t=mine.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes)[0]; sp={type:'special', t:t.uid, v: S.round<=4 ? 35 : 15}; break; }
           case 'tengen_retired': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.5 ? 30 : 0}; break;
           case 'hantengu': sp={type:'special', v: u.hp<u.max*.7 ? 35 : 10}; break;
           case 'kagaya': sp={type:'special', v: mine.reduce((a,m)=>a+Math.min(4,m.max-m.hp)/m.max*100,0)}; break;
@@ -259,7 +262,8 @@ function cpuPlan(p, level='hard'){
 // Each log line keeps everyone's HP at that moment, so the round can be played back step by step
 function L(t,c='',extra){ const hp={}; S.teams[0].concat(S.teams[1]).forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive){ const a=alive(1-u.p); t=a.length?rnd(a):null; } return t; }
-function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h'); return; } t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid});
+function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h'); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x'); return; }
+  t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid});
   if(t.fam==='shinobu' && a && a.alive && a.demon){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h'); }
   if(t.splits) split(t); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
@@ -300,6 +304,9 @@ function special(u,pl){
     case 'kanao': hit(u,target(u,pl.t),u.pow+4); break;
     case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h'); break; }
     case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h'); break; }
+    case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t); } break; }
+    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito & Makomo train ${t===u?'themselves':t.name}: +2 PWR for the rest of the match.`,'h'); break; }
+    case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-3,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k'); } break; }
     case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h'); break; }
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h'); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;

@@ -24,7 +24,12 @@ add({id:'yoriichi_old',fam:'yoriichi',sk:'yoriichi_old',name:'Yoriichi (Age 85)'
 // Demons
 add({id:'muzan',name:'Muzan Kibutsuji',short:'Muzan',g:'鬼',type:'Demon King',demon:true,cost:16,hp:54,pow:17,spd:11,def:8,regen:4,
   sig:{name:'Blood Whips',desc:'Every enemy takes PWR−4, and Muzan heals 2 for each enemy hit.',cd:3,kind:'all'}});
-add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:52,pow:17,spd:11,def:8,regen:3,
+// Final-Form Muzan: the other version of Muzan (one or the other is dealt)
+add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final Form)',short:'Final Muzan',g:'終',type:'Demon King · Final Form',demon:true,cost:18,hp:52,pow:17,spd:11,def:8,regen:5,
+  revive:.2,
+  passive:'Seven Hearts: the first time he falls, he gets back up with 20% health.',
+  sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−3, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
+add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:50,pow:17,spd:11,def:8,regen:3,
   sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:8,hp:37,pow:11,spd:9,def:5,regen:2,
   sig:{name:'Frozen Lotus',desc:'Every enemy takes 8, ignores DEF.',cd:3,kind:'all'}});
@@ -32,6 +37,8 @@ add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:tru
   sig:{name:'Destructive Death',desc:'Strike for PWR+6.',cd:3,kind:'single'}});
 add({id:'gyutaro',name:'Gyutaro & Daki',short:'Gyutaro',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:9,spd:8,def:4,regen:2,
   sig:{name:'Flying Blood Sickles',desc:'Every enemy takes 4 and is poisoned 2/round for 2 rounds.',cd:3,kind:'all'}});
+add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:true,upper:true,cost:6,hp:32,pow:10,spd:8,def:4,regen:2,
+  sig:{name:'Water Prison Pot',desc:'Traps one enemy: it takes PWR−2 (ignores DEF) and can\'t act next round.',cd:3,kind:'single'}});
 // Hantengu splits when knocked out: Hantengu → Sekido + Karaku, then Sekido → Aizetsu and Karaku → Urogi.
 // The split-off forms (spawn:true) are never dealt in the draft; they only appear in battle.
 add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:20,pow:8,spd:9,def:4,regen:1,
@@ -112,8 +119,11 @@ add({id:'tamayo',name:'Tamayo',short:'Tamayo',g:'薬',type:'Physician · Demon a
   sig:{name:'Healing Blood Art',desc:'Heal an ally (or herself) for 10 and cure poison.',cd:2,kind:'ally'}});
 add({id:'yushiro',name:'Yushiro',short:'Yushiro',g:'紙',type:'Tamayo\'s guardian · Demon ally',demon:true,cost:3,hp:20,pow:6,spd:9,def:3,regen:1,
   sig:{name:'Concealment Talisman',desc:'Moves first. Hide an ally (or himself): attacks against them miss this round.',cd:3,kind:'ally',prio:3}});
+add({id:'sabito',name:'Sabito & Makomo',short:'Sabito & Makomo',g:'錆',type:'Spirits · Urokodaki\'s students',cost:4,hp:24,pow:7,spd:10,def:3,
+  passive:"Urokodaki's students: they get his Mentor bonus too.",
+  sig:{name:'Spirit Training',desc:'Train an ally (or themselves): +2 PWR for the rest of the match.',cd:3,kind:'ally'}});
 add({id:'urokodaki',name:'Sakonji Urokodaki',short:'Urokodaki',g:'師',type:'Former Water Hashira',cost:4,hp:26,pow:7,spd:7,def:4,
-  passive:'Mentor: Tanjiro and Giyu on his team get +1 DEF.',
+  passive:'Mentor: Tanjiro, Giyu and Sabito & Makomo on his team get +1 DEF.',
   sig:{name:'Water Wheel',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
 add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:14,pow:2,spd:5,def:1,
   passive:'Master of the Corps: every Hashira on his team gets +1 DEF.',

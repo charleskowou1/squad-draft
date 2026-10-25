@@ -18,10 +18,12 @@ yoriichi_old       Yoriichi Tsugikuni (Age 85)
 
 DEMONS
 muzan              Muzan Kibutsuji
+muzan_final        Muzan Kibutsuji (Final Form)  - borrows muzan's picture if missing
 kokushibo          Kokushibo (Upper Moon 1)
 doma               Doma (Upper Moon 2)
 akaza              Akaza (Upper Moon 3)
 hantengu           Hantengu (Upper Moon 4)
+gyokko             Gyokko (Upper Moon 5)
 gyutaro            Gyutaro & Daki (Upper Moon 6), one picture for both
 kaigaku            Kaigaku (Upper Moon 6)
 enmu               Enmu (Lower Moon 1)
@@ -58,6 +60,7 @@ genya              Genya Shinazugawa  (Sanemi's brother)
 tamayo             Tamayo
 yushiro            Yushiro
 urokodaki          Sakonji Urokodaki                <-- last name
+sabito             Sabito & Makomo (one picture for both)
 kagaya             Kagaya Ubuyashiki
 murata             Murata
 

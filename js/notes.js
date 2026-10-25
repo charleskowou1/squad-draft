@@ -53,8 +53,8 @@ function poolNotes(){
   const kin=famsWhere(c=>c.demon && c.fam!=='muzan' && c.fam!=='nezuko');
   if(has('muzan')&&kin.length) add('team', ['muzan',...kin], "Muzan's Blood", 'Muzan plus another demon (not Nezuko) on one team: Muzan and those demons get +1 PWR.', withAnchor('muzan',kin));
 
-  const pupils=['tanjiro','giyu'].filter(has);
-  if(has('urokodaki')&&pupils.length) add('team', ['urokodaki',...pupils], 'Mentor', 'Urokodaki plus Tanjiro or Giyu on one team: his pupils get +1 DEF.', withAnchor('urokodaki',pupils));
+  const pupils=['tanjiro','giyu','sabito'].filter(has);
+  if(has('urokodaki')&&pupils.length) add('team', ['urokodaki',...pupils], 'Mentor', 'Urokodaki plus Tanjiro, Giyu or Sabito & Makomo on one team: his pupils get +1 DEF.', withAnchor('urokodaki',pupils));
   if(has('kagaya')&&hashira.length) add('team', ['kagaya',...hashira], 'Corps Master', 'Kagaya plus any Hashira on one team: every Hashira on that team gets +1 DEF.', withAnchor('kagaya',hashira));
 
   // opposing teams
