@@ -76,6 +76,10 @@ details ul b{color:var(--fg)}
 .tlabel{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 
 /* ---------- setup ---------- */
+.setbar{display:flex;justify-content:flex-end;margin-bottom:-14px}
+.gear span{font-size:1rem;line-height:1;margin-right:2px}
+.setgroup{display:flex;flex-direction:column;gap:8px}
+.seg button small{font-size:.66rem;font-weight:500;opacity:.75}
 .hero{position:relative;padding-top:18px;display:flex;flex-direction:column;gap:8px}
 /* the 滅 of the Corps uniform, as a vermilion seal */
 .hero .kanji{position:absolute;right:0;top:14px;width:76px;height:76px;border-radius:12px;background:var(--accent);color:#fff8ee;
