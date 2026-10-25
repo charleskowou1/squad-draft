@@ -8,6 +8,8 @@ const plural = (n,w) => `${n} ${w}${n===1?'':'s'}`;
 // Character pictures found in img/ (filled in by app.js at startup): card id → file path
 const ART = {};
 // A character's seal: their picture if there is one, otherwise their kanji
+// In battle, a fighter's picture is a button that opens their info card (stats, special, passive, status)
+const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${u.uid}" aria-label="About ${esc(u.name)}">${seal(u,cls)}</button>`;
 const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
@@ -64,19 +66,22 @@ function tile(u, o={}){
   const playing=o.hp!==undefined, up=playing?o.hp>0:u.alive, tap=o.tgtFor && up;
   const cls=`tile${up?'':' dead'}${o.flash?' '+o.flash:''}${tap?' targetable':''}${o.picked?' picked':''}`;
   const aimed=o.aimed&&o.aimed.length?`<span class="aimed"><span>Aimed</span>${o.aimed.map(a=>seal(a,'pip')).join('')}<span class="sr">by ${o.aimed.map(a=>esc(a.name)).join(', ')}</span></span>`:'';
-  const inner=`${seal(u)}<div class="tb">${health(u,o)}${aimed}${up&&!o.simple?meta(u)+(playing?'':statusChips(u,true)):''}</div>`;
-  return tap ? `<button class="${cls}" style="--tc:${pc(u.p)}" data-a="tgt" data-u="${o.tgtFor}" data-v="${u.uid}" aria-pressed="${!!o.picked}">${inner}</button>`
-    : `<div class="${cls}" style="--tc:${pc(u.p)}">${inner}</div>`;
+  const body=`<div class="tb">${health(u,o)}${aimed}${up&&!o.simple?meta(u)+(playing?'':statusChips(u,true)):''}</div>`;
+  // the picture opens the info card; when targeting, the rest of the tile is the target button
+  const main = tap ? `<button class="tilebtn" data-a="tgt" data-u="${o.tgtFor}" data-v="${u.uid}" aria-pressed="${!!o.picked}" aria-label="Target ${esc(u.name)}">${body}</button>` : body;
+  return `<div class="${cls}" style="--tc:${pc(u.p)};--i:${o.i||0}">${sealBtn(u)}${main}</div>`;
 }
 // One bar split between both sides' remaining health (all fighters' HP ÷ all max HP), so you can see who's ahead.
 // hpOf(u) = HP to count (playback passes the HP at that moment; undefined = not on the field yet).
-function strengthBar(me, hpOf=u=>u.alive?u.hp:0){
-  const side=p=>{ const us=S.teams[p].filter(u=>hpOf(u)!==undefined); const max=us.reduce((a,u)=>a+u.max,0); return max?us.reduce((a,u)=>a+Math.max(0,hpOf(u)),0)/max:0; };
-  const a=side(me), b=side(1-me), share=a+b?a/(a+b)*100:50, solo=S.mode==='cpu'||S.phase==='plan';
+function strengthBar(me, hpOf=u=>u.alive?u.hp:0, prevOf){
+  const sideOf=f=>p=>{ const us=S.teams[p].filter(u=>f(u)!==undefined); const max=us.reduce((a,u)=>a+u.max,0); return max?us.reduce((a,u)=>a+Math.max(0,f(u)),0)/max:0; };
+  const side=sideOf(hpOf), split=(x,y)=>x+y?x/(x+y)*100:50;
+  const a=side(me), b=side(1-me), share=split(a,b), solo=S.mode==='cpu'||S.phase==='plan';
+  const from=prevOf?split(sideOf(prevOf)(me),sideOf(prevOf)(1-me)):share;
   const name=p=>p===me&&solo?'You':p!==me&&solo?'Opponent':nm(p);
   return `<div class="strength" role="img" aria-label="${name(me)} ${Math.round(a*100)}% health, ${name(1-me)} ${Math.round(b*100)}%">
     <div class="sl"><span style="color:${pc(me)}">${name(me)} <b>${Math.round(a*100)}%</b></span><span style="color:${pc(1-me)}"><b>${Math.round(b*100)}%</b> ${name(1-me)}</span></div>
-    <div class="sbar"><i style="width:${share}%;background:${pc(me)}"></i><i style="flex:1;background:${pc(1-me)}"></i></div></div>`;
+    <div class="sbar"><i class="${from!==share?'drain':''}" style="width:${share}%;--from:${from}%;background:${pc(me)}"></i><i style="flex:1;background:${pc(1-me)}"></i></div></div>`;
 }
 const vsDivider = () => '<div class="vsdiv" aria-hidden="true"><span>VS</span></div>';
 function teamBlock(p, label, moment, simple, hint){
@@ -84,7 +89,7 @@ function teamBlock(p, label, moment, simple, hint){
   const up=S.teams[p].filter((u,i)=>!os[i].hidden && (os[i].hp===undefined?u.alive:os[i].hp>0)).length;
   return `<section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">${label||nm(p)}</span>
     ${hint?`<span class="taphint">${hint}</span>`:`<span class="muted">${up} of ${shown.length} standing</span>`}</div>
-    ${simple?'':synChips(p)}<div class="tiles${simple?' simple':''}">${S.teams[p].map((u,i)=>tile(u,os[i])).join('')}</div></section>`;
+    ${simple?'':synChips(p)}<div class="tiles${simple?' simple':''}">${S.teams[p].map((u,i)=>tile(u,{...os[i],i})).join('')}</div></section>`;
 }
 
 /* ---------- setup ---------- */
@@ -215,8 +220,37 @@ function splitTree(c){
   const all=[]; const walk=id=>{ (BYID[id].splits||[]).forEach(k=>{ all.push(k); }); (BYID[id].splits||[]).forEach(walk); }; walk(c.id);
   return `<div class="splits"><div class="tlabel">Splits into</div>${all.map(form).join('')}</div>`;
 }
-// Card detail, centred on screen, when a card is tapped during the draft
+// Fighter info card in battle: tap any picture (yours or the opponent's). Shows current stats, which include
+// team bonuses and anything gained in the match, plus the special's cooldown, passives and status effects.
+function vInfo(){
+  const u=findU(S.info); if(!u) return '';
+  const c=BYID[u.id], pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean);
+  const yours = S.mode==='cpu' ? u.p===0 : S.phase==='plan' ? u.p===S.planFor : null;
+  const side = yours===null ? nm(u.p) : yours ? 'Your team' : 'Opponent';
+  return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in info ${glyphCls(u)}" role="dialog" aria-modal="true" aria-label="${esc(u.name)}">
+    <button class="x" data-a="unsel" aria-label="Close">×</button>
+    <div class="shead">${seal(u,'lg')}<div><div class="eyebrow" style="color:${pc(u.p)}">${side} · ${esc(c.type)}</div><h2>${esc(c.name)}</h2></div></div>
+    <div class="ihp"><span class="tlabel">Health</span>${health(u,{simple:true})}</div>
+    <span class="stats"><span><i>PWR</i>${u.pow}</span><span><i>DEF</i>${u.def}</span><span><i>SPD</i>${u.spd}</span><span><i>REGEN</i>${u.regen?pct(u,u.regen)+'%':'–'}</span></span>
+    <div class="sig"><div class="sname">${esc(u.sig.name)} <span class="muted">· ${!u.alive?'knocked out':u.cd>0?`ready in ${plural(u.cd,'round')}`:'ready now'}</span></div>${esc(u.sig.desc)}</div>
+    ${u.legend?`<div class="pas">Strikes ×${u.strikes} per Attack · takes at most ${pct(u,u.cap)}% a round.</div>`:''}
+    ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
+    ${statusChips(u,false)}
+    <div class="row"><button class="btn ghost" data-a="unsel">Close</button></div>
+  </div></div>`;
+}
+// Two players: after both lock in, wait for a tap before the round plays out
+function vReady(){
+  const row=p=>`<div class="rteam" style="--tc:${pc(p)}"><span class="rname">${nm(p)}</span><span class="rseals">${alive(p).map(u=>seal(u,'sm')).join('')}</span></div>`;
+  return `<div class="pass ready"><div class="eyebrow">Round ${S.round}</div>
+    <div class="big">Both squads are ready</div>
+    <div class="rvs">${row(0)}<span class="rx">VS</span>${row(1)}</div>
+    <p class="muted">Put the phone where you can both see it.</p>
+    <button class="btn" data-a="fight">Start the battle</button></div>`;
+}
+// Card detail, centred on screen, when a card is tapped during the draft (or a fighter's info card in battle)
 function vSheet(){
+  if(S.info) return vInfo();
   if(S.phase!=='draft' || !S.sel) return '';
   const c=BYID[S.sel], p=turn(), ok=canPick(p,c.id);
   const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean);
@@ -256,8 +290,8 @@ function moveSummary(u){
 }
 function fighter(u, open){
   const ready=unitReady(u), pl=S.plans[u.p][u.uid]||{};
-  const head=`<button class="fhead" data-a="focus" data-v="${u.uid}" aria-expanded="${open}" ${u.stun?'disabled':''}>
-    ${seal(u)}<span class="tb">${health(u)}<span class="sum${ready?' ok':''}">${ready&&!u.stun?'✓ ':''}${moveSummary(u)}</span></span></button>`;
+  const head=`<div class="fhead">${sealBtn(u)}<button class="fmain" data-a="focus" data-v="${u.uid}" aria-expanded="${open}" ${u.stun?'disabled':''}>
+    <span class="tb">${health(u)}<span class="sum${ready?' ok':''}">${ready&&!u.stun?'✓ ':''}${moveSummary(u)}</span></span></button></div>`;
   if(!open) return `<div class="fighter" style="--tc:${pc(u.p)}">${head}</div>`;
   const mv=(v,k,label,sub,dis)=>`<button data-a="act" data-u="${u.uid}" data-v="${v}" class="${pl.type===v?'on':''}" ${dis?'disabled':''}><span class="mk" aria-hidden="true">${k}</span>${label}<small>${sub}</small></button>`;
   const opts=targetOptions(u,pl);
@@ -306,6 +340,8 @@ function stage(line){
   return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}" aria-hidden="true">
     ${duo ? who(by,'by')+mark+who(on,'on') : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
 }
+// Knockouts and hits of 30%+ shake the stage
+const bigHit = line => line.fx==='ko' || (/\[-(\d+)%\]/.exec(line.t)||[])[1] >= 30;
 const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<div class="${l.c}">${fmtLog(l.t)}</div>`).join('')}</div>`;
 // The round plays back one log line at a time (S.play.k = the line being shown); tiles show HP at that moment
 function vResult(){
@@ -319,19 +355,22 @@ function vResult(){
   const vsCpu=S.mode==='cpu';
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>' : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
-    ${strengthBar(0, done?undefined:u=>cur.hp[u.uid])}
+    ${strengthBar(0, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
     ${teamBlock(1,vsCpu?'Opponent':null,moment,!done)}
-    ${done?vsDivider():`<div class="now ${cur.c}" aria-live="polite">${k?stage(cur):''}<span>${k?fmtLog(cur.t):'…'}</span></div>`}
+    ${done?vsDivider():k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
+      :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
     ${teamBlock(0,vsCpu?'Your team':null,moment,!done)}
     ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
     ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }
 function vOver(){
   const w=S.winner;
-  return `<div class="win"><div class="eyebrow">After ${plural(S.round,'round')}</div>
+  return `<div class="win${w<0?'':' victory'}" style="--wc:${w<0?'var(--muted)':pc(w)}"><span class="burst" aria-hidden="true"></span>
+    ${w<0?'':`<div class="winseals" aria-hidden="true">${S.teams[w].map((u,i)=>`<span style="--i:${i}">${seal(u,'lg')}</span>`).join('')}</div>`}
+    <div class="eyebrow">After ${plural(S.round,'round')}</div>
     <div class="big" style="color:${w<0?'var(--fg)':pc(w)}">${w<0?'Both squads fall':nm(w)+' wins'}</div>
     <p class="muted">${w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>
-    ${teamBlock(0)}${teamBlock(1)}
+    <div class="overteams">${teamBlock(0)}${teamBlock(1)}</div>
     <details class="panel" id="finallog"><summary>Final round</summary>${logHTML()}</details>
     ${actionbar('<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>')}`;
 }

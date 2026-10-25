@@ -362,17 +362,69 @@ details ul b{color:var(--fg)}
 @keyframes poisoned{0%,100%{filter:none}40%{filter:hue-rotate(250deg) saturate(1.8)}}
 @keyframes charge{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(214,165,77,0)}40%{transform:scale(1.12);box-shadow:0 0 0 4px var(--gold),0 0 34px rgba(214,165,77,.8)}100%{transform:scale(1);box-shadow:0 6px 16px rgba(0,0,0,.45)}}
 @media (prefers-reduced-motion:reduce){.stage *,.stage .gl{animation:none!important}.stage .pop{opacity:1}}
+/* tap a picture in battle for the fighter's info card */
+.sealbtn{flex:none;padding:0;background:none;border-radius:6px;line-height:0;transition:transform .12s}
+.sealbtn:active{transform:scale(.93)}
+.sealbtn:focus-visible{outline-offset:1px}
+.tilebtn{flex:1;min-width:0;display:block;padding:0;background:none;text-align:left;color:inherit;font:inherit;cursor:pointer;border-radius:6px}
+.modal .in.info .ihp{display:flex;flex-direction:column;gap:5px}
+.modal .in.info .ihp .un{display:none}
+.modal .in.info .ihp .hp{font-size:1.1rem}
+.modal .in.info .stats span{font-size:1.05rem}
+/* two players: both locked in, waiting for "Start the battle" */
+.pass.ready .big{color:var(--fg)}
+.rvs{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
+.rteam{display:flex;flex-direction:column;align-items:center;gap:6px;animation:popin .45s ease-out both}
+.rteam:last-child{animation-delay:.15s}
+.rname{font-family:var(--display);font-weight:800;color:var(--tc);font-size:1.1rem}
+.rseals{display:flex;gap:4px}
+.rx{font-family:var(--display);font-weight:800;color:var(--accent);letter-spacing:.2em;animation:pulse 1.4s ease-in-out infinite}
+.pass.ready .btn{animation:pulse 1.8s ease-in-out infinite}
+/* playback intro: "Round 2 · Fight!" */
+.now.intro{min-height:150px;gap:2px;border-color:rgba(224,87,59,.5)}
+.now.intro .ir{font-family:var(--display);font-weight:800;font-size:1.1rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);animation:dropin .5s ease-out both}
+.now.intro .ig{font-family:var(--display);font-weight:800;font-size:3rem;line-height:1;color:var(--accent);text-shadow:0 0 26px rgba(224,87,59,.6);animation:zoomin .6s .25s cubic-bezier(.2,1.6,.4,1) both}
+/* slash streak and impact ring on hits */
+.stage.fx-hit .st-on::after,.stage.fx-ko .st-on::after{content:"";position:absolute;left:-30%;top:34%;width:160%;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,#fff 45%,#ffd2c8 55%,transparent);transform:rotate(-32deg) scaleX(0);animation:streak .35s .28s ease-out both;z-index:4}
+.stage.fx-hit .st-on::before,.stage.fx-ko .st-on::before,.stage.fx-special .st-by::before,.stage.fx-heal .st-on::before,.stage.fx-revive .st-on::before{
+  content:"";position:absolute;left:50%;top:36px;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid var(--accent);opacity:0;animation:ring .6s .3s ease-out both;z-index:1}
+.stage.fx-special .st-by::before{border-color:var(--gold);animation:ring .8s .05s ease-out both, ring .8s .45s ease-out both}
+.stage.fx-heal .st-on::before,.stage.fx-revive .st-on::before{border-color:#5fd39a;animation-delay:.2s}
+/* big hits and knockouts shake the stage; knockouts flash red */
+.now.big{animation:quake .5s .32s ease-out}
+.now.big.k{animation:quake .55s .32s ease-out, koflash .9s .3s ease-out}
+.now.big .pop{font-size:1.5rem}
+.sbar i.drain{animation:drain .7s ease-out}
+/* victory */
+.win{position:relative}
+.win.victory .burst{position:absolute;left:50%;top:44%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:4px solid var(--wc);opacity:0;animation:ring 1.2s .2s ease-out both, ring 1.2s .7s ease-out both;pointer-events:none}
+.win .big{animation:zoomin .7s .35s cubic-bezier(.2,1.6,.4,1) both}
+.winseals{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
+.winseals span{animation:popin .5s calc(.5s + var(--i)*.12s) cubic-bezier(.2,1.5,.4,1) both}
+.overteams{display:flex;flex-direction:column;gap:18px}
+.overteams .tile{animation:popin .4s calc(.9s + var(--i)*.07s) ease-out both}
+@keyframes streak{0%{transform:rotate(-32deg) scaleX(0);opacity:1}60%{transform:rotate(-32deg) scaleX(1);opacity:1}100%{transform:rotate(-32deg) scaleX(1.05);opacity:0}}
+@keyframes ring{0%{opacity:.9;transform:scale(.4)}100%{opacity:0;transform:scale(2.1)}}
+@keyframes quake{0%,100%{transform:none}15%{transform:translate(-6px,2px)}30%{transform:translate(6px,-2px)}45%{transform:translate(-4px,1px)}60%{transform:translate(4px,-1px)}80%{transform:translate(-2px,0)}}
+@keyframes koflash{0%{box-shadow:inset 0 0 0 0 rgba(255,93,76,0)}25%{box-shadow:inset 0 0 60px 10px rgba(255,93,76,.45)}100%{box-shadow:inset 0 0 0 0 rgba(255,93,76,0)}}
+@keyframes zoomin{0%{opacity:0;transform:scale(2.4)}100%{opacity:1;transform:none}}
+@keyframes dropin{0%{opacity:0;transform:translateY(-12px)}100%{opacity:1;transform:none}}
+@keyframes popin{0%{opacity:0;transform:scale(.6) translateY(10px)}100%{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{transform:none}50%{transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){.now.big,.now.intro *,.win *,.win .burst,.rteam,.rx,.pass.ready .btn,.overteams .tile,.sbar i.drain{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.tile.targetable,.tile.acting,.tile.spawn,.tile.hit,.tile.heal,.tile.ko,.bar i.drain,.now,.modal .in,.scrim{animation:none}}
 
 /* your fighters while choosing moves */
 .fighters{display:flex;flex-direction:column;gap:8px}
 .fighter{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:10px;transition:border-color .15s}
 .fighter.open{background:var(--surface-2);border-color:var(--line-2);border-left-color:var(--tc);box-shadow:0 0 0 1px var(--paper) inset,var(--shadow)}
-.fhead{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:transparent;padding:10px}
-.fhead:disabled{cursor:default;opacity:.6}
+.fhead{display:flex;gap:10px;align-items:flex-start;padding:10px}
+.fmain{flex:1;min-width:0;text-align:left;background:transparent;padding:0}
+.fmain:disabled{cursor:default;opacity:.6}
 .sum{display:block;font-size:.82rem;color:var(--muted)}
 .sum.ok{color:var(--p1);font-weight:700}
-.fhead:disabled .sum{color:var(--muted)}
+.fmain:disabled .sum{color:var(--muted)}
 .fbody{padding:0 10px 12px;display:flex;flex-direction:column;gap:9px}
 .moves{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .moves button{background:var(--bg-2);border:1.5px solid var(--line);padding:9px 4px 10px;font-weight:700;font-size:.92rem;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}

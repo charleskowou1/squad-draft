@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, result:vResult, over:vOver};
+const VIEWS = {setup:vSetup, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false;
 
@@ -28,13 +28,14 @@ const readTime = line => quickMotion() ? 300 : 2200 + line.t.length*30 + (line.k
 function playRound(){
   S.play={k:0, done:false};
   const step=()=>{
+    if(S.info){ S._t=setTimeout(step,300); return; }   // paused while a fighter's info card is open
     if(S.play.k>=S.log.length-1){ S.play.done=true; render(); return; }
     S.play.k++; const line=S.log[S.play.k];
     if(line.ko && navigator.vibrate) navigator.vibrate([90,50,160]);
     render();
     S._t=setTimeout(step, readTime(line));
   };
-  clearTimeout(S._t); S._t=setTimeout(step, 400);
+  clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500);   // the "Round N · Fight!" intro
 }
 function startDraft(){
   const n0 = document.getElementById('n0').value.trim()||'Player 1';
@@ -45,9 +46,9 @@ function startDraft(){
 function toSpin(){ S.phase='spin'; S.spin=null; window.scrollTo(0,0); }
 // After a fighter's move is complete, open the next one that still needs a move
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
-function newPlanTurn(){ S.focus=null; window.scrollTo(0,0); }
+function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 // Run the round, then play it back (a finished match still plays back first, then "See who won")
-function fight(){ resolve(); S.final = S.phase==='over'; S.phase='result'; playRound(); }
+function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='result'; playRound(); }
 
 const ACTIONS = {
   mode(v){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value; S.mode=v; if(v==='2p'){ const s=loadNames(); S.names[1]=(s&&s[1])||'Mia'; } },
@@ -60,7 +61,9 @@ const ACTIONS = {
   redeal(){ S.pool=buildPool(); S.sel=null; },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
   sel(v){ if(S.mode==='cpu' && turn()===1) return; if(S.pool.includes(v)) S.sel=v; },
-  unsel(){ S.sel=null; },
+  unsel(){ S.sel=null; S.info=null; },
+  info(v){ S.info=v; },
+  fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },
   confirmPick(){ if(!canPick(turn(),S.sel)) return; doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
   lock(){ doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
@@ -71,7 +74,7 @@ const ACTIONS = {
   lockMoves(){
     if(S.mode==='cpu'){ cpuPlan(1,S.level); fight(); }
     else if(S.planFor===0){ S.planFor=1; S.phase='pass'; }
-    else fight();
+    else S.phase='ready';   // two players: wait for "Start the battle"
     newPlanTurn();
   },
   skip(){ clearTimeout(S._t); S.play.done=true; },
@@ -83,7 +86,7 @@ document.addEventListener('click',e=>{
   const fn=ACTIONS[b.dataset.a]; if(!fn) return;
   fn(b.dataset.v,b); render();
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape' && S.sel){ S.sel=null; render(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info)){ S.sel=null; S.info=null; render(); } });
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
