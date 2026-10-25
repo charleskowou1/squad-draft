@@ -83,7 +83,8 @@ function poolNotes(){
   if(has('kokushibo')&&has('yoriichi')) add('vs', ['kokushibo','yoriichi'], 'Kokushibo shaken', 'Facing Yoriichi, Kokushibo gets −1 DEF.', facing(['kokushibo'],['yoriichi']));
   if(has('tamayo')&&has('muzan')) add('vs', ['tamayo','muzan'], "Tamayo's medicine", 'Facing Tamayo, Muzan regenerates 2 less HP a round.', facing(['tamayo'],['muzan']));
   const demons=famsWhere(c=>c.demon);
-  if(has('shinobu')&&demons.length) add('vs', ['shinobu',...demons], 'Wisteria Body', 'If a demon lands the blow that knocks Shinobu out, it devours her and loses 5 HP every round for the rest of the match.', facing(['shinobu'],demons));
+  const eaters=demons.filter(f=>f!=='akaza');   // demons who would devour Shinobu (Akaza never eats women)
+  if(has('shinobu')&&eaters.length) add('vs', ['shinobu',...eaters], 'Wisteria Body', 'If a demon lands the blow that knocks Shinobu out, it devours her and loses 5 HP every round for the rest of the match. Akaza is the exception: he never eats women.', facing(['shinobu'],eaters));
   const regen=demons.filter(f=>BYID[inPool[f]].regen);
   if(S.pool.includes('yoriichi') && regen.length) add('vs', ['yoriichi',...regen], 'Sun Breathing', "Yoriichi's special hits every enemy, and demons it hits stop regenerating for the rest of the match.", facing(['yoriichi'],regen));
   const poison=['shinobu','gyutaro'].filter(has);

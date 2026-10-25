@@ -329,7 +329,8 @@ function L(t,c='',extra){ const hp={}; S.teams[0].concat(S.teams[1]).forEach(u=>
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive){ const a=alive(1-u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',fx('revive',null,t)); return; }
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ...fx('ko',a,t)});
-  if(t.fam==='shinobu' && a && a.alive && a.demon){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
+  // Shinobu's Wisteria Body: the demon who knocks her out devours her and is poisoned. Not Akaza: he never eats women.
+  if(t.fam==='shinobu' && a && a.alive && a.demon && a.fam!=='akaza'){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
   if(t.splits) split(t); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
 function split(t){

@@ -97,7 +97,7 @@ add({id:'tengen_retired',fam:'tengen',sk:'tengen_retired',name:'Tengen Uzui (Ret
   passive:'Retired: lost a hand and an eye, so he no longer counts as a Hashira.',
   sig:{name:'Bodyguard',desc:'Moves first. Shields an ally (or himself): they count as Defending this round and take half damage.',cd:2,kind:'ally',prio:3}});
 add({id:'shinobu',name:'Shinobu Kocho',short:'Shinobu',g:'蟲',type:'Insect Hashira',hashira:true,cost:5,hp:24,pow:6,spd:10,def:3,
-  passive:'Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match.',
+  passive:'Wisteria Body: if a demon lands the blow that knocks her out, it devours her and loses 5 HP every round for the rest of the match. (Not Akaza: he never eats women.)',
   sig:{name:'Wisteria Poison',desc:'Poison a target for 3 rounds: 6/round to demons, 3/round to humans.',cd:3,kind:'single'}});
 
 // Main cast (+ Marks)
