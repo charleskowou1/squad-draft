@@ -1,12 +1,22 @@
 /* ================= ENGINE =================
    Game state, draft rules and battle rules. No DOM in this file: tools/balance-sim.js runs it in Node. */
-const MAXTEAM = 6, POOL_SIZE = 10;
+const MAXTEAM = 6;
 // Points per team: chosen in Settings (10, 20 or 30) and remembered on this phone
 const BUDGETS = [10, 20, 30], DEFAULT_BUDGET = 20;
 const budget = () => S.budget || DEFAULT_BUDGET;
-// Most a single card may cost to be dealt. In 10-point games it's 6, so every team gets at least two fighters
-// (one 9–10 point card alone against two or three cheap ones was a coin flip decided by matchups).
-const maxCardCost = () => budget() <= 10 ? 6 : budget();
+// How a draft is dealt at each team budget:
+//  size    = characters dealt
+//  maxCost = most one card may cost. 10-point games stop at 6 so every team gets at least two fighters
+//            (one 9–10 point card alone against two or three cheap ones was a coin flip decided by matchups).
+//  strong  = favour stronger characters: pricier characters come up more, Mark versions beat base versions 2 to 1
+const DEALS = {
+  10: {size:10, maxCost:6},
+  20: {size:10, maxCost:20},
+  30: {size:14, maxCost:30, strong:true},
+};
+const deal = () => DEALS[budget()] || DEALS[DEFAULT_BUDGET];
+const poolSize = () => deal().size;
+const maxCardCost = () => deal().maxCost;
 const SNAKE = [0,1,1,0];
 
 /* ---------- state / storage ---------- */
@@ -42,23 +52,34 @@ const lost = (u,n) => `[-${pct(u,n)}%]`, gained = (u,n) => `[+${pct(u,n)}%]`;
 // and when he is dealt, the old version is twice as likely as the prime one.
 const FAMILY_ODDS = {yoriichi:.4};
 const VERSION_ODDS = {yoriichi:.5, muzan_final:.5};   // the stronger version of these comes up less often
+// 30-point games deal more and stronger cards, so the hard pulls get their own odds to stay hard pulls
+const STRONG_FAMILY_ODDS = {yoriichi:.4};
+const STRONG_VERSION_ODDS = {yoriichi:.5, muzan_final:.2};
+// How likely a family / version is to be dealt in the current mode (relative to 1)
+function familyOdds(fam, cards){
+  if(!deal().strong) return FAMILY_ODDS[fam] ?? 1;
+  if(fam in STRONG_FAMILY_ODDS) return STRONG_FAMILY_ODDS[fam];
+  const top=Math.max(...cards.filter(c=>c.fam===fam).map(c=>c.cost));
+  return 0.5 + top/8;   // a 2-pt character ×0.75, an 8-pt ×1.5, a 16-pt ×2.5
+}
+const versionOdds = c => deal().strong ? (STRONG_VERSION_ODDS[c.id] ?? (c.mark ? 2 : 1)) : (VERSION_ODDS[c.id] ?? 1);
 // Weighted pick without replacement: takes one item out of `list` and returns it
 function takeWeighted(list, w){
   let r=Math.random()*list.reduce((a,x)=>a+w(x),0);
   const i=Math.max(0, list.findIndex(x=>(r-=w(x))<0));
   return list.splice(i,1)[0];
 }
-// Deal 10 random characters, one version each (base OR Mark OR old/young Yoriichi). Always at least 3 cheap (≤4) picks.
+// Deal random characters (10, or 14 in 30-point games), one version each (base OR Mark OR old/young Yoriichi). Always at least 3 cheap (≤4) picks.
 // Split-off forms (Hantengu's emotions) are never dealt, nor is anything over maxCardCost().
 function buildPool(){
   const cards=ROSTER.filter(c=>!c.spawn && c.cost<=maxCardCost()), fams=[...new Set(cards.map(c=>c.fam))];
   for(let tries=0;tries<200;tries++){
     const left=fams.slice(), f=[];
-    while(f.length<POOL_SIZE) f.push(takeWeighted(left, x=>FAMILY_ODDS[x]??1));
-    const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), c=>VERSION_ODDS[c.id]??1).id);
+    while(f.length<poolSize()) f.push(takeWeighted(left, x=>familyOdds(x,cards)));
+    const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), versionOdds).id);
     if(ids.filter(id=>BYID[id].cost<=4).length>=3) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost);
   }
-  return cards.slice(0,POOL_SIZE).map(c=>c.id);
+  return cards.slice(0,poolSize()).map(c=>c.id);
 }
 // first = the player who won the spin and picks first (0 or 1)
 function newDraft(first=0){
@@ -200,8 +221,8 @@ const SIG_EST = {
   akaza: u=>({base:u.pow+6}),
   doma: ()=>({all:true, base:8, o:{ignoreDef:true}}),
   kokushibo: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
-  muzan: u=>({all:true, base:u.pow-4}),
-  muzan_final: u=>({all:true, base:u.pow-3}),
+  muzan: u=>({all:true, base:u.pow-7, o:{ignoreDef:true}}),
+  muzan_final: u=>({all:true, base:u.pow-6, o:{ignoreDef:true}}),
   gyokko: u=>({base:u.pow-2, o:{ignoreDef:true}, stun:true}),
   sekido: ()=>({all:true, base:4, o:{ignoreDef:true}}),
   karaku: u=>({base:u.pow+3}),
@@ -316,7 +337,7 @@ function special(u,pl){
     case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h',fx('heal',u,t)); break; }
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t); } break; }
     case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito & Makomo train ${t===u?'themselves':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
-    case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-3,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
+    case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-6,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
     case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
@@ -347,7 +368,7 @@ function special(u,pl){
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
     case 'kagaya': { const healed=alive(u.p).map(m=>{ const h=Math.min(4,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
       L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
-    case 'muzan': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-4,{counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(2*n,u.max-u.hp); u.hp+=h; L(`Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
+    case 'muzan': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-7,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(2*n,u.max-u.hp); u.hp+=h; L(`Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
   }
   u.cd = s.cd + 1;
 }

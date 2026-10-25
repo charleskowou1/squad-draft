@@ -23,12 +23,12 @@ add({id:'yoriichi_old',fam:'yoriichi',sk:'yoriichi_old',name:'Yoriichi (Age 85)'
 
 // Demons
 add({id:'muzan',name:'Muzan Kibutsuji',short:'Muzan',g:'鬼',type:'Demon King',demon:true,cost:16,hp:54,pow:17,spd:11,def:8,regen:4,
-  sig:{name:'Blood Whips',desc:'Every enemy takes PWR−4, and Muzan heals 2 for each enemy hit.',cd:3,kind:'all'}});
+  sig:{name:'Blood Whips',desc:'Every enemy takes PWR−7, ignores DEF, and Muzan heals 2 for each enemy hit.',cd:3,kind:'all'}});
 // Final-Form Muzan: the other version of Muzan (one or the other is dealt)
 add({id:'muzan_final',fam:'muzan',sk:'muzan_final',name:'Muzan Kibutsuji (Final Form)',short:'Final Muzan',g:'終',type:'Demon King · Final Form',demon:true,cost:18,hp:52,pow:17,spd:11,def:8,regen:5,
   revive:.2,
   passive:'Seven Hearts: the first time he falls, he gets back up with 20% health.',
-  sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−3, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
+  sig:{name:'Thorned Flesh Whips',desc:'Every enemy takes PWR−6, ignores DEF, and he heals 3 for each enemy hit.',cd:3,kind:'all'}});
 add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 1',demon:true,upper:true,cost:15,hp:50,pow:17,spd:11,def:8,regen:3,
   sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:8,hp:37,pow:11,spd:9,def:5,regen:2,

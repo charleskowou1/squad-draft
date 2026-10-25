@@ -187,7 +187,7 @@ function vDraft(){
     ${orderStrip(p)}
     <div class="teams">${teamBox(0,p)}${teamBox(1,p)}</div>
     ${lockbar}
-    <div class="dealt"><span>${POOL_SIZE} characters dealt · tap one to see it</span>${fresh&&!cpuTurn?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
+    <div class="dealt"><span>${S.pool.length} characters dealt · tap one to see it</span>${fresh&&!cpuTurn?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
     ${notesPanel()}
     <div class="grid">${S.pool.map(id=>cardHTML(BYID[id],p)).join('')}</div></div>`;
 }
@@ -251,7 +251,7 @@ function vReady(){
 }
 // Settings (gear on the main screen): points per team
 function vSettings(){
-  const blurb={10:'Quick, chaotic games with 2–3 fighters each. Only cards costing 6 or less are dealt.',20:'The standard game.',30:'Bigger squads, or a Legend with a real team behind them. Still up to 6 fighters.'};
+  const blurb={10:'Quick, chaotic games with 2–3 fighters each. Only cards costing 6 or less are dealt.',20:'The standard game.',30:'Bigger squads: 14 characters are dealt and stronger ones come up more often. Yoriichi and Final-Form Muzan stay rare. Still up to 6 fighters.'};
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in" role="dialog" aria-modal="true" aria-label="Settings">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     <h2>Settings</h2>
