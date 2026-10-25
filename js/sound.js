@@ -26,9 +26,12 @@ function hiss(filter, f0, f1, len, vol=.3, at=0){
   g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+len);
   src.connect(bq).connect(g).connect(AC.destination); src.start(t); src.stop(t+len+.02);
 }
+// a sword ring: two quiet high partials that fade fast
+function shing(at, vol){ tone('sine',2400,2350,.35,vol,at); tone('sine',3600,3500,.25,vol*.6,at); tone('triangle',1200,1180,.2,vol*.5,at); }
 const SFX = {
-  slash(){ hiss('bandpass',5200,700,.2,.35,.22); tone('sine',150,55,.18,.35,.3); },          // timed with the lunge
-  bighit(){ hiss('bandpass',4800,500,.25,.4,.22); tone('sine',110,35,.4,.5,.3); hiss('lowpass',900,80,.4,.35,.3); },
+  // attacks (timed with the lunge): a soft blade whoosh, a short metallic "shing", then a light impact
+  slash(){ hiss('highpass',900,3200,.16,.08,.16); shing(.28,.07); tone('sine',140,70,.12,.16,.32); },
+  bighit(){ hiss('highpass',700,2800,.2,.1,.14); shing(.28,.09); tone('sine',110,40,.3,.32,.32); hiss('lowpass',500,80,.25,.12,.32); },
   ko(){ tone('sine',90,28,.8,.55,.3); hiss('lowpass',1200,60,.7,.4,.3); tone('triangle',220,110,.5,.15,.45); },
   miss(){ hiss('highpass',2500,6000,.25,.18,.2); },
   block(){ tone('triangle',900,700,.25,.2,.25); tone('triangle',1350,1100,.2,.12,.27); },
