@@ -31,7 +31,7 @@ const stageLevel = () => STAGES[S.stage].level;
 // Your side in story mode is the Demon Slayer Corps and its allies: slayers plus Nezuko, Tamayo and Yushiro.
 // No demons, and no Yoriichi (he lived centuries before the story; he also made any stage he fit into trivial).
 const STORY_ALLIES = ['nezuko','tamayo','yushiro'];
-const storyCard = c => !c.spawn && !c.legend && (!c.demon || STORY_ALLIES.includes(c.fam));
+const storyCard = c => !c.spawn && !c.legend && (!c.demon || STORY_ALLIES.includes(c.fam));   // includes the back-pocket helpers
 // Start a stage's draft: the enemy team is already locked in, you draft from the Corps within the stage's budget
 function startStage(i){
   const st=STAGES[i];

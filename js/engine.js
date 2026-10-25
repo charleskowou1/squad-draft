@@ -77,17 +77,21 @@ function takeWeighted(list, w){
 }
 // Deal random characters (10, or 14 in 30-point games), one version each (base OR Mark OR old/young Yoriichi). Always at least 3 cheap (≤4) picks.
 // Split-off forms (Hantengu's emotions) are never dealt, nor is anything over maxCardCost().
+// The back-pocket helpers are offered in every draft, on top of the characters dealt
+const HELPERS = ROSTER.filter(c=>c.helper).map(c=>c.id);
+const isHelper = id => !!BYID[id].helper;
+const fighterIds = p => S.picks[p].filter(id=>!isHelper(id));
 function buildPool(){
-  const cards=ROSTER.filter(c=>!c.spawn && c.cost<=maxCardCost()), fams=[...new Set(cards.map(c=>c.fam))];
+  const cards=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=maxCardCost()), fams=[...new Set(cards.map(c=>c.fam))];
   // "All" pool: every character and every version (still one version per character per draft, via famTaken)
-  if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
+  if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(HELPERS);
   for(let tries=0;tries<200;tries++){
     const left=fams.slice(), f=[];
     while(f.length<poolSize()) f.push(takeWeighted(left, x=>familyOdds(x,cards)));
     const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), versionOdds).id);
-    if(ids.filter(id=>BYID[id].cost<=4).length>=3) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost);
+    if(ids.filter(id=>BYID[id].cost<=4).length>=3) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost).concat(HELPERS);
   }
-  return cards.slice(0,poolSize()).map(c=>c.id);
+  return cards.slice(0,poolSize()).map(c=>c.id).concat(HELPERS);
 }
 // first = the player who won the spin and picks first (0 or 1)
 function newDraft(first=0){
@@ -104,7 +108,8 @@ function spinWheel(){
 const spent = p => S.picks[p].reduce((a,id)=>a+BYID[id].cost,0);
 const famTaken = fam => S.picks[0].concat(S.picks[1]).some(id=>BYID[id].fam===fam);
 const taken = id => famTaken(BYID[id].fam);
-function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && S.picks[p].length<MAXTEAM && c.cost <= budget()-spent(p); }
+// helpers don't take one of the 6 fighter slots
+function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && (c.helper || fighterIds(p).length<MAXTEAM) && c.cost <= budget()-spent(p); }
 const canAny = p => S.pool.some(id=>canPick(p,id));
 // Whose pick it is: snake order, skipping a player who has locked
 function turn(){ return turnAt(S.k); }
@@ -138,7 +143,7 @@ const LEVELS = {easy:{label:'Easy', draftNoise:12}, normal:{label:'Normal', draf
 function cpuDraftStep(level='hard'){
   const p=turn();
   const left=budget()-spent(p);
-  if(S.picks[p].length && left<=2 && Math.random()<.5){ doLock(p); return; }
+  if(fighterIds(p).length && left<=2 && Math.random()<.5){ doLock(p); return; }
   const mine=S.picks[p].map(id=>BYID[id]);
   const ok=S.pool.map(id=>BYID[id]).filter(c=>canPick(p,c.id));
   ok.forEach(c=>{
@@ -180,7 +185,8 @@ function synergies(p){
   return out;
 }
 function startBattle(){
-  S.teams=[S.picks[0].map(id=>mkUnit(id,0)), S.picks[1].map(id=>mkUnit(id,1))];
+  S.teams=[fighterIds(0).map(id=>mkUnit(id,0)), fighterIds(1).map(id=>mkUnit(id,1))];
+  S.helpers=[S.picks[0].filter(isHelper), S.picks[1].filter(isHelper)]; S.helperPlan=[[],[]]; S.scoutQueue=[]; S.scouting=false;
   S.sib=[false,false]; S.syn=[synergies(0),synergies(1)];
   S.round=1; S.plans=[{},{}]; S.lastPlans=[null,null]; S.log=[]; S.planFor=0; S.focus=null; S.stats={};
   S.phase = S.mode==='2p' ? 'pass' : 'plan';
@@ -399,6 +405,45 @@ function special(u,pl){
   }
   u.cd = s.cd + 1;
 }
+// A back-pocket helper's effect, at the start of the round it's used. It then leaves the back pocket.
+function useHelper(p, id){
+  S.helpers[p]=S.helpers[p].filter(h=>h!==id);
+  const team=alive(p), tag={fx:id==='chachamaru'?'heal':id==='mice'?'buff':'special', by:null, on:null, helper:id};
+  if(id==='chachamaru'){
+    const healed=team.map(u=>{ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; return h?`${u.name} ${gained(u,h)}`:''; }).filter(Boolean);
+    L(`Chachamaru delivers Tamayo's medicine.${healed.length?' '+healed.join(', ')+'.':''}`,'h',tag);
+  }
+  if(id==='mice'){ team.forEach(u=>{ u.pow+=MICE_PWR; u.miceBoost=(u.miceBoost||0)+MICE_PWR; }); L(`The Muscle Mice flex! ${S.names[p]}'s team gets +${MICE_PWR} PWR this round.`,'h',tag); }
+  if(id==='crow') L(`${S.names[p]}'s Kasugai Crow scouted the enemy's moves.`,'x',tag);
+}
+// Computer back-pocket choices for this round
+function cpuHelpers(p){
+  const team=alive(p), have=S.helpers[p]||[], use=[];
+  if(team.length){
+    const avg=team.reduce((a,u)=>a+u.hp/u.max,0)/team.length;
+    if(have.includes('chachamaru') && avg<=.6) use.push('chachamaru');
+    if(have.includes('mice') && S.round>=2 && team.length>=2) use.push('mice');
+    if(have.includes('crow') && S.round>=2) use.push('crow');
+  }
+  S.helperPlan[p]=use;
+}
+// Computer with a crow: it has seen the other side's moves, so any fighter about to be knocked out defends instead
+function cpuScout(p){
+  const incoming={};
+  alive(1-p).forEach(e=>{
+    const q=S.plans[1-p][e.uid]; if(!q || e.stun) return;
+    const x = q.type==='special' && SIG_EST[e.sk] ? SIG_EST[e.sk](e) : null;
+    const base = q.type==='attack' ? e.pow*e.strikes : x ? x.base : 0; if(!base) return;
+    const hits = x && x.all ? alive(p) : [findU(q.t)].filter(t=>t && t.p===p);
+    hits.forEach(t=>{ incoming[t.uid]=(incoming[t.uid]||0)+estHit(t, base, x?x.o:{}); });
+  });
+  alive(p).forEach(u=>{ if(!u.stun && (incoming[u.uid]||0)>=u.hp) S.plans[p][u.uid]={type:'defend'}; });
+}
+// Both sides played by the computer (simulator and checks): moves, back-pocket helpers, then crow scouting
+function cpuBothSides(l0='hard', l1='hard'){
+  cpuPlan(0,l0); cpuPlan(1,l1); cpuHelpers(0); cpuHelpers(1);
+  [0,1].forEach(p=>{ if(S.helperPlan[p].includes('crow')) cpuScout(p); });
+}
 // Match stats for the win screen, counted from each log line's HP snapshot (no extra bookkeeping in the rules):
 // damage dealt and biggest hit (hit lines), knockouts (ko lines with an attacker), healing given to others (heal lines with a healer)
 function tallyRound(){
@@ -415,6 +460,7 @@ const mvpScore = s => s.dmg + s.kos*12 + s.heal;
 function resolve(){
   S.log=[]; S.shield=[false,false];
   L(`Round ${S.round}`,'r');
+  [0,1].forEach(p=>(S.helperPlan&&S.helperPlan[p]||[]).forEach(id=>useHelper(p,id)));   // back-pocket helpers act first
   const acts=[];
   [0,1].forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:'defend'}), r:Math.random()}); }));
   acts.forEach(x=>{ if(x.pl.type==='defend') x.u.defending=true; });
@@ -436,9 +482,10 @@ function resolve(){
     if(u.alive && u.regen && u.hp<u.max){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',fx('heal',null,u)); }
     if(u.cd>0) u.cd--;
     u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false;
+    if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
   tallyRound();
-  S.plans=[{},{}];
+  S.plans=[{},{}]; S.helperPlan=[[],[]];
   const a0=alive(0).length, a1=alive(1).length;
   if(!a0||!a1){ S.winner = !a0&&!a1 ? -1 : a0 ? 0 : 1; S.phase='over'; }
   else if(S.round>=40){ S.winner=-1; S.phase='over'; }

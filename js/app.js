@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, story:vStory, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {setup:vSetup, story:vStory, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false;
 
@@ -52,6 +52,18 @@ function toSpin(){ S.phase='spin'; S.spin=null; window.scrollTo(0,0); }
 // After a fighter's move is complete, open the next one that still needs a move
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
+// After both sides lock in: give each crow owner their report (and a chance to re-plan), then fight
+function nextScoutOrFight(){
+  S.scouting=false;
+  if(S.scoutQueue.length){
+    S.scoutP=S.scoutQueue.shift(); S.planFor=S.scoutP;
+    if(vsCpu()) S.phase='scout'; else { S.phase='pass'; S.passScout=true; }
+    return newPlanTurn();
+  }
+  S.passScout=false;
+  if(vsCpu()) fight(); else S.phase='ready';
+  newPlanTurn();
+}
 // Run the round, then play it back (a finished match still plays back first, then "See who won")
 function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='result'; playRound(); }
 
@@ -80,16 +92,25 @@ const ACTIONS = {
   storymap(){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value.trim()||S.names[0]; clearTimeout(S._t); S.budget=loadBudget(); S.phase='story'; window.scrollTo(0,0); },
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); window.scrollTo(0,0); },
   lock(){ doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
-  reveal(){ S.phase='plan'; newPlanTurn(); },
+  reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
+  helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
+  rescout(){ S.scouting=true; S.planFor=S.scoutP; S.phase='plan'; S.passScout=false; newPlanTurn(); const f=alive(S.planFor).find(u=>!u.stun); if(f) S.focus=f.uid; },   // open the first fighter to change
+  keepmoves(){ nextScoutOrFight(); },
   focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; },
   act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); },
   tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); },
   lockMoves(){
     S.lastPlans[S.planFor]=JSON.parse(JSON.stringify(S.plans[S.planFor]));   // for "Repeat last round"
-    if(vsCpu()){ cpuPlan(1, S.mode==='story'?stageLevel():S.level); fight(); }
-    else if(S.planFor===0){ S.planFor=1; S.phase='pass'; }
-    else S.phase='ready';   // two players: wait for "Start the battle"
-    newPlanTurn();
+    if(S.scouting) return nextScoutOrFight();          // re-planned after a crow report
+    if(vsCpu()){
+      cpuPlan(1, S.mode==='story'?stageLevel():S.level); cpuHelpers(1);
+      if(S.helperPlan[1].includes('crow')) cpuScout(1);   // the computer's crow sees your moves
+      S.scoutQueue=S.helperPlan[0].includes('crow')?[0]:[];
+      return nextScoutOrFight();
+    }
+    if(S.planFor===0){ S.planFor=1; S.phase='pass'; return newPlanTurn(); }
+    S.scoutQueue=[0,1].filter(p=>S.helperPlan[p].includes('crow'));   // two players: each crow owner gets a private report
+    nextScoutOrFight();
   },
   skip(){ clearTimeout(S._t); S.play.done=true; },
   next(){ S.round++; S.planFor=0; S.play=null; S.phase=S.mode==='2p'?'pass':'plan'; newPlanTurn(); },

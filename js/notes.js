@@ -9,35 +9,54 @@ function poolNotes(){
   const famsWhere = test => Object.keys(inPool).filter(f=>test(BYID[inPool[f]]));
   const free = fs => fs.filter(f=>who(f)<0);
 
-  // state of a note: 'on' (a team has it, p = that team), 'open' (still possible) or 'off' (can't happen any more)
+  // Points: a note only counts as possible if a team can still afford the characters it needs.
+  const cost = f => Math.min(...versions[f].map(id=>BYID[id].cost));          // cheapest version of that character in the pool
+  const sum = fs => fs.reduce((a,f)=>a+cost(f),0);
+  const cheapest = (fs,n) => fs.slice().sort((a,b)=>cost(a)-cost(b)).slice(0,n);
+  const fighters = p => S.picks[p].filter(id=>!BYID[id].helper).length;
+  // can team p still add these (not yet picked) characters: enough points left and fighter slots, and not locked
+  const canAdd = (p,fs) => !S.locked[p] && spent(p)+sum(fs) <= budget() && fighters(p)+fs.length <= MAXTEAM;
+  const fits = fs => sum(fs) <= budget() && fs.length <= MAXTEAM;   // affordable at all on a fresh team
+
+  // state of a note: 'on' (a team has it, p = that team), 'open' (still possible), 'off' (can't happen any more),
+  // or 'never' (no team could ever afford it in this match: the note isn't shown)
   // all of these fighters on one team
   function together(fs){
+    if(!fits(fs)) return {state:'never'};
     const o=fs.map(who), owners=[...new Set(o.filter(x=>x>=0))];
     if(owners.length>1) return {state:'off'};
-    if(owners.length===1){ const p=owners[0]; if(o.every(x=>x===p)) return {state:'on',p}; if(S.locked[p]) return {state:'off'}; }
-    return {state:'open'};
+    if(owners.length===1){ const p=owners[0]; if(o.every(x=>x===p)) return {state:'on',p}; return {state: canAdd(p,free(fs))?'open':'off'}; }
+    return {state: [0,1].some(p=>canAdd(p,fs))?'open':'off'};
   }
   // two or more of these fighters on one team
   function twoOf(fs){
+    if(!fits(cheapest(fs,2))) return {state:'never'};
     for(const p of [0,1]) if(fs.filter(f=>who(f)===p).length>=2) return {state:'on',p};
-    const can=[0,1].some(p=>!S.locked[p] && fs.filter(f=>who(f)===p).length+free(fs).length>=2);
+    const can=[0,1].some(p=>{ const need=2-fs.filter(f=>who(f)===p).length, pick=cheapest(free(fs),need); return pick.length===need && canAdd(p,pick); });
     return {state: can?'open':'off'};
   }
   // `anchor` plus at least one of `others` on one team
   function withAnchor(anchor, others){
+    if(!fits([anchor, ...cheapest(others,1)])) return {state:'never'};
     const m=who(anchor);
-    if(m<0) return {state: S.locked[0]&&S.locked[1]?'off':'open'};
-    if(others.some(f=>who(f)===m)) return {state:'on',p:m};
-    return {state: !S.locked[m] && free(others).length ? 'open' : 'off'};
+    if(m>=0 && others.some(f=>who(f)===m)) return {state:'on',p:m};
+    const can=[0,1].some(p=>{
+      if(m>=0 && m!==p) return false;
+      const need=m===p?[]:[anchor];
+      if(others.some(f=>who(f)===p)) return canAdd(p,need);
+      const o=cheapest(free(others),1); return o.length && canAdd(p,[...need,...o]);
+    });
+    return {state: can?'open':'off'};
   }
   // a fighter from A on the opposite team to a fighter from B
   function facing(A, B){
     for(const a of A) for(const b of B){ const x=who(a), y=who(b); if(x>=0 && y>=0 && x!==y) return {state:'on'}; }
-    return {state: A.concat(B).every(f=>who(f)>=0) ? 'off' : 'open'};
+    const can=(f,p)=>who(f)===p || (who(f)<0 && canAdd(p,[f]));
+    return {state: A.some(a=>B.some(b=>a!==b && [0,1].some(p=>can(a,p)&&can(b,1-p)))) ? 'open' : 'off'};
   }
 
   const N=[];
-  const add=(kind, fams, title, text, st) => N.push(Object.assign({kind, ids:fams.flatMap(f=>versions[f]), title, text}, st));
+  const add=(kind, fams, title, text, st) => { if(st.state!=='never') N.push(Object.assign({kind, ids:fams.flatMap(f=>versions[f]), title, text}, st)); };
 
   // same team
   const kama=['tanjiro','zenitsu','inosuke'];

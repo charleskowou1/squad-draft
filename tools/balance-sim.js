@@ -7,7 +7,7 @@
 const { loadGame } = require('./load-game');
 const ctx = loadGame(['roster.js', 'engine.js'], `
 function battle(a,b){ S.mode='cpu'; S.names=['A','B']; S.picks=[a,b]; startBattle();
-  while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1); resolve(); if(S.phase==='result') S.round++; } return S.winner; }
+  while(S.phase!=='over'){ cpuBothSides(); resolve(); if(S.phase==='result') S.round++; } return S.winner; }
 function vs(a,b,n){ const w=[0,0,0]; for(let i=0;i<n;i++){ const r=battle(a,b); w[r<0?2:r]++; }
   return 'A '+(w[0]/n*100).toFixed(0)+'%  B '+(w[1]/n*100).toFixed(0)+'%  draw '+(w[2]/n*100).toFixed(0)+'%'; }
 function draftSim(n){ const st={}; S.budget=${+process.env.BUDGET||20};

@@ -64,6 +64,11 @@ sabito             Sabito & Makomo (one picture for both)
 kagaya             Kagaya Ubuyashiki
 murata             Murata
 
+BACK-POCKET HELPERS
+chachamaru         Chachamaru (Tamayo's cat)
+crow               Kasugai Crow
+mice               Muscle Mice (Tengen's mice)
+
 MARK ✦ VERSIONS (separate pictures, optional)
 giyu_mark          Giyu Tomioka (Mark)
 gyomei_mark        Gyomei Himejima (Mark)

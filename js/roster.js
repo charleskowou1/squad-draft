@@ -132,6 +132,16 @@ add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and fi
   passive:'Somehow Survives: the first hit that would knock him out leaves him at 1 HP instead.',
   sig:{name:'Water Surface Slash',desc:'Strike for PWR+2.',cd:2,kind:'single'}});
 
+// Back-pocket helpers: 1 pt each, not fighters. They sit in your "back pocket" (no fighter slot, can't attack or be
+// attacked); you choose a round to use each one, it acts first that round, then it leaves. Effects live in useHelper().
+const MICE_PWR = 2;
+add({id:'chachamaru',name:'Chachamaru',short:'Chachamaru',g:'猫',type:"Tamayo's cat · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Medicine Delivery',desc:'Every fighter on your team heals half of their current health (50% becomes 75%).',kind:'helper'}});
+add({id:'crow',name:'Kasugai Crow',short:'Kasugai Crow',g:'烏',type:'Messenger crow · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Scouting Report',desc:"After both sides lock in, the crow shows you the enemy's moves, and you can change yours before the round plays.",kind:'helper'}});
+add({id:'mice',name:'Muscle Mice',short:'Muscle Mice',g:'鼠',type:"Tengen's mice · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Flex!',desc:`Every fighter on your team gets +${MICE_PWR} PWR for this round.`,kind:'helper'}});
+
 // A few words shown under each fighter's Special button, like "hit one enemy" under Attack
 const SPECIAL_TAGS = {
   yoriichi:'hit all, stops regen', yoriichi_old:'huge hit, ignores DEF',
@@ -145,6 +155,7 @@ const SPECIAL_TAGS = {
   tanjiro:'big hit, ignores DEF', nezuko:'hit all enemies', zenitsu:'first, double hit', inosuke:'2 random hits',
   kanao:'early strong hit', genya:'heal + PWR up', tamayo:'heal an ally', yushiro:'hide an ally',
   sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'heal whole team', murata:'strong hit',
+  chachamaru:'team heals ½ current', crow:'see enemy moves', mice:`team +${MICE_PWR} PWR, 1 round`,
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
 // One short line each fighter says when their special fires (shown on the fight stage)
@@ -161,7 +172,7 @@ const SPECIAL_QUOTES = {
   shinobu:'Shall we be friends? No? Then poison.', tanjiro:'Dance of the Fire God!', nezuko:'Mmph!', zenitsu:'Thunder Breathing, First Form.',
   inosuke:'Beast Breathing! Charge!', kanao:'I decide for myself now.', genya:'Give me your strength, demon.', tamayo:'Hold still. This will help.',
   yushiro:'Lady Tamayo, look at me!', sabito:'Again. Swing again.', urokodaki:'Your judgment is too slow.', kagaya:'My children, thank you.',
-  murata:'Why am I always here?!',
+  murata:'Why am I always here?!', chachamaru:'Mrrow.', crow:'Caw! Caw! Report!', mice:'*flexes*',
 };
 ROSTER.forEach(c=>{ c.sig.quote = SPECIAL_QUOTES[c.sk]; });
 

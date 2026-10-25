@@ -135,6 +135,7 @@ function vSetup(){
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
     <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat last round copies your previous moves.</li>
+    <li><b>Back pocket:</b> Chachamaru, Kasugai Crow and Muscle Mice cost 1 pt, don't fight and don't take a fighter slot. Use each once, on the round you choose: Chachamaru heals your team by half their current health, the Crow shows you the enemy's moves so you can change yours, the Mice give your team +2 PWR for that round.</li>
     <li><b>Story mode:</b> nine stages from Final Selection to Muzan. You see the enemy first, then build a squad from the Corps.</li>
     <li><b>Health</b> is shown as a percent of each fighter's own max. It turns red at 25%.</li>
     <li><b>Damage</b> = PWR − target's DEF, but never less than half the attacker's power. Demons regenerate; poison ticks.</li>
@@ -183,7 +184,7 @@ function vDraft(){
   // second pick in a row (snake order), or the other player has locked and this one keeps going
   const again = S.lastPicker===p && !S.locked[1-p];
   const verb = S.locked[1-p] && S.picks[1-p].length ? 'keeps picking' : again ? 'picks again' : cpuTurn ? 'is picking' : 'picks';
-  const lockbar = !cpuTurn && S.picks[p].length ? `<div class="lockbar"><span>${story?'Ready to fight?':'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
+  const lockbar = !cpuTurn && fighterIds(p).length ? `<div class="lockbar"><span>${story?'Ready to fight?':'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
     <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${story?'Fight':'Lock team'}</button></div>` : '';
   // Undo the latest pick (2 players: either player's; vs computer: only your own)
   const un=undoable(), undo = un && (S.mode==='2p' || un.p===0) && !cpuTurn
@@ -195,9 +196,39 @@ function vDraft(){
     ${orderStrip(p)}
     <div class="teams">${teamBox(0,p)}${teamBox(1,p)}</div>
     ${lockbar}
-    <div class="dealt"><span>${story?`The Corps · ${S.pool.length} characters`:S.poolType==='all'?`All ${S.pool.length} characters`:`${S.pool.length} characters dealt`} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!story&&S.poolType!=='all'?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
+    <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:S.poolType==='all'?`All ${n} characters`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!story&&S.poolType!=='all'?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
     ${notesPanel()}
-    <div class="grid">${S.pool.map(id=>cardHTML(BYID[id],p)).join('')}</div></div>`;
+    ${pocketDraft(p)}
+    <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div></div>`;
+}
+// The back-pocket helpers in the draft: 1 pt each, offered every draft, one owner each
+function pocketDraft(p){
+  const hs=S.pool.filter(isHelper); if(!hs.length) return '';
+  return `<section class="pocket"><div class="pockethead"><span class="tlabel">Back pocket</span><span class="muted">1 pt helpers · one use each, then they leave · no fighter slot</span></div>
+    <div class="pocketrow">${hs.map(id=>{ const c=BYID[id], owner=S.picks[0].includes(id)?0:S.picks[1].includes(id)?1:-1, ok=canPick(p,id);
+      return `<button class="hcard${ok?'':' off'}${S.sel===id?' sel':''}" data-a="sel" data-v="${id}" ${ok?'':'aria-disabled="true"'}>${seal(c,'sm')}
+        <span class="hb"><b>${esc(c.short)}</b><small>${esc(c.sig.tag)}</small></span>${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:''}</button>`; }).join('')}</div></section>`;
+}
+// Move screen: back-pocket helpers still unused, each with a Use toggle for this round
+function pocketPlan(p){
+  const hs=S.helpers&&S.helpers[p]||[]; if(!hs.length) return '';
+  const on=id=>(S.helperPlan[p]||[]).includes(id);
+  return `<div class="pocketuse"><span class="tlabel">Back pocket</span>${hs.map(id=>{ const c=BYID[id];
+    return `<button class="huse${on(id)?' on':''}" data-a="helper" data-v="${id}" aria-pressed="${on(id)}">${seal(c,'sm')}<span class="hb"><b>${esc(c.short)}</b><small>${esc(c.sig.tag)}</small></span><span class="hgo">${on(id)?'Using ✓':'Use'}</span></button>`; }).join('')}</div>`;
+}
+// What the crow saw: the other side's locked-in moves
+function crowReport(p){
+  return `<div class="crow"><div class="crowhead">${seal(BYID.crow,'sm')}<b>Crow report</b><span class="muted">${nm(1-p)}'s moves this round</span></div>
+    ${alive(1-p).map(e=>`<div class="crowline">${seal(e,'pip')}<b>${esc(e.name)}</b><span>${moveSummary(e)}</span></div>`).join('')}
+    ${(S.helperPlan[1-p]||[]).length?`<div class="crowline"><span>Back pocket: ${(S.helperPlan[1-p]).map(id=>esc(BYID[id].short)).join(', ')}</span></div>`:''}</div>`;
+}
+// The crow is back: see the enemy's moves, then change yours or keep them
+function vScout(){
+  const p=S.scoutP;
+  return `${topbar(`Round ${S.round} · Kasugai Crow`, `<span style="color:${pc(p)}">${nm(p)}</span>, your crow is back`)}
+    ${crowReport(p)}
+    <p class="hint">You can change your moves now that you know theirs. Back-pocket choices stay as they are.</p>
+    ${actionbar(`<button class="btn ghost" data-a="keepmoves">Keep my moves</button><button class="btn team" data-a="rescout" style="--bc:${pc(p)}">Change my moves</button>`)}`;
 }
 // Who picks next: the current pick and the next few, so a double pick is never a surprise
 function orderStrip(p){
@@ -281,6 +312,13 @@ function vSheet(){
   if(S.info) return vInfo();
   if(S.phase!=='draft' || !S.sel) return '';
   const c=BYID[S.sel], p=turn(), ok=canPick(p,c.id);
+  if(c.helper) return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
+    <button class="x" data-a="unsel" aria-label="Close">×</button>
+    <div class="shead">${seal(c,'lg')}<div><div class="eyebrow">${esc(c.type)}</div><h2>${esc(c.name)}</h2></div><span class="cost">${c.cost}<small>pt</small></span></div>
+    <div class="sig"><div class="sname">${esc(c.sig.name)}</div>${esc(c.sig.desc)}</div>
+    <div class="pas">Back-pocket helper: doesn't fight, can't be attacked and doesn't take a fighter slot. On the move screen, tap Use on the round you want. It acts first that round, then leaves.</div>
+    <div class="row"><button class="btn ghost" data-a="unsel">Close</button>${ok?`<button class="btn team" data-a="confirmPick" style="--bc:${pc(p)}">Confirm ${esc(c.short)}</button>`:''}</div>
+  </div></div>`;
   const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean);
   const notes=poolNotes().filter(n=>n.ids.includes(c.id));
   const rec=loadRecords()[c.id];
@@ -336,7 +374,7 @@ function vPass(){
   const p=S.planFor;
   return `<div class="pass"><div class="eyebrow">Round ${S.round}</div>
     <div class="big" style="color:${pc(p)}">Hand the phone to ${nm(p)}</div>
-    <p class="muted">${nm(1-p)}, no peeking at their moves.</p>
+    <p class="muted">${S.passScout?`${nm(p)}'s Kasugai Crow is back with a report. ${nm(1-p)}, look away.`:`${nm(1-p)}, no peeking at their moves.`}</p>
     <button class="btn team" data-a="reveal" style="--bc:${pc(p)}">I'm ${nm(p)}. Show my team</button></div>`;
 }
 function vPlan(){
@@ -350,7 +388,7 @@ function vPlan(){
     ${teamBlock(1-p,'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')}
     ${vsDivider()}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span>${S.lastPlans&&S.lastPlans[p]?'<button class="btn ghost small" data-a="repeat">↻ Repeat last round</button>':'<span class="muted">Tap a fighter to change</span>'}</div>
-      ${synChips(p)}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
+      ${synChips(p)}${S.scouting?crowReport(p):pocketPlan(p)}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
     ${actionbar(`<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
 }
 
@@ -366,6 +404,8 @@ function stage(line){
   const amt=line.t.match(/\[([+-])(\d+%)\]/);
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
   const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?pop:''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
+    return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${FX_MARK[type]||''}</span>`;
   const solo=on||by;
   return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}${rev?' rev':''}" aria-hidden="true">

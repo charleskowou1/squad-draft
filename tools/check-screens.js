@@ -11,13 +11,13 @@ function check(games){
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
-      let k=0; while(S.phase==='draft'&&k++<50){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); S.sel=null; cpuDraftStep(level); }
+      let k=0; while(S.phase==='draft'&&k++<50){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
       vPass();
       while(S.phase!=='over'){
         S.planFor=0; S.focus=null; vPlan();
         alive(0).forEach(u=>{ if(u.stun) return; setMove(u,u.cd?'attack':'special'); const o=targetOptions(u,S.plans[0][u.uid]); if(o.length) S.plans[0][u.uid].t=o[0].uid; vPlan(); });
         if(!planReady(0)) throw new Error('plan not ready after choosing every move');
-        cpuPlan(1,level); S.phase='ready'; vReady(); S.teams[0].concat(S.teams[1]).forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
+        cpuPlan(1,level); cpuHelpers(0); cpuHelpers(1); S.scoutP=0; S.phase='scout'; vScout(); S.scouting=true; vPlan(); S.scouting=false; S.phase='ready'; vReady(); S.teams[0].concat(S.teams[1]).forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
         resolve(); const ph=S.phase; S.phase='result';
         for(let i=0;i<S.log.length;i++){ S.play={k:i,done:false}; vResult(); }
         S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
