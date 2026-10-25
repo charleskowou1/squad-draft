@@ -1,12 +1,14 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {setup:vSetup, story:vStory, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false;
 
 function render(){
-  if(S.phase==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(), n=S.names[S.winner]; sc[n]=(sc[n]||0)+1; saveScore(sc); } recordMatch(); }
+  if(S.phase==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(), n=S.names[S.winner]; sc[n]=(sc[n]||0)+1; saveScore(sc); } recordMatch();
+    if(S.mode==='story' && S.winner===0) saveStoryClear(STAGES[S.stage].id);
+    sfx(S.winner<0 || (vsCpu() && S.winner===1) ? 'lose' : 'win'); }
   if(S.phase!=='over') scored=false;
   // keep fold-out sections (How to play, records…) open across redraws
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
@@ -20,7 +22,9 @@ function animateSpin(){
   S.spin.started=true;
   const w=app.querySelector('.wheel');
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ w.classList.add('go'); w.style.transform=`rotate(${S.spin.angle}deg)`; }));
-  clearTimeout(S._t); S._t=setTimeout(()=>{ S.spin.state='done'; render(); }, quickMotion()?300:4300);
+  // ticks that slow down with the wheel, then a ding
+  if(!quickMotion()) for(let t=0,gap=40; t<3900; t+=gap, gap*=1.09) setTimeout(()=>sfx('tick'), t);
+  clearTimeout(S._t); S._t=setTimeout(()=>{ S.spin.state='done'; sfx('ding'); render(); }, quickMotion()?300:4300);
 }
 // How long a playback line stays up: enough to read it, longer for long lines and knockouts
 const readTime = line => quickMotion() ? 300 : 2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0);
@@ -32,10 +36,11 @@ function playRound(){
     if(S.play.k>=S.log.length-1){ S.play.done=true; render(); return; }
     S.play.k++; const line=S.log[S.play.k];
     if(line.ko && navigator.vibrate) navigator.vibrate([90,50,160]);
+    sfxForLine(line);
     render();
     S._t=setTimeout(step, readTime(line));
   };
-  clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500);   // the "Round N · Fight!" intro
+  sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500);   // the "Round N · Fight!" intro
 }
 function startDraft(){
   const n0 = document.getElementById('n0').value.trim()||'Player 1';
@@ -53,7 +58,7 @@ function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='r
 const ACTIONS = {
   mode(v){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value; S.mode=v; if(v==='2p'){ const s=loadNames(); S.names[1]=(s&&s[1])||'Mia'; } },
   start: startDraft,
-  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:S.budget,poolType:S.poolType,names:S.mode==='cpu'?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
+  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:loadBudget(),poolType:S.poolType,soundOn:S.soundOn,names:vsCpu()?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
   level(v){ S.level=v; saveLevel(v); },
   rematch: toSpin,
   spin(){ if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -68,14 +73,20 @@ const ACTIONS = {
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },
-  confirmPick(){ if(!canPick(turn(),S.sel)) return; doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
+  confirmPick(){ if(!canPick(turn(),S.sel)) return; sfx('pick'); doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
+  undo(){ undoPick(); },
+  repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
+  sound(v){ S.soundOn=v==='on'; saveSoundOn(S.soundOn); if(S.soundOn) sfx('pick'); },
+  storymap(){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value.trim()||S.names[0]; clearTimeout(S._t); S.budget=loadBudget(); S.phase='story'; window.scrollTo(0,0); },
+  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); window.scrollTo(0,0); },
   lock(){ doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase='plan'; newPlanTurn(); },
   focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; },
   act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); },
   tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); },
   lockMoves(){
-    if(S.mode==='cpu'){ cpuPlan(1,S.level); fight(); }
+    S.lastPlans[S.planFor]=JSON.parse(JSON.stringify(S.plans[S.planFor]));   // for "Repeat last round"
+    if(vsCpu()){ cpuPlan(1, S.mode==='story'?stageLevel():S.level); fight(); }
     else if(S.planFor===0){ S.planFor=1; S.phase='pass'; }
     else S.phase='ready';   // two players: wait for "Start the battle"
     newPlanTurn();
@@ -85,6 +96,7 @@ const ACTIONS = {
   finish(){ S.play=null; S.phase='over'; window.scrollTo(0,0); },
 };
 document.addEventListener('click',e=>{
+  unlockSound();   // phones only allow sound after a tap
   const b=e.target.closest('[data-a]'); if(!b||b.disabled) return;
   const fn=ACTIONS[b.dataset.a]; if(!fn) return;
   fn(b.dataset.v,b); render();
@@ -106,6 +118,7 @@ function findArt(){
     tryNext();
   });
 }
+S.soundOn=loadSoundOn();
 render();
 findArt();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)

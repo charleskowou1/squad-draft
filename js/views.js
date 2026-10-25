@@ -76,7 +76,7 @@ function tile(u, o={}){
 function strengthBar(me, hpOf=u=>u.alive?u.hp:0, prevOf){
   const sideOf=f=>p=>{ const us=S.teams[p].filter(u=>f(u)!==undefined); const max=us.reduce((a,u)=>a+u.max,0); return max?us.reduce((a,u)=>a+Math.max(0,f(u)),0)/max:0; };
   const side=sideOf(hpOf), split=(x,y)=>x+y?x/(x+y)*100:50;
-  const a=side(me), b=side(1-me), share=split(a,b), solo=S.mode==='cpu'||S.phase==='plan';
+  const a=side(me), b=side(1-me), share=split(a,b), solo=vsCpu()||S.phase==='plan';
   const from=prevOf?split(sideOf(prevOf)(me),sideOf(prevOf)(1-me)):share;
   const name=p=>p===me&&solo?'You':p!==me&&solo?'Opponent':nm(p);
   return `<div class="strength" role="img" aria-label="${name(me)} ${Math.round(a*100)}% health, ${name(1-me)} ${Math.round(b*100)}%">
@@ -112,14 +112,16 @@ function vSetup(){
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
     <p class="muted">Draft a squad on ${budget()} points. Pick secret moves each round. Last team standing wins.</p></div>
   <div class="panel">
-    <div class="seg">${seg('mode','2p','2 players, one phone')}${seg('mode','cpu','Vs computer')}</div>
+    <div class="seg">${seg('mode','2p','2 players')}${seg('mode','cpu','Vs computer')}${seg('mode','story','Story')}</div>
     <div class="row">
-      <label for="n0">Player 1<input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
-      <label for="n1">${S.mode==='cpu'?'Opponent':'Player 2'}<input id="n1" type="text" maxlength="14" value="${esc(S.mode==='cpu'?'Muzan AI':S.names[1])}" ${S.mode==='cpu'?'disabled':''}></label>
+      <label for="n0">${S.mode==='story'?'Your name':'Player 1'}<input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
+      ${S.mode==='story'?'':`<label for="n1">${S.mode==='cpu'?'Opponent':'Player 2'}<input id="n1" type="text" maxlength="14" value="${esc(S.mode==='cpu'?'Muzan AI':S.names[1])}" ${S.mode==='cpu'?'disabled':''}></label>`}
     </div>
     ${S.mode==='cpu'?`<div class="levelpick"><span class="tlabel">Muzan AI difficulty</span><div class="seg">${Object.entries(LEVELS).map(([k,l])=>`<button data-a="level" data-v="${k}" class="${S.level===k?'on':''}">${l.label}</button>`).join('')}</div>
       <span class="hint">${{easy:'Picks moves almost at random. Good for learning the cards.',normal:'Plays sensibly but makes mistakes.',hard:'Goes for knockouts, spreads damage and saves its specials.'}[S.level]}</span></div>`:''}
-    <button class="btn" data-a="start">Start the draft</button>
+    ${S.mode==='story'?`<p class="hint">Fight through the arcs with the Demon Slayer Corps, from Final Selection to dawn. ${loadStory().cleared.length} of ${STAGES.length} stages cleared.</p>
+    <button class="btn" data-a="storymap">${loadStory().cleared.length?'Continue the story':'Begin the story'}</button>`
+    :'<button class="btn" data-a="start">Start the draft</button>'}
   </div>
   <div class="panel"><div class="eyebrow">All-time wins on this phone</div>
     <div class="score">${Object.keys(sc).length ? Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`<div><b>${v}</b>${esc(k)}</div>`).join('') : '<div class="muted">No matches yet</div>'}</div>
@@ -132,7 +134,8 @@ function vSetup(){
     <li><b>Legends:</b> Yoriichi (18) and Yoriichi at 85 (15) strike twice per Attack and cap the damage they take each round. They're rare: Yoriichi is dealt in about 1 draft in 8.</li>
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
-    <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first.</li>
+    <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat last round copies your previous moves.</li>
+    <li><b>Story mode:</b> nine stages from Final Selection to Muzan. You see the enemy first, then build a squad from the Corps.</li>
     <li><b>Health</b> is shown as a percent of each fighter's own max. It turns red at 25%.</li>
     <li><b>Damage</b> = PWR − target's DEF, but never less than half the attacker's power. Demons regenerate; poison ticks.</li>
     <li><b>Synergies:</b> Kamaboko Squad +2 SPD · Siblings counter · 2+ Hashira +1 PWR · 2+ Upper Moons +1 regen · Muzan's Blood +1 PWR · 2+ Marks +1 SPD · Tamayo + Yushiro: Yushiro +2 PWR · Yoriichi + Tanjiro: Tanjiro +2 PWR · Urokodaki: Tanjiro and Giyu +1 DEF · Kagaya: Hashira +1 DEF. Facing Yoriichi, Muzan loses 3 PWR and Kokushibo 1 DEF. Facing Tamayo, Muzan regenerates 2 less. Facing Kaigaku, Zenitsu gets +2 PWR.</li>
@@ -170,24 +173,29 @@ function cardHTML(c,p){
 function teamBox(q,p){
   const left=budget()-spent(q);
   return `<div class="tbox${p===q&&!S.locked[q]?' active':''}" style="--tc:${pc(q)}">
-    <div class="tn"><span>${nm(q)}</span><span>${S.locked[q]?'Locked':left+' pts left'}</span></div>
-    <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${spent(q)/budget()*100}%"></i></div>
+    <div class="tn"><span>${nm(q)}</span><span>${S.mode==='story'&&q===1?'Enemy':S.locked[q]?'Locked':left+' pts left'}</span></div>
+    <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${Math.min(100,spent(q)/budget()*100)}%"></i></div>
     <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&S.picks[q].length<MAXTEAM?'<span class="slot empty"></span>':''}</div></div>`;
 }
 function vDraft(){
-  const p = turn(), cpuTurn = S.mode==='cpu' && p===1;
+  const p = turn(), cpuTurn = S.mode==='cpu' && p===1, story = S.mode==='story';
   const fresh = !S.picks[0].length && !S.picks[1].length, left=budget()-spent(p);
   // second pick in a row (snake order), or the other player has locked and this one keeps going
   const again = S.lastPicker===p && !S.locked[1-p];
   const verb = S.locked[1-p] && S.picks[1-p].length ? 'keeps picking' : again ? 'picks again' : cpuTurn ? 'is picking' : 'picks';
-  const lockbar = !cpuTurn && S.picks[p].length ? `<div class="lockbar"><span>Done picking?${left?` ${left} pts go unused.`:''}</span>
-    <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">Lock team</button></div>` : '';
+  const lockbar = !cpuTurn && S.picks[p].length ? `<div class="lockbar"><span>${story?'Ready to fight?':'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
+    <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${story?'Fight':'Lock team'}</button></div>` : '';
+  // Undo the latest pick (2 players: either player's; vs computer: only your own)
+  const un=undoable(), undo = un && (S.mode==='2p' || un.p===0) && !cpuTurn
+    ? `<button class="btn ghost small undo" data-a="undo">↶ Undo ${nm(un.p)}'s ${esc(BYID[un.id].short)}</button>` : '';
+  const st=story&&STAGES[S.stage];
   return `<div class="draftlayout"><div class="dtop">
-    ${topbar('Draft', `<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
+    ${story?topbar(`Story · Stage ${S.stage+1} · ${esc(st.title)}`,'Build your squad'):topbar('Draft', `<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
+    ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
     ${orderStrip(p)}
     <div class="teams">${teamBox(0,p)}${teamBox(1,p)}</div>
     ${lockbar}
-    <div class="dealt"><span>${S.poolType==='all'?`All ${S.pool.length} characters`:`${S.pool.length} characters dealt`} · tap one to see it</span>${fresh&&!cpuTurn&&S.poolType!=='all'?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
+    <div class="dealt"><span>${story?`The Corps · ${S.pool.length} characters`:S.poolType==='all'?`All ${S.pool.length} characters`:`${S.pool.length} characters dealt`} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!story&&S.poolType!=='all'?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
     ${notesPanel()}
     <div class="grid">${S.pool.map(id=>cardHTML(BYID[id],p)).join('')}</div></div>`;
 }
@@ -226,7 +234,7 @@ function splitTree(c){
 function vInfo(){
   const u=findU(S.info); if(!u) return '';
   const c=BYID[u.id], pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean);
-  const yours = S.mode==='cpu' ? u.p===0 : S.phase==='plan' ? u.p===S.planFor : null;
+  const yours = vsCpu() ? u.p===0 : S.phase==='plan' ? u.p===S.planFor : null;
   const side = yours===null ? nm(u.p) : yours ? 'Your team' : 'Opponent';
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in info ${glyphCls(u)}" role="dialog" aria-modal="true" aria-label="${esc(u.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
@@ -261,7 +269,9 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Character pool</div>
       <div class="seg">${[['random','Random'],['all','All']].map(([k,l])=>`<button data-a="pooltype" data-v="${k}" class="${S.poolType===k?'on':''}">${l}${k==='random'?' <small>default</small>':''}</button>`).join('')}</div>
       <div class="hint">${S.poolType==='all'?'Every character is available to draft. Each one can still only be picked once (taking Giyu also rules out Giyu ✦).':`A random hand of ${poolSize()} characters is dealt each draft.`}</div></div>
-    <div class="hint">Saved on this phone. Applies from the next draft.</div>
+    <div class="setgroup"><div class="tlabel">Sound effects</div>
+      <div class="seg"><button data-a="sound" data-v="on" class="${S.soundOn?'on':''}">On <small>default</small></button><button data-a="sound" data-v="off" class="${S.soundOn?'':'on'}">Off</button></div></div>
+    <div class="hint">Saved on this phone. Points and pool apply from the next draft.</div>
     <div class="row"><button class="btn" data-a="unsel">Done</button></div>
   </div></div>`;
 }
@@ -339,7 +349,7 @@ function vPlan(){
     ${strengthBar(p)}
     ${teamBlock(1-p,'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')}
     ${vsDivider()}
-    <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span><span class="muted">Tap a fighter to change</span></div>
+    <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span>${S.lastPlans&&S.lastPlans[p]?'<button class="btn ghost small" data-a="repeat">↻ Repeat last round</button>':'<span class="muted">Tap a fighter to change</span>'}</div>
       ${synChips(p)}<div class="fighters">${S.teams[p].map(u=>u.alive?fighter(u,u.uid===open):tile(u)).join('')}</div></section>
     ${actionbar(`<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
 }
@@ -370,16 +380,41 @@ function vResult(){
     flash: cur.ko===u.uid ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
   const step=S.log.slice(1,k+1).length, total=S.log.length-1;
   // vs computer the screen is yours, so label the teams from your side; two players share it, so keep names
-  const vsCpu=S.mode==='cpu';
+  const solo=vsCpu();
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>' : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
     ${strengthBar(0, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
-    ${teamBlock(1,vsCpu?'Opponent':null,moment,!done)}
-    ${done?vsDivider():k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
+    ${teamBlock(1,solo?'Opponent':null,moment,!done)}
+    ${done?vsDivider():k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}${cur.fx==='special'&&findU(cur.by)&&findU(cur.by).sig.quote?`<span class="quote">“${esc(findU(cur.by).sig.quote)}”</span>`:''}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
-    ${teamBlock(0,vsCpu?'Your team':null,moment,!done)}
+    ${teamBlock(0,solo?'Your team':null,moment,!done)}
     ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
     ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
+}
+// MVP of the match plus a few awards, from S.stats (see tallyRound in engine.js)
+function mvpPanel(){
+  const all=S.teams[0].concat(S.teams[1]).filter(u=>!u.spawn || S.stats[u.uid]).map(u=>({u, s:S.stats[u.uid]||{dmg:0,kos:0,heal:0,best:0}}));
+  if(!all.length) return '';
+  const top=(f)=>all.slice().sort((a,b)=>f(b.s)-f(a.s))[0];
+  const mvp=top(mvpScore); if(!mvpScore(mvp.s)) return '';
+  const line=s=>[s.dmg?`${s.dmg} damage`:'', s.kos?plural(s.kos,'knockout'):'', s.heal?`${s.heal} healed`:''].filter(Boolean).join(' · ');
+  const award=(label,x,val)=>x&&val?`<div class="award">${seal(x.u,'sm')}<span><b>${label}</b> ${esc(x.u.name)} · ${val}</span></div>`:'';
+  const dm=top(s=>s.dmg), ko=top(s=>s.kos), bh=top(s=>s.best), hl=top(s=>s.heal);
+  return `<section class="mvp" style="--tc:${pc(mvp.u.p)}"><div class="mvpmain">${seal(mvp.u,'lg')}<div><div class="tlabel">Match MVP</div>
+    <div class="mvpname">${esc(mvp.u.name)}</div><div class="muted">${line(mvp.s)}</div></div></div>
+    <div class="awards">${award('Most damage',dm,dm.s.dmg?`${dm.s.dmg}`:'')}${award('Most knockouts',ko,ko.s.kos?`${ko.s.kos}`:'')}${award('Biggest hit',bh,bh.s.best?`${bh.s.best}`:'')}${award('Best healer',hl,hl.s.heal?`${hl.s.heal} HP`:'')}</div></section>`;
+}
+// Story map: the stages in order, with the enemy team, points and difficulty of each
+function vStory(){
+  const done=loadStory().cleared;
+  return `${topbar('Story mode', 'The Demon Slayer Corps')}
+    <p class="muted">${done.length} of ${STAGES.length} stages cleared. Clear a stage to unlock the next.</p>
+    <div class="stages">${STAGES.map((st,i)=>{ const open=stageUnlocked(i), clear=stageCleared(i);
+      return `<button class="stagecard${clear?' clear':''}${open?'':' locked'}" data-a="stage" data-v="${i}" ${open?'':'disabled'}>
+        <span class="snum">${clear?'✓':open?i+1:'🔒'}</span>
+        <span class="sinfo"><span class="stitle">${esc(st.title)}</span><span class="splace">${esc(st.place)} · vs ${esc(st.foe)}</span>
+          <span class="sblurb">${esc(st.blurb)}</span>
+          <span class="sfoot"><span class="sseals">${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span><span class="smeta">${st.budget} pts · ${LEVELS[st.level].label}</span></span></span></button>`; }).join('')}</div>`;
 }
 function vOver(){
   const w=S.winner;
@@ -387,8 +422,12 @@ function vOver(){
     ${w<0?'':`<div class="winseals" aria-hidden="true">${S.teams[w].map((u,i)=>`<span style="--i:${i}">${seal(u,'lg')}</span>`).join('')}</div>`}
     <div class="eyebrow">After ${plural(S.round,'round')}</div>
     <div class="big" style="color:${w<0?'var(--fg)':pc(w)}">${w<0?'Both squads fall':nm(w)+' wins'}</div>
-    <p class="muted">${w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>
+    <p class="muted">${S.mode==='story' ? (w===0 ? (S.stage+1<STAGES.length?`Stage ${S.stage+1} cleared. ${esc(STAGES[S.stage+1].title)} is unlocked.`:'The sun rises. The story is complete!') : 'Defeated. Rethink your squad and try again.')
+      : w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>
+    ${mvpPanel()}
     <div class="overteams">${teamBlock(0)}${teamBlock(1)}</div>
     <details class="panel" id="finallog"><summary>Final round</summary>${logHTML()}</details>
-    ${actionbar('<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>')}`;
+    ${actionbar(S.mode==='story'
+      ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next stage</button>`:w===0?'':`<button class="btn" data-a="stage" data-v="${S.stage}">Try again</button>`}`
+      : '<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>')}`;
 }

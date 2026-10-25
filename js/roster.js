@@ -147,6 +147,23 @@ const SPECIAL_TAGS = {
   sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'heal whole team', murata:'strong hit',
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
+// One short line each fighter says when their special fires (shown on the fight stage)
+const SPECIAL_QUOTES = {
+  yoriichi:'Sun Breathing has thirteen forms. This is the last.', yoriichi_old:'Even now, my sword has not dulled.',
+  muzan:'I decide who lives.', muzan_final:'I will not die. Not to the sun, not to you.', kokushibo:'Moonlight, cut them down.',
+  doma:'Let me save you all.', akaza:'Become a demon and fight me forever!', gyutaro:'Take it all from them!',
+  hantengu:'Don\'t hurt me! I\'m so weak!', gyokko:'Admire my art!', kaigaku:'I was the one meant to rise.',
+  sekido:'Anger burns the field!', karaku:'Ha! Blow them away!', aizetsu:'How sad. How very sad.', urogi:'Such joy, from up here!',
+  enmu:'Sleep. Have a lovely dream.', rui:'You\'re not my family.', kyogai:'My writing was not trash!', hand:'I remember every student.',
+  swamp:'Into the swamp with you.', giyu:'Water Breathing, Eleventh Form.', gyomei:'Namu Amida Butsu.', sanemi:'Come on, then. Try me.',
+  muichiro:'The mist hides everything.', mitsuri:'I won\'t let anyone else get hurt!', obanai:'No one touches Kanroji.',
+  rengoku:'Set your heart ablaze!', tengen:'Let\'s make this flashy!', tengen_retired:'Retired or not, stay behind me.',
+  shinobu:'Shall we be friends? No? Then poison.', tanjiro:'Dance of the Fire God!', nezuko:'Mmph!', zenitsu:'Thunder Breathing, First Form.',
+  inosuke:'Beast Breathing! Charge!', kanao:'I decide for myself now.', genya:'Give me your strength, demon.', tamayo:'Hold still. This will help.',
+  yushiro:'Lady Tamayo, look at me!', sabito:'Again. Swing again.', urokodaki:'Your judgment is too slow.', kagaya:'My children, thank you.',
+  murata:'Why am I always here?!',
+};
+ROSTER.forEach(c=>{ c.sig.quote = SPECIAL_QUOTES[c.sk]; });
 
 const BYID = Object.fromEntries(ROSTER.map(c=>[c.id,c]));
 const MARK_PASSIVE = 'Mark awakened: boosted stats and the special recharges 1 round faster.';

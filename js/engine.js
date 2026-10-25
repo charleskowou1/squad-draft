@@ -43,8 +43,10 @@ function saveBudget(v){ try{ localStorage.setItem('squad-draft-budget',v) }catch
 function loadLevel(){ try{ return localStorage.getItem('squad-draft-level')||'normal' }catch(e){ return 'normal' } }
 function saveLevel(v){ try{ localStorage.setItem('squad-draft-level',v) }catch(e){} }
 
-let S = {phase:'setup', mode:'2p', level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), names: loadNames() || ['CK','Mia']};
+let S = {phase:'setup', mode:'2p', level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), soundOn: true, names: loadNames() || ['CK','Mia']};
 const rnd = a => a[Math.floor(Math.random()*a.length)];
+// Playing against the computer (normal vs-computer games and story mode); the screen belongs to player 1
+const vsCpu = () => S.mode!=='2p';
 // Health is shown as a percent of each fighter's own max HP (display only; the engine keeps raw HP)
 const pct = (u,n=u.hp) => Math.round(n/u.max*100);
 const LOW = 25;
@@ -89,7 +91,7 @@ function buildPool(){
 }
 // first = the player who won the spin and picks first (0 or 1)
 function newDraft(first=0){
-  Object.assign(S,{phase:'draft', first, lastPicker:null, picks:[[],[]], locked:[false,false], k:0, sel:null, pool:buildPool()});
+  Object.assign(S,{phase:'draft', first, lastPicker:null, history:[], picks:[[],[]], locked:[false,false], k:0, sel:null, pool:buildPool()});
 }
 // Who picks first: a fair coin flip, shown as a wheel. Returns the winner and how far to turn the wheel.
 const WHEEL_SEGS = 8;
@@ -115,10 +117,18 @@ function afterTurn(){
   if(S.locked[0] && S.locked[1]) startBattle();
 }
 function doPick(id){
-  const p=turn(); S.picks[p].push(id); S.lastPicker=p; S.k++;
+  const p=turn();
+  S.history.push({p, id, lastPicker:S.lastPicker, locked:S.locked.slice()});   // for Undo
+  S.picks[p].push(id); S.lastPicker=p; S.k++;
   S.sel=null; afterTurn();
 }
-function doLock(p){ S.locked[p]=true; S.lastPicker=p; S.sel=null; S.k++; afterTurn(); }
+function doLock(p){ S.history.push({lock:true}); S.locked[p]=true; S.lastPicker=p; S.sel=null; S.k++; afterTurn(); }
+// The pick Undo would take back: the latest action, if it was a pick and the draft is still going (else null)
+const undoable = () => { const h=S.phase==='draft' && S.history && S.history[S.history.length-1]; return h && !h.lock ? h : null; };
+function undoPick(){
+  const h=undoable(); if(!h) return;
+  S.history.pop(); S.picks[h.p].pop(); S.k--; S.lastPicker=h.lastPicker; S.locked=h.locked; S.sel=null;
+}
 // Two-character synergies the computer drafter looks for
 const PAIRS = [['urokodaki','sabito'],['sabito','tanjiro'],['tanjiro','nezuko'],['tamayo','yushiro'],['yoriichi','tanjiro'],['urokodaki','tanjiro'],['urokodaki','giyu'],
   ['tanjiro','zenitsu'],['tanjiro','inosuke'],['zenitsu','inosuke']];
@@ -172,7 +182,7 @@ function synergies(p){
 function startBattle(){
   S.teams=[S.picks[0].map(id=>mkUnit(id,0)), S.picks[1].map(id=>mkUnit(id,1))];
   S.sib=[false,false]; S.syn=[synergies(0),synergies(1)];
-  S.round=1; S.plans=[{},{}]; S.log=[]; S.planFor=0; S.focus=null;
+  S.round=1; S.plans=[{},{}]; S.lastPlans=[null,null]; S.log=[]; S.planFor=0; S.focus=null; S.stats={};
   S.phase = S.mode==='2p' ? 'pass' : 'plan';
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
@@ -247,6 +257,17 @@ function cpuPlanEasy(p){
     let t=low.uid;
     if(u.sig.kind==='ally'){ const hurt=alive(p).slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; t=hurt.uid; if(type==='special' && u.sk==='tamayo' && hurt.hp>hurt.max*.75) type='attack'; if(type==='attack') t=low.uid; }
     S.plans[p][u.uid]={type, t};
+  });
+}
+// "Repeat last round": give each fighter the move they used last round. A special still recharging becomes Attack;
+// a target that's gone is dropped (or replaced when there's only one choice left).
+function repeatPlans(p){
+  const last=S.lastPlans && S.lastPlans[p]; if(!last) return;
+  alive(p).forEach(u=>{
+    const q=last[u.uid]; if(u.stun || !q || !q.type) return;
+    setMove(u, q.type==='special' && u.cd>0 ? 'attack' : q.type);
+    const pl=S.plans[p][u.uid], opts=targetOptions(u,pl);
+    if(needsTarget(u,pl)) pl.t = q.t && opts.some(o=>o.uid===q.t) ? q.t : opts.length===1 ? opts[0].uid : undefined;
   });
 }
 function cpuPlan(p, level='hard'){
@@ -378,6 +399,19 @@ function special(u,pl){
   }
   u.cd = s.cd + 1;
 }
+// Match stats for the win screen, counted from each log line's HP snapshot (no extra bookkeeping in the rules):
+// damage dealt and biggest hit (hit lines), knockouts (ko lines with an attacker), healing given to others (heal lines with a healer)
+function tallyRound(){
+  const st=uid=>S.stats[uid]||(S.stats[uid]={dmg:0, kos:0, heal:0, best:0});
+  for(let i=1;i<S.log.length;i++){
+    const l=S.log[i], prev=S.log[i-1], diff=uid=>(l.hp[uid]??0)-(prev.hp[uid]??l.hp[uid]??0);
+    if(l.fx==='hit' && l.by && l.on){ const d=-diff(l.on); if(d>0){ const s=st(l.by); s.dmg+=d; s.best=Math.max(s.best,d); } }
+    if(l.fx==='ko' && l.by && l.by!==l.on) st(l.by).kos++;
+    if(l.fx==='heal' && l.by){ const h=Object.keys(l.hp).reduce((a,uid)=>a+Math.max(0,diff(uid)),0); if(h>0) st(l.by).heal+=h; }
+  }
+}
+// Who did best this match: damage + 12 per knockout + healing given
+const mvpScore = s => s.dmg + s.kos*12 + s.heal;
 function resolve(){
   S.log=[]; S.shield=[false,false];
   L(`Round ${S.round}`,'r');
@@ -403,6 +437,7 @@ function resolve(){
     if(u.cd>0) u.cd--;
     u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false;
   }));
+  tallyRound();
   S.plans=[{},{}];
   const a0=alive(0).length, a1=alive(1).length;
   if(!a0||!a1){ S.winner = !a0&&!a1 ? -1 : a0 ? 0 : 1; S.phase='over'; }
