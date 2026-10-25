@@ -132,5 +132,21 @@ add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and fi
   passive:'Somehow Survives: the first hit that would knock him out leaves him at 1 HP instead.',
   sig:{name:'Water Surface Slash',desc:'Strike for PWR+2.',cd:2,kind:'single'}});
 
+// A few words shown under each fighter's Special button, like "hit one enemy" under Attack
+const SPECIAL_TAGS = {
+  yoriichi:'hit all, stops regen', yoriichi_old:'huge hit, ignores DEF',
+  muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
+  akaza:'big hit', gyutaro:'hit all + poison', hantengu:'hide + heal self', gyokko:'hit + stun', kaigaku:'hit two enemies',
+  sekido:'hit all enemies', karaku:'strong hit', aizetsu:'strong hit', urogi:'fast hit',
+  enmu:'delay enemy specials', rui:'hit + stun', kyogai:'stun one enemy', hand:'strong hit', swamp:'dodge + hit',
+  giyu:'team takes no damage', gyomei:'hit all enemies', sanemi:'hit two enemies', muichiro:'dodge + hit',
+  mitsuri:'hit all enemies', obanai:'hit through Defend', rengoku:'huge hit', tengen:'hit all enemies',
+  tengen_retired:'shield an ally', shinobu:'poison one enemy',
+  tanjiro:'big hit, ignores DEF', nezuko:'hit all enemies', zenitsu:'first, double hit', inosuke:'2 random hits',
+  kanao:'early strong hit', genya:'heal + PWR up', tamayo:'heal an ally', yushiro:'hide an ally',
+  sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'heal whole team', murata:'strong hit',
+};
+ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
+
 const BYID = Object.fromEntries(ROSTER.map(c=>[c.id,c]));
 const MARK_PASSIVE = 'Mark awakened: boosted stats and the special recharges 1 round faster.';

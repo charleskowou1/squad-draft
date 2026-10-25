@@ -435,6 +435,7 @@ details ul b{color:var(--fg)}
 .moves .mk{font-family:var(--display);font-size:1.45rem;line-height:1.1;color:var(--accent)}
 .moves button.on .mk{color:#b8331b}
 .moves .spn{font-size:.78rem;line-height:1.15}
+.moves small.cdn{color:var(--accent);font-weight:700}
 .moves button small{font-size:.68rem;font-weight:500;color:var(--muted)}
 .moves button.on{background:var(--btn);border-color:var(--btn);color:var(--btn-fg)}
 .moves button.on small{color:#5c5246}

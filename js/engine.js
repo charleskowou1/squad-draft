@@ -34,12 +34,16 @@ function recordMatch(){
   try{ localStorage.setItem(RECORDS_KEY,JSON.stringify(rec)) }catch(e){}
 }
 
+// Character pool: 'random' deals a hand of characters (default), 'all' offers every character
+const POOL_TYPES = ['random','all'];
+function loadPoolType(){ try{ const t=localStorage.getItem('squad-draft-pooltype'); return POOL_TYPES.includes(t)?t:'random' }catch(e){ return 'random' } }
+function savePoolType(v){ try{ localStorage.setItem('squad-draft-pooltype',v) }catch(e){} }
 function loadBudget(){ try{ const b=+localStorage.getItem('squad-draft-budget'); return BUDGETS.includes(b)?b:DEFAULT_BUDGET }catch(e){ return DEFAULT_BUDGET } }
 function saveBudget(v){ try{ localStorage.setItem('squad-draft-budget',v) }catch(e){} }
 function loadLevel(){ try{ return localStorage.getItem('squad-draft-level')||'normal' }catch(e){ return 'normal' } }
 function saveLevel(v){ try{ localStorage.setItem('squad-draft-level',v) }catch(e){} }
 
-let S = {phase:'setup', mode:'2p', level: loadLevel(), budget: loadBudget(), names: loadNames() || ['CK','Mia']};
+let S = {phase:'setup', mode:'2p', level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), names: loadNames() || ['CK','Mia']};
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Health is shown as a percent of each fighter's own max HP (display only; the engine keeps raw HP)
 const pct = (u,n=u.hp) => Math.round(n/u.max*100);
@@ -73,6 +77,8 @@ function takeWeighted(list, w){
 // Split-off forms (Hantengu's emotions) are never dealt, nor is anything over maxCardCost().
 function buildPool(){
   const cards=ROSTER.filter(c=>!c.spawn && c.cost<=maxCardCost()), fams=[...new Set(cards.map(c=>c.fam))];
+  // "All" pool: every character and every version (still one version per character per draft, via famTaken)
+  if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
   for(let tries=0;tries<200;tries++){
     const left=fams.slice(), f=[];
     while(f.length<poolSize()) f.push(takeWeighted(left, x=>familyOdds(x,cards)));

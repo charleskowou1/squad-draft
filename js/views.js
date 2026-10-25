@@ -128,7 +128,7 @@ function vSetup(){
   <details class="panel" id="howto"><summary>How to play</summary><ul>
     <li><b>The pool:</b> each draft deals 10 random characters, one version of each (base, Mark-awakened, or Yoriichi young or old). Every card shows its cost and stats before you pick.</li>
     <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A, A, B…) on a ${budget()}-point budget (change it in ⚙ Settings: 10, 20 or 30), up to 6 fighters. Tap <b>Lock team</b> when you're done; the other player keeps drafting until they lock or run out of points.</li>
-    <li><b>Pool notes</b> list the synergies and matchups possible with the characters dealt.</li>
+    <li><b>Pool notes</b> list the synergies and matchups possible with the characters dealt. In ⚙ Settings you can switch the pool from Random to All characters.</li>
     <li><b>Legends:</b> Yoriichi (18) and Yoriichi at 85 (15) strike twice per Attack and cap the damage they take each round. They're rare: Yoriichi is dealt in about 1 draft in 8.</li>
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
@@ -187,7 +187,7 @@ function vDraft(){
     ${orderStrip(p)}
     <div class="teams">${teamBox(0,p)}${teamBox(1,p)}</div>
     ${lockbar}
-    <div class="dealt"><span>${S.pool.length} characters dealt · tap one to see it</span>${fresh&&!cpuTurn?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
+    <div class="dealt"><span>${S.poolType==='all'?`All ${S.pool.length} characters`:`${S.pool.length} characters dealt`} · tap one to see it</span>${fresh&&!cpuTurn&&S.poolType!=='all'?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
     ${notesPanel()}
     <div class="grid">${S.pool.map(id=>cardHTML(BYID[id],p)).join('')}</div></div>`;
 }
@@ -258,6 +258,9 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Points per team</div>
       <div class="seg">${BUDGETS.map(b=>`<button data-a="budget" data-v="${b}" class="${budget()===b?'on':''}">${b}${b===DEFAULT_BUDGET?' <small>default</small>':''}</button>`).join('')}</div>
       <div class="hint">${blurb[budget()]}</div></div>
+    <div class="setgroup"><div class="tlabel">Character pool</div>
+      <div class="seg">${[['random','Random'],['all','All']].map(([k,l])=>`<button data-a="pooltype" data-v="${k}" class="${S.poolType===k?'on':''}">${l}${k==='random'?' <small>default</small>':''}</button>`).join('')}</div>
+      <div class="hint">${S.poolType==='all'?'Every character is available to draft. Each one can still only be picked once (taking Giyu also rules out Giyu ✦).':`A random hand of ${poolSize()} characters is dealt each draft.`}</div></div>
     <div class="hint">Saved on this phone. Applies from the next draft.</div>
     <div class="row"><button class="btn" data-a="unsel">Done</button></div>
   </div></div>`;
@@ -314,7 +317,7 @@ function fighter(u, open){
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
   return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
     ${meta(u)}${statusChips(u,false)}
-    <div class="moves">${mv('attack','攻','Attack',u.strikes>1?'hits ×'+u.strikes:'hit one enemy')}${mv('defend','守','Defend','half damage')}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`ready in ${u.cd}`:'ready',u.cd>0)}</div>
+    <div class="moves">${mv('attack','攻','Attack',u.strikes>1?'hits ×'+u.strikes:'hit one enemy')}${mv('defend','守','Defend','half damage')}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,`${esc(u.sig.tag)}${u.cd>0?`</small><small class="cdn">ready in ${u.cd}`:''}`,u.cd>0)}</div>
     ${pl.type==='special'?`<div class="hint"><b>${esc(u.sig.name)}.</b> ${esc(u.sig.desc)}</div>`:''}
     ${opts.length?`<div class="tlabel">${isAllyMove(u,pl)?'Choose an ally':'Choose a target, or tap one above'}</div><div class="targets">${opts.map(tgt).join('')}</div>`:''}
   </div></div>`;

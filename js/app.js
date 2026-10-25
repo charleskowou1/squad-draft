@@ -53,7 +53,7 @@ function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='r
 const ACTIONS = {
   mode(v){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value; S.mode=v; if(v==='2p'){ const s=loadNames(); S.names[1]=(s&&s[1])||'Mia'; } },
   start: startDraft,
-  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:S.budget,names:S.mode==='cpu'?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
+  home(){ clearTimeout(S._t); S={phase:'setup',mode:S.mode,level:S.level,budget:S.budget,poolType:S.poolType,names:S.mode==='cpu'?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
   level(v){ S.level=v; saveLevel(v); },
   rematch: toSpin,
   spin(){ if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -64,6 +64,7 @@ const ACTIONS = {
   unsel(){ S.sel=null; S.info=null; S.settings=false; },
   settings(){ S.settings=true; },
   budget(v){ S.budget=+v; saveBudget(S.budget); },
+  pooltype(v){ S.poolType=v; savePoolType(v); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },

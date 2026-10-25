@@ -2,7 +2,8 @@
    Plain-language notes on the synergies and matchups that are possible with the characters dealt this draft.
    Keep the wording in step with synergies(), the passives and the specials in engine.js. No DOM. */
 function poolNotes(){
-  const inPool = {}; S.pool.forEach(id=>{ inPool[BYID[id].fam]=id; });
+  // fam → a card of that character in the pool (inPool) and every version of it in the pool (versions; several in the All pool)
+  const inPool = {}, versions = {}; S.pool.forEach(id=>{ const f=BYID[id].fam; inPool[f]=inPool[f]||id; (versions[f]=versions[f]||[]).push(id); });
   const has = f => f in inPool;
   const who = f => S.picks[0].some(id=>BYID[id].fam===f) ? 0 : S.picks[1].some(id=>BYID[id].fam===f) ? 1 : -1;
   const famsWhere = test => Object.keys(inPool).filter(f=>test(BYID[inPool[f]]));
@@ -36,7 +37,7 @@ function poolNotes(){
   }
 
   const N=[];
-  const add=(kind, fams, title, text, st) => N.push(Object.assign({kind, ids:fams.map(f=>inPool[f]), title, text}, st));
+  const add=(kind, fams, title, text, st) => N.push(Object.assign({kind, ids:fams.flatMap(f=>versions[f]), title, text}, st));
 
   // same team
   const kama=['tanjiro','zenitsu','inosuke'];
@@ -65,7 +66,7 @@ function poolNotes(){
   const demons=famsWhere(c=>c.demon);
   if(has('shinobu')&&demons.length) add('vs', ['shinobu',...demons], 'Wisteria Body', 'If a demon lands the blow that knocks Shinobu out, it devours her and loses 5 HP every round for the rest of the match.', facing(['shinobu'],demons));
   const regen=demons.filter(f=>BYID[inPool[f]].regen);
-  if(inPool.yoriichi==='yoriichi' && regen.length) add('vs', ['yoriichi',...regen], 'Sun Breathing', "Yoriichi's special hits every enemy, and demons it hits stop regenerating for the rest of the match.", facing(['yoriichi'],regen));
+  if(S.pool.includes('yoriichi') && regen.length) add('vs', ['yoriichi',...regen], 'Sun Breathing', "Yoriichi's special hits every enemy, and demons it hits stop regenerating for the rest of the match.", facing(['yoriichi'],regen));
   const poison=['shinobu','gyutaro'].filter(has);
   if(has('tamayo')&&poison.length) add('vs', ['tamayo',...poison], 'Antidote', "Tamayo's heal also cures poison, so she can undo Shinobu's and Gyutaro's poison on her team.", facing(['tamayo'],poison));
 

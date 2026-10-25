@@ -7,7 +7,7 @@ function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
     try{
-      const level=['easy','normal','hard'][g%3]; S={phase:'setup',mode:'cpu',level,budget:[10,20,30][Math.floor(g/3)%3],names:['A','B']}; vSetup(); S.settings=true; vSheet(); S.settings=false;
+      const level=['easy','normal','hard'][g%3]; S={phase:'setup',mode:'cpu',level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',names:['A','B']}; vSetup(); S.settings=true; vSheet(); S.settings=false;
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
