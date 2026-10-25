@@ -284,9 +284,9 @@ details ul b{color:var(--fg)}
 .taphint{font-size:.78rem;font-weight:700;color:var(--accent);animation:fade .3s ease-out}
 /* who's ahead: one bar split between both teams' remaining health */
 .strength{display:flex;flex-direction:column;gap:5px}
-.strength .sl{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700}
+.strength .sl{display:flex;justify-content:space-between;font-size:.72rem;font-weight:700;opacity:.9}
 .strength .sl b{font-variant-numeric:tabular-nums}
-.sbar{display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--bg-2);gap:2px}
+.sbar{display:flex;height:5px;border-radius:5px;overflow:hidden;background:var(--bg-2);gap:2px}
 .sbar i{display:block;height:100%;transition:width .5s}
 .vsdiv{display:flex;align-items:center;gap:12px;color:var(--muted);font-family:var(--display);font-weight:800;letter-spacing:.3em;font-size:.85rem}
 .vsdiv::before,.vsdiv::after{content:"";flex:1;height:1px;background:linear-gradient(to right,transparent,var(--line-2),transparent)}
@@ -443,7 +443,7 @@ details ul b{color:var(--fg)}
 /* artwork: faint picture behind battle tiles, wide banner on detail cards */
 .fighter{position:relative}
 .fighter > *{position:relative}
-.tile.hasart::before,.fighter.hasart::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--art) 70% 22%/cover no-repeat;opacity:.16;pointer-events:none;
+.tile.hasart::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--art) 70% 22%/cover no-repeat;opacity:.09;pointer-events:none;
   mask-image:linear-gradient(to left,#000 10%,transparent 85%);-webkit-mask-image:linear-gradient(to left,#000 10%,transparent 85%)}
 .tile.dead.hasart::before{opacity:.06}
 .tile > *{position:relative}
@@ -602,6 +602,13 @@ details ul b{color:var(--fg)}
 .moves .mk{font-family:var(--display);font-size:1.45rem;line-height:1.1;color:var(--accent)}
 .moves button.on .mk{color:#b8331b}
 .moves .spn{font-size:.78rem;line-height:1.15}
+.moves button{min-height:74px;justify-content:center}
+.moves small .cdn{color:var(--accent);font-weight:700}
+.targets .tlabel{align-self:center;margin-right:2px}
+.aimx{color:var(--accent);font-size:.8rem;line-height:1}
+.ibonus{display:flex;flex-direction:column;gap:6px}
+.side{gap:10px}
+.fbody{gap:10px}
 .moves small.cdn{color:var(--accent);font-weight:700}
 .moves button small{font-size:.68rem;font-weight:500;color:var(--muted)}
 .moves button.on{background:var(--btn);border-color:var(--btn);color:var(--btn-fg)}
