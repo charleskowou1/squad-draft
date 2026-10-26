@@ -18,7 +18,7 @@ const ARCS = {
 // scene lines: [speaker card id, or '' for the narrator, text]
 const STAGES = [
   {id:'training', arc:'prologue', title:'The Boulder', place:'Mount Sagiri', foe:'Sabito', mine:['tanjiro'], enemy:['sabito'], level:'easy',
-    stars:{standing:1, rounds:5},
+    stars:{standing:1, hp2:45, rounds:5},
     beats:[{when:'low', id:'tanjiro', at:.4, text:'Breathe. Feel the gap in his guard.'}, {when:'low', id:'sabito', at:.35, text:'That’s it. Again!'}],
     outro:[['sabito','You cut it. You really cut the boulder.'],['tanjiro','Sabito? …He’s gone.'],['','Tanjiro is ready for Final Selection.']],
     boosts:[{side:1, hp:1.4, label:'Sabito: +40% HP'}],
@@ -28,7 +28,7 @@ const STAGES = [
       ['tanjiro',"Then I'll fight you until I understand!"],
       ['sabito','Good. Show me.']]},
   {id:'selection', arc:'prologue', title:'Final Selection', place:'Mount Fujikasane', foe:'Hand Demon', mine:['tanjiro'], enemy:['hand','swamp'], level:'easy',
-    stars:{standing:1, rounds:5},
+    stars:{standing:1, hp2:45, rounds:5},
     beats:[{when:'round', round:1, id:'tanjiro', text:'That one hides in the swamp when it dives. I’ll cut it when it comes back up.'}, {when:'low', id:'tanjiro', at:.35, text:'I can’t die here. Nezuko is waiting for me!'}],
     outro:[['hand','Those eyes… like Urokodaki’s…'],['tanjiro','Rest now. May you be reborn somewhere kinder.'],['','Tanjiro survives seven nights and joins the Demon Slayer Corps.']],
     boosts:[{side:0, hp:1.3, label:'Urokodaki’s training: Tanjiro +30% HP'}],
@@ -99,7 +99,7 @@ const STAGES = [
       ['gyutaro',"Who made my sister cry? I'll take everything you have."],
       ['tengen','Listen up! Their heads have to fall at the same time. Let\'s make it flashy!']]},
   {id:'typezero', arc:'swordsmith', title:'Type Zero', place:'The hidden village', foe:'Yoriichi Type Zero', mine:['tanjiro','hotaru'], enemy:['typezero'], level:'normal',
-    stars:{standing:1, rounds:2},
+    stars:{standing:1, hp2:55, rounds:2},
     beats:[{when:'low', id:'tanjiro', at:.4, text:'It sees every opening… then I’ll make a new one!'}],
     outro:[['','The puppet cracks open. Inside: a sword centuries old.'],['hotaru','This blade… I’ll polish it. Now hand me yours.'],['tanjiro','Yes, Hotaru! …Please put the knife down.']],
     blurb:'A six-armed training doll, built to copy the greatest swordsman.',
@@ -107,7 +107,7 @@ const STAGES = [
       ['tanjiro',"It moves like a real swordsman… Hotaru, my sword's still chipped!"],
       ['hotaru',"You CHIPPED it?! Fine. I'll reforge it. Then I'll kill you."]]},
   {id:'gyokko', arc:'swordsmith', title:'Pots and Mist', place:'The hidden village', foe:'Gyokko', mine:['muichiro_mark'], enemy:['gyokko'], level:'normal',
-    stars:{standing:1, rounds:7},
+    stars:{standing:1, hp2:45, rounds:7},
     beats:[{when:'low', id:'gyokko', at:.5, text:'My true form! Behold my perfect body!'}],
     outro:[['gyokko','Impossible! My masterpiece!'],['muichiro','I remember now. My brother. Why I fight.']],
     boosts:[{side:1, hp:1.5, label:'Gyokko: +50% HP'}],
@@ -136,7 +136,7 @@ const STAGES = [
       ['murata',"Why am I always here?!"],
       ['giyu','Stay close. The demons here are hers to command.']]},
   {id:'doma1', arc:'castle', title:'Wisteria', place:'Infinity Castle, the lotus pond', foe:'Doma', mine:['shinobu'], enemy:['doma'], level:'hard',
-    stars:{standing:1, health:5},
+    stars:{standing:1, hp2:10, health:20},
     beats:[{when:'low', id:'shinobu', at:.5, text:'Just a little longer. The poison is working.'}],
     outro:[['shinobu','Kanao… finish it. I’m counting on you.'],['','Doma swallows Shinobu whole. The wisteria inside her starts to work.']],
     boosts:[{side:0, hp:1.4, label:"Shinobu's resolve: +40% HP"}],
@@ -157,7 +157,7 @@ const STAGES = [
       ['inosuke',"Let's finish him, Kanao! Beast Breathing!"],
       ['','Doma starts at 60% health and loses 5 HP every round.']]},
   {id:'kaigaku', arc:'castle', title:'Senior Brother', place:'Infinity Castle', foe:'Kaigaku', mine:['zenitsu'], enemy:['kaigaku'], level:'normal',
-    stars:{standing:1, rounds:2},
+    stars:{standing:1, hp2:50, rounds:2},
     beats:[{when:'low', id:'zenitsu', at:.5, text:'Grandpa… watch this. Seventh Form.'}],
     outro:[['kaigaku','Thunder… a form I never learned…'],['zenitsu','I wanted to fight beside you, you know.']],
     boosts:[{side:0, pow:4, label:'Seventh Form: Zenitsu +4 PWR'}, {side:1, pow:1, label:'Kaigaku: +1 PWR'}],
@@ -165,7 +165,7 @@ const STAGES = [
     scene:[['kaigaku',"Still only one form, Zenitsu? Grandpa wasted his time on you."],
       ['zenitsu',"Grandpa cut his own belly because of you. I made a form of my own. For him."]]},
   {id:'akaza', arc:'castle', title:'Destructive Death', place:'Infinity Castle', foe:'Akaza', mine:['tanjiro','giyu'], enemy:['akaza'], level:'hard',
-    stars:{standing:1, rounds:10},
+    stars:{standing:1, hp2:15, rounds:10},
     beats:[{when:'low', id:'akaza', at:.5, text:'Your spirit… it’s just like Kyojuro’s.'}, {when:'low', id:'giyu', at:.4, text:'Tanjiro, keep going. I’ll hold.'}],
     outro:[['akaza','Koyuki… I remember now.'],['','Akaza ends himself, choosing his memories over strength.'],['tanjiro','Rengoku… we did it.']],
     blurb:"Tanjiro and Giyu against the demon who killed Rengoku.",
@@ -173,7 +173,7 @@ const STAGES = [
       ['tanjiro',"Rengoku didn't lose to you. He protected everyone. Now it's my turn."],
       ['giyu',"Together, Tanjiro."]]},
   {id:'flash_kokushibo', arc:'flashback', title:'Brothers', place:'Sixty years later', foe:'Kokushibo', mine:['yoriichi_old'], enemy:['kokushibo'], level:'hard',
-    stars:{standing:1, rounds:3},
+    stars:{standing:1, hp2:25, rounds:3},
     beats:[{when:'low', id:'kokushibo', at:.5, text:'Even now… you are so far ahead of me.'}],
     outro:[['','Yoriichi dies standing, mid-swing. His last strike was enough.'],['kokushibo','Even at the very end… I could not surpass you.']],
     boosts:[{side:1, pow:4, label:'Kokushibo: +4 PWR'}],
@@ -193,7 +193,7 @@ const STAGES = [
       ['muichiro','Never.'],
       ['genya',"Hold on, Muichiro! My brother's coming, and Gyomei's right behind him!"]]},
   {id:'flash_muzan', arc:'flashback', title:'The Sun Itself', place:'Four hundred years ago', foe:'Muzan & Tamayo', mine:['yoriichi'], enemy:['muzan','tamayo'], level:'normal',
-    stars:{standing:1, rounds:5},
+    stars:{standing:1, hp2:10, rounds:5},
     beats:[{when:'low', id:'muzan', at:.5, text:'Impossible… what IS this man?!'}],
     outro:[['muzan','That man… he will haunt me for centuries.'],['','Muzan shatters into pieces and flees. Yoriichi lets Tamayo go.'],['tamayo','I will spend my life finishing what he started.']],
     boosts:[{side:1, hp:1.25, label:'Muzan & Tamayo: +25% HP'}],
@@ -229,14 +229,17 @@ const STAGES = [
 const STORY_KEY = 'squad-draft-story-v2';   // {cleared:[ids], stars:{id: best stars 1–3}}
 try{ localStorage.removeItem('squad-draft-story') }catch(e){}
 function loadStory(){ try{ return JSON.parse(localStorage.getItem(STORY_KEY))||{cleared:[]} }catch(e){ return {cleared:[]} } }
-// Stars: ★ win, ★★ win with at least `standing` fighters still up, ★★★ win within `rounds` rounds (or, on some survive
+// Stars: ★ win, ★★ win with at least `standing` fighters still up (or team health above `hp2`%), ★★★ win within `rounds` rounds (or, on some survive
 // stages, with your team above `health`% at the end). Targets come from simulated strong-player wins (CLAUDE.md).
+// ★★ is "fighters standing" where that means something; on solo battles (and wherever 1 fighter standing is all a win
+// needs) it's "team above hp2% health" instead, so it's never the same as just winning (CK spotted that).
 function starGoals(st){ const g=st.stars||{standing:1};
-  return ['Win', g.standing>1?`Win with ${g.standing}+ fighters standing`:'Win with a fighter standing', g.rounds?`Win within ${g.rounds} rounds`:`Finish with your team above ${g.health}% health`]; }
+  return ['Win', g.hp2?`Win with your team above ${g.hp2}% health`:`Win with ${g.standing}+ fighters standing`,
+    g.rounds?`Win within ${g.rounds} rounds`:`Finish with your team above ${g.health}% health`]; }
 function starsEarned(st){
   if(S.winner!==0) return 0; const g=st.stars||{standing:1}, mine=S.teams[0].filter(u=>!u.spawn);
   const up=mine.filter(u=>u.alive).length, hp=mine.reduce((a,u)=>a+Math.max(0,u.hp),0)/mine.reduce((a,u)=>a+u.max,0)*100;
-  return 1 + (up>=g.standing?1:0) + ((g.rounds ? S.round<=g.rounds && !S.survived : hp>=g.health) ? 1 : 0);
+  return 1 + ((g.hp2 ? hp>=g.hp2 : up>=g.standing)?1:0) + ((g.rounds ? S.round<=g.rounds && !S.survived : hp>=g.health) ? 1 : 0);
 }
 const stageStars = id => (loadStory().stars||{})[id]||0;
 const totalStars = () => STAGES.reduce((a,st)=>a+stageStars(st.id),0);
