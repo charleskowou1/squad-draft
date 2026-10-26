@@ -240,7 +240,7 @@ function installCard(){
   const steps = i.ios ? `<ol class="isteps"><li>Tap <b>Share</b> <span class="ishare" aria-hidden="true">⬆︎</span> at the bottom of Safari</li><li>Choose <b>Add to Home Screen</b></li></ol>`
     : i.canPrompt ? '' : '<p class="muted">Open your browser menu (⋮) and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>';
   return `<div class="install"><div class="ihead"><span class="ik">家</span><div><b>Keep your progress safe</b><span class="muted">Add Squad Draft to your Home Screen. It opens like an app, and your story and stats stay saved.</span></div></div>
-    ${steps}<div class="ibtns">${i.canPrompt?'<button class="btn small" data-a="install">Install</button>':''}<button class="btn ghost small" data-a="installlater">Later</button></div></div>`;
+    ${steps}<div class="ibtns">${i.canPrompt && !i.ios?'<button class="btn small" data-a="install">Install</button>':''}<button class="btn ghost small" data-a="installlater">Later</button></div></div>`;
 }
 // Story on the home screen: a progress pie and one button to carry on where you left off
 function storyHome(){
@@ -258,7 +258,6 @@ function vSetup(){
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${artStrip()}
-  ${installCard()}
   ${dailyCard()}
   ${storyHome()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
@@ -277,7 +276,8 @@ function vSetup(){
       <p><b>Back pocket:</b> one optional 1 pt helper you can use once, on any round.</p>
       <p><b>3–4 players:</b> a free-for-all or 2v2 teams. Specials that hit "every enemy" hit the team you aim at.</p>
       <p><b>Story</b> unlocks new characters for every mode as you win battles.</p>
-    </div></details>`;
+    </div></details>
+  ${installCard()}`;
 }
 
 /* ---------- who picks first ---------- */
