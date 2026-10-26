@@ -76,7 +76,7 @@ out(`Same team:
 - Mentor: Urokodaki + Tanjiro / Giyu / Sabito & Makomo → those pupils +1 DEF.
 - Corps Master: Kagaya + any Hashira → every Hashira +1 DEF.
 - Two as One: Gyutaro + Daki → Gyutaro +2 PWR, and if one falls while the other still stands, they get back up at the
-  end of the round with 30% (once each). Knock both out in the same round to stop it. (Very strong: ~71% when paired.)
+  end of the round with 30% (once each). Knock both out in the same round to stop it. (Strong: ~58% when paired.)
 - Temari & Arrows: Susamaru + Yahaba → Susamaru's hits slip past Defend.
 - Kocho Sisters: Kanae + Shinobu → Shinobu's poison lasts 4 rounds instead of 3.
 - Kanae's student: Kanae + Kanao → Kanao +1 PWR.

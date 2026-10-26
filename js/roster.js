@@ -36,10 +36,10 @@ add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,u
 add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:44,pow:13,spd:10,def:5,regen:2,
   sig:{name:'Destructive Death',desc:'Strike for PWR+6.',cd:3,kind:'single'}});
 // Gyutaro and Daki: two cards. Together they're "Two as One" (see synergies() and fall() in engine.js).
-add({id:'gyutaro',name:'Gyutaro',short:'Gyutaro',g:'鎌',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:9,spd:8,def:4,regen:2,
+add({id:'gyutaro',name:'Gyutaro',short:'Gyutaro',g:'鎌',type:'Upper Moon 6',demon:true,upper:true,cost:8,hp:40,pow:12,spd:9,def:5,regen:2,
   passive:'Two as One: with Daki on his team he gets +2 PWR. If one of them falls while the other is still standing, they get back up at the end of the round with 30% health (once each). Knock both out in the same round to stop it.',
   sig:{name:'Flying Blood Sickles',desc:'Every enemy takes 4 and is poisoned 2/round for 2 rounds.',cd:3,kind:'all'}});
-add({id:'daki',name:'Daki',short:'Daki',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:4,hp:24,pow:8,spd:10,def:3,regen:2,
+add({id:'daki',name:'Daki',short:'Daki',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:10,spd:9,def:4,regen:2,
   passive:'Two as One: with Gyutaro on her team, if one of them falls while the other is still standing, they get back up at the end of the round with 30% health (once each).',
   sig:{name:'Obi Sashes',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
 // Nakime never attacks: her basic move (in place of Attack) is Biwa Strum. See resolve() in engine.js.
