@@ -33,7 +33,7 @@ add({id:'kokushibo',name:'Kokushibo',short:'Kokushibo',g:'月',type:'Upper Moon 
   sig:{name:'Moon Breathing',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,upper:true,cost:11,hp:44,pow:14,spd:11,def:6,regen:3,
   sig:{name:'Frozen Lotus',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
-add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:40,pow:13,spd:10,def:5,regen:2,
+add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:44,pow:13,spd:10,def:5,regen:2,
   sig:{name:'Destructive Death',desc:'Strike for PWR+6.',cd:3,kind:'single'}});
 add({id:'gyutaro',name:'Gyutaro & Daki',short:'Gyutaro',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:9,spd:8,def:4,regen:2,
   sig:{name:'Flying Blood Sickles',desc:'Every enemy takes 4 and is poisoned 2/round for 2 rounds.',cd:3,kind:'all'}});
@@ -64,7 +64,7 @@ add({id:'rui',name:'Rui',short:'Rui',g:'糸',type:'Lower Moon 5',demon:true,cost
   sig:{name:'Cutting Thread Cage',desc:'Strike for PWR and stun the target next round.',cd:3,kind:'single'}});
 add({id:'kyogai',name:'Kyogai',short:'Kyogai',g:'鼓',type:'Former Lower Moon',demon:true,cost:3,hp:22,pow:6,spd:6,def:3,regen:1,
   sig:{name:'Drum Room Spin',desc:'Flip the room. The target is stunned next round.',cd:4,kind:'single'}});
-add({id:'hand',name:'Hand Demon',short:'Hand Demon',g:'手',type:'Final Selection',demon:true,cost:2,hp:16,pow:5,spd:4,def:3,regen:1,
+add({id:'hand',name:'Hand Demon',short:'Hand Demon',g:'手',type:'Final Selection',demon:true,cost:2,hp:14,pow:4,spd:4,def:3,regen:1,
   sig:{name:'Grasping Arms',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
 add({id:'swamp',name:'Swamp Demon',short:'Swamp Demon',g:'沼',type:'Lesser demon',demon:true,cost:3,hp:16,pow:5,spd:8,def:2,regen:1,
   sig:{name:'Swamp Dive',desc:'Moves early. Sinks out of reach this round and strikes for PWR+1.',cd:2,kind:'single',prio:1}});
@@ -73,9 +73,9 @@ add({id:'swamp',name:'Swamp Demon',short:'Swamp Demon',g:'沼',type:'Lesser demo
 const giyu = add({id:'giyu',name:'Giyu Tomioka',short:'Giyu',g:'水',type:'Water Hashira',hashira:true,cost:8,hp:32,pow:10,spd:8,def:5,
   sig:{name:'Dead Calm',desc:'Moves first. Your whole team takes no damage this round.',cd:4,kind:'self',prio:3}});
 markOf(giyu,{cost:10});
-const gyomei = add({id:'gyomei',name:'Gyomei Himejima',short:'Gyomei',g:'岩',type:'Stone Hashira',hashira:true,cost:8,hp:42,pow:13,spd:7,def:7,
-  sig:{name:'Volcanic Rock',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
-markOf(gyomei,{cost:12});
+const gyomei = add({id:'gyomei',name:'Gyomei Himejima',short:'Gyomei',g:'岩',type:'Stone Hashira',hashira:true,cost:8,hp:42,pow:13,spd:8,def:7,
+  sig:{name:'Volcanic Rock',desc:'Every enemy takes 9, ignoring DEF.',cd:3,kind:'all',dmg:9}});
+markOf(gyomei,{cost:12, sig:Object.assign({}, gyomei.sig, {cd:2, dmg:11, desc:'Every enemy takes 11, ignoring DEF.'})});
 const sanemi = add({id:'sanemi',name:'Sanemi Shinazugawa',short:'Sanemi',g:'風',type:'Wind Hashira',hashira:true,cost:6,hp:34,pow:11,spd:9,def:5,
   sig:{name:'Black Wind Mountain Mist',desc:'Strike your target and one other enemy for PWR.',cd:3,kind:'single'}});
 markOf(sanemi,{cost:10});
@@ -88,7 +88,7 @@ markOf(mitsuri,{cost:8});
 const obanai = add({id:'obanai',name:'Obanai Iguro',short:'Obanai',g:'蛇',type:'Serpent Hashira',hashira:true,cost:5,hp:26,pow:9,spd:10,def:4,
   sig:{name:'Twin-Headed Reptile',desc:'Strike for PWR+4. Slips past guards (Defend does nothing).',cd:3,kind:'single'}});
 markOf(obanai,{cost:8});
-add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:34,pow:11,spd:7,def:5,
+add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:38,pow:11,spd:9,def:5,
   sig:{name:'Ninth Form: Rengoku',desc:'Strike for PWR+8.',cd:3,kind:'single'}});
 add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:10,def:5,
   sig:{name:'Constant Resounding Slashes',desc:'Every enemy takes PWR−2.',cd:3,kind:'all'}});
@@ -112,7 +112,7 @@ add({id:'inosuke',name:'Inosuke Hashibira',short:'Inosuke',g:'獣',type:'Beast',
   sig:{name:'Fang Frenzy',desc:'Two wild strikes of PWR−1 at random enemies.',cd:2,kind:'auto'}});
 add({id:'kanao',name:'Kanao Tsuyuri',short:'Kanao',g:'花',type:'Flower',cost:4,hp:24,pow:7,spd:10,def:3,
   sig:{name:'Equinoctial Vermilion Eye',desc:'Moves early. Strike for PWR+4.',cd:3,kind:'single',prio:1}});
-add({id:'genya',name:'Genya Shinazugawa',short:'Genya',g:'銃',type:'Demon eater',cost:3,hp:24,pow:7,spd:6,def:3,
+add({id:'genya',name:'Genya Shinazugawa',short:'Genya',g:'銃',type:'Demon eater',cost:4,hp:30,pow:7,spd:7,def:3,
   sig:{name:'Demon Consumption',desc:'Heal 8 and gain +2 PWR for the rest of the match.',cd:3,kind:'self'}});
 add({id:'tamayo',name:'Tamayo',short:'Tamayo',g:'薬',type:'Physician · Demon ally',demon:true,cost:3,hp:22,pow:5,spd:7,def:3,regen:2,
   passive:"Anti-Muzan Medicine: an enemy Muzan's regeneration drops by 2.",

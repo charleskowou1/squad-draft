@@ -231,7 +231,7 @@ const SIG_EST = {
   kanao: u=>({base:u.pow+4}),
   murata: u=>({base:u.pow+2}),
   urokodaki: u=>({base:u.pow+3}),
-  gyomei: u=>({all:true, base:u.pow-3}),
+  gyomei: u=>({all:true, base:u.sig.dmg, o:{ignoreDef:true}}),
   sanemi: u=>({base:u.pow, bonus:1.6}),          // also hits a second enemy
   kaigaku: u=>({base:u.pow+3, bonus:1.3}),
   muichiro: u=>({base:u.pow+2}),
@@ -380,7 +380,7 @@ function special(u,pl){
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
     case 'giyu': S.shield[u.p]=true; L(`${S.names[u.p]}'s team can't be hurt this round.`,'h',fx('guard',u,null)); break;
-    case 'gyomei': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
+    case 'gyomei': en().forEach(e=>hit(u,e,s.dmg,{ignoreDef:true,counter:false})); break;
     case 'sanemi': { const t=target(u,pl.t); hit(u,t,u.pow); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow); break; }
     case 'muichiro': hit(u,target(u,pl.t),u.pow+2); break;
     case 'mitsuri': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
