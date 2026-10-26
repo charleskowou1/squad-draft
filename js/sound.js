@@ -110,20 +110,6 @@ const STYLE_SFX = {
   dream:  v=>{ [523,659,784,988].forEach((f,i)=>tone('sine',f,f*1.02,.6,.05*v,i*.12)); },
   slash:  v=>{ shing(0,.06*v); },
 };
-// Voices: deep-voiced fighters grunt when they attack and shout on their special (a buzzy source through two vowel
-// "formant" filters, so it sounds like a short "hup!" / "haaa!"). Number = voice pitch in Hz.
-const VOICE = {gyomei:82, kokushibo:88, muzan:92, muzan_final:88, zohakuten:95, sanemi:108, akaza:112, tengen:104, urokodaki:98,
-  gyutaro:100, rengoku:118, genya:112, tanjiro_demon:104, inosuke:138, kaigaku:120, sekido:110, giyu:122};
-function voice(f0, len, vol, at=0){
-  const t=AC.currentTime+at, src=AC.createOscillator(), g=AC.createGain(), mix=AC.createGain(), lp=AC.createBiquadFilter();
-  src.type='sawtooth'; src.frequency.setValueAtTime(f0*1.08,t); src.frequency.exponentialRampToValueAtTime(f0*.82,t+len);
-  [[620,6,1],[1080,8,.55],[2400,10,.18]].forEach(([f,q,a])=>{ const bp=AC.createBiquadFilter(), ga=AC.createGain(); bp.type='bandpass'; bp.frequency.value=f; bp.Q.value=q; ga.gain.value=a; src.connect(bp).connect(ga).connect(mix); });
-  lp.type='lowpass'; lp.frequency.value=2800; mix.connect(lp).connect(g).connect(SFX_OUT);
-  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.02); g.gain.setValueAtTime(vol,t+len*.4); g.gain.exponentialRampToValueAtTime(.001,t+len);
-  src.start(t); src.stop(t+len+.05);
-  hiss('bandpass',900,600,len*.6,vol*.25,at,SFX_OUT,2);   // breath
-}
-const grunt = (id, at=0, big=false) => { const f=VOICE[id]; if(f && sfxOn()) try{ voice(f, big?.55:.2, big?.5:.38, at); }catch(e){} };
 // Basic attacks: what the fighter swings. Blades ring; fists, claws and demon arts sound like themselves.
 const WEAPON = {akaza:'fist', typezero:'blade', hand:'claw', swamp:'claw', kyogai:'drum', rui:'thread', enmu:'dream', muzan:'whip', muzan_final:'whip',
   doma:'fan', gyutaro:'sickle', daki:'obi', gyokko:'blunt', susamaru:'blunt', yahaba:'arrow', nezuko:'kick', nezuko_awakened:'kick', tanjiro_demon:'claw',
@@ -155,12 +141,12 @@ function sfxForLine(line){
   if(line.fx==='say') return sfx('page');
   const big=/\[-(\d+)%\]/.exec(line.t), hard=big && +big[1]>=30, by=line.by && typeof findU==='function' && findU(line.by);
   const style = by && typeof styleOf==='function' ? styleOf(by, line.move) : null;
-  if(line.fx==='special'){ sfx('cutin'); if(by) grunt(by.id, .15, true); if(style) setTimeout(()=>styleSfx(style, 1), 250); return; }
-  // a basic attack: the fighter's own weapon, their breathing style on top, a grunt if they have a deep voice
+  if(line.fx==='special'){ sfx('cutin'); if(style) setTimeout(()=>styleSfx(style, 1), 250); return; }
+  // a basic attack: the fighter's own weapon, their breathing style on top
   if(line.fx==='hit' && by && line.move==='attack' && sfxOn()){
     const w=WEAPON[by.id] || (by.demon ? 'claw' : 'blade');
     try{ ATTACK_SFX[w](hard?1.25:1); }catch(e){}
-    grunt(by.id, .12); if(style) setTimeout(()=>styleSfx(style, hard?.75:.55), 300);
+    if(style) setTimeout(()=>styleSfx(style, hard?.75:.55), 300);
     if(hard) setTimeout(()=>sfx('bighitTail'), 0);
     return;
   }
