@@ -5,7 +5,7 @@ function poolNotes(){
   // fam → a card of that character in the pool (inPool) and every version of it in the pool (versions; several in the All pool)
   const inPool = {}, versions = {}; S.pool.forEach(id=>{ const f=BYID[id].fam; inPool[f]=inPool[f]||id; (versions[f]=versions[f]||[]).push(id); });
   const has = f => f in inPool;
-  const who = f => S.picks[0].some(id=>BYID[id].fam===f) ? 0 : S.picks[1].some(id=>BYID[id].fam===f) ? 1 : -1;
+  const who = f => S.picks.findIndex(team=>team.some(id=>BYID[id].fam===f));   // owner, or -1
   const famsWhere = test => Object.keys(inPool).filter(f=>test(BYID[inPool[f]]));
   const free = fs => fs.filter(f=>who(f)<0);
 
@@ -27,14 +27,14 @@ function poolNotes(){
     const o=fs.map(who), owners=[...new Set(o.filter(x=>x>=0))];
     if(owners.length>1) return {state:'off'};
     if(owners.length===1){ const p=owners[0]; if(o.every(x=>x===p)) return {state:'on',p}; return {state: canAdd(p,free(fs))?'open':'off'}; }
-    return {state: [0,1].some(p=>canAdd(p,fs))?'open':'off'};
+    return {state: players().some(p=>canAdd(p,fs))?'open':'off'};
   }
   // two or more of these fighters on one team
   const twoOf = fs => Object.assign(twoOf_(fs), {rule:{type:'two', fams:fs}});
   function twoOf_(fs){
     if(!fits(cheapest(fs,2))) return {state:'never'};
-    for(const p of [0,1]) if(fs.filter(f=>who(f)===p).length>=2) return {state:'on',p};
-    const can=[0,1].some(p=>{ const need=2-fs.filter(f=>who(f)===p).length, pick=cheapest(free(fs),need); return pick.length===need && canAdd(p,pick); });
+    for(const p of players()) if(fs.filter(f=>who(f)===p).length>=2) return {state:'on',p};
+    const can=players().some(p=>{ const need=2-fs.filter(f=>who(f)===p).length, pick=cheapest(free(fs),need); return pick.length===need && canAdd(p,pick); });
     return {state: can?'open':'off'};
   }
   // `anchor` plus at least one of `others` on one team
@@ -43,7 +43,7 @@ function poolNotes(){
     if(!fits([anchor, ...cheapest(others,1)])) return {state:'never'};
     const m=who(anchor);
     if(m>=0 && others.some(f=>who(f)===m)) return {state:'on',p:m};
-    const can=[0,1].some(p=>{
+    const can=players().some(p=>{
       if(m>=0 && m!==p) return false;
       const need=m===p?[]:[anchor];
       if(others.some(f=>who(f)===p)) return canAdd(p,need);
@@ -51,11 +51,11 @@ function poolNotes(){
     });
     return {state: can?'open':'off'};
   }
-  // a fighter from A on the opposite team to a fighter from B
+  // a fighter from A on a different team to a fighter from B
   function facing(A, B){
     for(const a of A) for(const b of B){ const x=who(a), y=who(b); if(x>=0 && y>=0 && x!==y) return {state:'on'}; }
     const can=(f,p)=>who(f)===p || (who(f)<0 && canAdd(p,[f]));
-    return {state: A.some(a=>B.some(b=>a!==b && [0,1].some(p=>can(a,p)&&can(b,1-p)))) ? 'open' : 'off'};
+    return {state: A.some(a=>B.some(b=>a!==b && players().some(p=>others(p).some(q=>can(a,p)&&can(b,q))))) ? 'open' : 'off'};
   }
 
   const N=[];
@@ -105,7 +105,7 @@ function poolNotes(){
     const couldUse=(t,f)=> r.type==='two'
       ? (r.fams.some(x=>x!==f && who(x)===t) ? canAdd(t,[f]) : r.fams.some(x=>x!==f && who(x)<0 && canAdd(t,[f,x])))
       : (who(r.anchor)===t ? canAdd(t,[f]) : who(r.anchor)<0 && canAdd(t,[f,r.anchor]));
-    const keep=f=> f===r.anchor || who(f)>=0 || [0,1].some(t=>couldUse(t,f));
+    const keep=f=> f===r.anchor || who(f)>=0 || players().some(t=>couldUse(t,f));
     n.ids=n.ids.filter(id=>keep(BYID[id].fam)); });
   const rank={on:0, open:1, off:2};
   return N.sort((a,b)=>rank[a.state]-rank[b.state]);
@@ -116,11 +116,11 @@ function poolNotes(){
 // partners are listed. Example at 20 pts: viewing Giyu ✦ (10) won't suggest Gyomei ✦ (12) for the Hashira bonus.
 function notesForCard(id, p){
   const c=BYID[id], f=c.fam, notes=poolNotes().filter(n=>n.ids.includes(id));
-  if(S.picks[1-p].includes(id)) return notes;                       // the other side has it: show as is
+  if(others(p).some(q=>S.picks[q].includes(id))) return notes;      // another player has it: show as is
   const owned=S.picks[p].includes(id);
   const left=budget()-spent(p)-(owned?0:c.cost), slots=MAXTEAM-fighterIds(p).length-(owned||c.helper?0:1);
   const mine=fam=>S.picks[p].some(x=>BYID[x].fam===fam);
-  const free=fam=>!S.picks[0].concat(S.picks[1]).some(x=>BYID[x].fam===fam);
+  const free=fam=>!allPicks().some(x=>BYID[x].fam===fam);
   const cost=fam=>Math.min(...S.pool.filter(x=>BYID[x].fam===fam).map(x=>BYID[x].cost));
   const fits=fams=>{ const need=fams.filter(x=>!mine(x)); return need.every(free) && need.reduce((a,x)=>a+cost(x),0)<=left && need.length<=slots; };
   return notes.map(n=>{

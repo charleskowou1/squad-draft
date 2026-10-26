@@ -9,7 +9,7 @@
   --paper:#e9dec8; --paper-ink:#1d1915;
   --btn:#e9dec8; --btn-fg:#1a1714;
   --accent:#e0573b; --gold:#d6a54d; --mark:#d8434f;
-  --p1:#52b388; --p2:#8b9cf0;
+  --p1:#52b388; --p2:#8b9cf0; --p3:#e3a447; --p4:#e07fae;
   --hp:#e9dec8; --low:#ff5d4c;
   --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
   --body:"Zen Kaku Gothic New","Hiragino Sans","Segoe UI",system-ui,sans-serif;
@@ -458,6 +458,8 @@ details ul b{color:var(--fg)}
 .artstrip img{width:64px;height:78px;object-fit:cover;object-position:50% 20%;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 @keyframes marquee{to{transform:translateX(-50%)}}
 .modes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mode .mk{transition:transform .2s}
+.mode.on .mk{transform:scale(1.12)}
 @media (min-width:520px){.modes{grid-template-columns:repeat(4,1fr)}}
 /* online: create / join, lobby, waiting for the other phone */
 .onlinebox{display:flex;flex-direction:column;gap:10px}
@@ -724,3 +726,93 @@ details ul b{color:var(--fg)}
 .log .x{border-left-color:var(--gold);color:var(--gold);font-weight:700}
 .win{text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;padding:24px 0 8px}
 .win .big{font-family:var(--display);font-size:2.9rem;font-weight:800;line-height:1.05}
+
+/* ---------- 2–4 players ---------- */
+.teams.many{grid-template-columns:1fr 1fr}
+.overteams.many{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:720px){.overteams.many{grid-template-columns:1fr 1fr}}
+.strength.multi .sl{flex-wrap:wrap;justify-content:flex-start;gap:2px 14px}
+.modepanel{gap:14px}
+.setline{display:flex;flex-direction:column;gap:6px}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pname{min-width:0}
+.pname span{color:var(--tc);font-weight:800;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase}
+.pname input{border-left:3px solid var(--tc)}
+.subset{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg-2)}
+.subset summary{cursor:pointer;font-weight:700;font-size:.88rem}
+.subset[open]{display:flex;flex-direction:column;gap:12px}
+.storyhead{display:flex;gap:14px;align-items:center}
+.sprog{flex:none;width:84px;height:84px;border-radius:50%;display:grid;place-content:center;text-align:center;background:conic-gradient(var(--gold) calc(var(--won,0)*1%),var(--bg-2) 0);border:1px solid var(--line-2)}
+.sprog b{font-family:var(--display);font-size:1.6rem;line-height:1}
+.sprog span{font-size:.62rem;color:var(--muted);max-width:60px;line-height:1.1}
+.seats{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:420px}
+.seat{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;border:1.5px dashed var(--line-2);color:var(--muted);text-align:left}
+.seat.on{border-style:solid;border-color:var(--tc);color:var(--fg);background:var(--surface)}
+.seat .sn{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-weight:800;font-size:.8rem;background:var(--bg-2);color:var(--tc)}
+.seat.on .sn{background:var(--tc);color:#16130f}
+.seat b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat small{font-size:.66rem;color:var(--muted)}
+.places{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:4px}
+.place{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--tc);color:var(--tc);font-weight:700;font-size:.85rem}
+.place b{font-family:var(--display)}
+.crowteam{font-weight:800;font-size:.78rem;margin-top:6px}
+.aimhint{margin:-4px 0 0}
+/* ---------- story scenes ---------- */
+.scene .splace{font-size:.76rem;color:var(--sc2,var(--accent));font-weight:700}
+.lbox{position:absolute;left:0;right:0;height:14px;background:#000;z-index:2;pointer-events:none}
+.lbox.t{top:0;border-radius:18px 18px 0 0}.lbox.b{bottom:0;border-radius:0 0 18px 18px}
+.scenetop{z-index:3;padding-top:8px}
+.particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.particles i{position:absolute;left:var(--x);top:-10%;width:6px;height:6px;border-radius:50%;background:var(--sc2);opacity:.5;
+  transform:scale(var(--s));animation:fall 7s linear infinite;animation-delay:calc(var(--d)*-1)}
+.p-snow i{background:#f3efe8;opacity:.55}
+.p-petal i{width:9px;height:6px;border-radius:60% 0 60% 0;background:#f2a6c8;opacity:.6}
+.p-leaf i{width:9px;height:5px;border-radius:60% 0 60% 0;background:#7fc79a;opacity:.5}
+.p-ember i{background:#ff9b4a;box-shadow:0 0 6px #ff7a2a;opacity:.7;top:auto;bottom:-10%;animation-name:rise}
+.p-thread i{width:1px;height:46px;border-radius:0;background:linear-gradient(transparent,#dfe3f3,transparent);opacity:.35}
+.p-dust i{width:3px;height:3px;opacity:.35}
+@keyframes fall{to{transform:translate(30px,115vh) rotate(260deg) scale(var(--s))}}
+@keyframes rise{to{transform:translate(-24px,-115vh) scale(var(--s))}}
+.stagecast{position:relative;flex:1;min-height:220px;display:flex;align-items:flex-end;justify-content:center}
+.stagecast .gl.lg{width:150px;height:186px;font-size:4.5rem;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.stagecast .lead{position:absolute;bottom:0;animation:enter .45s cubic-bezier(.2,.8,.2,1)}
+.stagecast .lead.l{left:8%}.stagecast .lead.r{right:8%}.stagecast .lead.n{display:none}
+.stagecast .extra{position:absolute;bottom:26px;opacity:.28;filter:grayscale(.5) blur(.5px);transform:scale(.8)}
+.stagecast .extra.l{left:2%}.stagecast .extra.r{right:2%}
+@keyframes enter{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.sceneline{z-index:3}
+.sceneline.l{border-left:4px solid var(--p1)}.sceneline.r{border-right:4px solid var(--accent);text-align:right}
+.sceneline.n{text-align:center;background:rgba(18,16,14,.55)}
+.sceneline.n p{font-style:italic;color:var(--ink-2)}
+.sceneline .sname{font-family:var(--display);font-weight:800;font-size:1.15rem;color:var(--gold)}
+.typed span{opacity:0;animation:type .01s linear forwards;animation-delay:calc(var(--i)*28ms)}
+@keyframes type{to{opacity:1}}
+.scenefoot{z-index:3;padding-bottom:10px}
+.scenefoot .dots i.done{background:var(--ink-2)}
+.vscard{justify-content:flex-start;align-items:stretch;cursor:default}
+.vscard .vsrow.l{margin-top:auto}
+.vscard .btn.big{margin-bottom:auto}
+.vsrow{position:relative;z-index:3;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.vsc{display:flex;flex-direction:column;align-items:center;gap:4px;animation:enter .5s both}
+.vsc .gl.lg{width:84px;height:104px;font-size:2.6rem;border-radius:12px}
+.vsrow.r .vsc .gl{box-shadow:0 0 0 2px var(--accent)}
+.vsrow.l .vsc .gl{box-shadow:0 0 0 2px var(--p1)}
+.vsc small{font-size:.72rem;font-weight:700}
+.vsmid{position:relative;z-index:3;display:grid;place-items:center}
+.vsmid span{font-family:var(--display);font-weight:800;font-size:2.2rem;color:var(--gold);letter-spacing:.06em;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.vscard .stags{position:relative;z-index:3;justify-content:center}
+.vscard .btn.big{position:relative;z-index:3;align-self:center;min-width:200px;font-size:1.1rem}
+@media (prefers-reduced-motion: reduce){.particles,.typed span,.stagecast .lead,.vsc,.vsmid span{animation:none!important;opacity:1}}
+
+/* free-for-all move screen: opponents three to a row, so your own team stays in view */
+.opps{display:flex;flex-direction:column;gap:10px}
+.opps.many .side{gap:6px}
+.opps.many .tiles.simple{grid-template-columns:repeat(3,1fr);gap:6px}
+.opps.many .tiles.simple .tile{padding:6px}
+.opps.many .tiles.simple .nm{font-size:.78rem}
+.opps.many .sidehead .tname{font-size:1rem}
+.opps.many .tiles .tile .gl{width:30px;height:36px;font-size:1rem;border-radius:6px}
+.opps.many .tiles.simple .hprow{gap:4px}
+.opps.many .tiles.simple .bar{min-width:24px}
+.opps.many .tiles.simple .hp{font-size:.72rem}

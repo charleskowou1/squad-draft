@@ -7,22 +7,31 @@ function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
     try{
-      const level=['easy','normal','hard'][g%3]; S={phase:'setup',mode:'cpu',level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',names:['A','B']}; vSetup(); S.settings=true; vSheet(); S.settings=false;
+      // cycles: 2, 3 and 4 players; Quickplay, Local and Online screens; every level, budget and pool type
+      const level=['easy','normal','hard'][g%3], n=[2,3,4][g%3===0?0:(g%5)%3], mode=['cpu','local','online','cpu'][g%4];
+      S={phase:'setup',mode,n,level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',names:['A','B','C','D'].slice(0,n),me:mode==='online'?g%n:0};
+      ['local','online','cpu','story'].forEach(m=>{ S.mode=m; vSetup(); }); S.mode=mode; S.settings=true; vSheet(); S.settings=false;
+      if(mode==='online'){ S.phase='lobby'; S.lobby={code:'TEST',seats:[{name:'B',on:true},{name:'C',on:n>2},null]}; vLobby(); S.phase='setup'; }
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
+      if(S.spin.r<0||S.spin.r>=n) throw new Error('spin winner out of range');
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
-      let k=0; while(S.phase==='draft'&&k++<50){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.helpers=[['crow'],[]]; S.helperPlan=[[],[]]; S.sel=null; cpuDraftStep(level); }
-      vPass();
+      if(S.pool.some(id=>BYID[id].cost>maxCardCost())) throw new Error('card over the cost cap dealt');
+      let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
+      if(S.phase==='draft') throw new Error('draft did not finish');
+      if(S.teams.length!==n) throw new Error('wrong number of teams');
+      S.helpers[0]=['crow']; vPass();
       while(S.phase!=='over'){
-        S.planFor=0; S.focus=null; vPlan();
-        alive(0).forEach(u=>{ if(u.stun) return; setMove(u,u.cd?'attack':'special'); const o=targetOptions(u,S.plans[0][u.uid]); if(o.length) S.plans[0][u.uid].t=o[0].uid; vPlan(); });
-        if(!planReady(0)) throw new Error('plan not ready after choosing every move');
-        cpuPlan(1,level); cpuHelpers(0); cpuHelpers(1); S.scoutP=0; S.phase='scout'; vScout(); S.scouting=true; vPlan(); S.scouting=false; S.phase='ready'; vReady(); S.teams[0].concat(S.teams[1]).forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
+        const me=S.me||0;
+        players().forEach(p=>{ if(!alive(p).length) return; S.planFor=p; S.focus=null; if(p===me) vPlan();
+          alive(p).forEach(u=>{ if(u.stun) return; setMove(u,u.cd?'attack':'special'); const o=targetOptions(u,S.plans[p][u.uid]); if(o.length) S.plans[p][u.uid].t=o[0].uid; if(p===me) vPlan(); });
+          if(!planReady(p)) throw new Error('plan not ready after choosing every move'); });
+        players().forEach(p=>cpuHelpers(p)); S.scoutP=0; S.phase='scout'; vScout(); S.scouting=true; S.planFor=0; vPlan(); S.scouting=false; S.phase='ready'; vReady(); allUnits().forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
         resolve(); const ph=S.phase; S.phase='result';
         const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; vResult(); }
         S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
       }
-      vOver(); recordMatch(); vSetup();
+      vOver(); recordMatch(); if(n>2 && placings().flat().length!==n && S.winner>=0 && S.round<40) throw new Error('placings missing a team'); vSetup();
     }catch(e){ errors++; if(!first) first=e.stack; }
   }
   // story mode: every stage's map and scene, the preset battle (with repeat), a draft replay (with undo) and results
@@ -30,7 +39,7 @@ function check(games){
   for(let i=0;i<STAGES.length;i++){
     try{
       S={phase:'story',mode:'story',level:'hard',names:['A','B']}; vStory(); vSetup();
-      startStage(i); for(S.sceneAt=0;S.sceneAt<STAGES[i].scene.length;S.sceneAt++) vScene(); beginStage();
+      startStage(i); for(S.sceneAt=0;S.sceneAt<STAGES[i].scene.length;S.sceneAt++) vScene(); S.sceneAt=0; S.sceneVs=true; vScene(); beginStage();
       if(S.phase!=='plan') throw new Error('preset stage did not start the battle');
       S.planFor=0; vPlan(); cpuPlan(0); S.lastPlans[0]=JSON.parse(JSON.stringify(S.plans[0])); cpuPlan(1,stageLevel()); resolve();
       if(S.phase==='result'){ S.round++; S.phase='plan'; repeatPlans(0); vPlan(); }

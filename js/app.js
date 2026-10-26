@@ -18,10 +18,12 @@ function render(){
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
-  if(S.phase==='draft' && S.mode==='cpu' && turn()===1){ clearTimeout(S._t); S._t=setTimeout(()=>{ cpuDraftStep(S.level); render(); },700); }
+  if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ cpuDraftStep(S.level); render(); },700); }
   if(S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
-  // online host: send the new shared state to the other phone (only when it changed)
-  if(iAmHost() && ONLINE.net){ const j=snapshotFor(); if(j!==ONLINE.last){ ONLINE.last=j; ONLINE.net.publish(j); } }
+  // online host: send each guest phone its own copy of the shared state (only when it changed)
+  if(iAmHost() && ONLINE.net){ ONLINE.last=ONLINE.last||{};
+    const seats = S.phase==='lobby' ? (S.lobby.seats||[]).map((x,i)=>x&&x.on?i+1:0).filter(Boolean) : others(0);
+    seats.forEach(q=>{ const j=snapshotFor(q); if(j!==ONLINE.last[q]){ ONLINE.last[q]=j; ONLINE.net.publish(j,q); } }); }
 }
 // Turn the freshly drawn wheel to its landing angle, then show who won
 function animateSpin(){
@@ -47,23 +49,28 @@ function playRound(){
     if(S.info){ S._t=setTimeout(step,300); return; }   // paused while a fighter's info card is open
     if(S.play.k>=S.play.steps.length-1){ S.play.done=true; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
-    if(lines.some(l=>l.ko) && navigator.vibrate) navigator.vibrate([90,50,160]);
+    if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
     if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else sfxForLine(line);
     render();
     S._t=setTimeout(step, b>a ? groupTime(lines) : readTime(line));
   };
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
+// Start a Local or Quickplay match with the mode's settings: names from the boxes (computers get demon names)
 function startDraft(){
-  const n0 = document.getElementById('n0').value.trim()||'Player 1';
-  const n1 = S.mode==='cpu' ? 'Muzan AI' : (document.getElementById('n1').value.trim()||'Player 2');
-  S.names=[n0,n1]; if(S.mode==='2p') saveNames(S.names);
-  toSpin();
+  const c=useModeCfg(), field=i=>{ const el=document.getElementById('n'+i); return el&&el.value.trim(); };
+  if(S.mode==='local'){ S.names=Array.from({length:c.players},(_,i)=>field(i)||`Player ${i+1}`); saveNames(S.names.concat(localNames().slice(S.names.length))); }
+  else S.names=[field(0)||S.names[0]||'Player 1', ...CPU_NAMES.slice(0,c.players-1)];
+  S.n=c.players; toSpin();
 }
+// The next player (after p) who still has fighters, or -1
+const nextChooser = p => { for(let q=p+1;q<nPlayers();q++) if(alive(q).length) return q; return -1; };
 function toSpin(){ S.phase='spin'; S.spin=null; window.scrollTo(0,0); }
 // After a fighter's move is complete, open the next one that still needs a move
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
+// Scene lines type themselves out; a tap while typing shows the whole line, the next tap moves on
+const typingDone = () => S.sceneInstant || Date.now()-(S.sceneShownAt||0) > (STAGES[S.stage].scene[S.sceneAt][1].length*28+250);
 // After both sides lock in: give each crow owner their report (and a chance to re-plan), then fight
 function nextScoutOrFight(){
   S.scouting=false;
@@ -79,11 +86,20 @@ function nextScoutOrFight(){
 // Run the round, then play it back (a finished match still plays back first, then "See who won")
 function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='result'; playRound(); }
 
+// Change one of the selected mode's match settings (saved per mode)
+function setCfg(k,v){ const c=loadModeCfg(S.mode); c[k]=v; saveModeCfg(S.mode,c); useModeCfg(); }
+const keepNames = () => { const n0=document.getElementById('n0'); if(n0 && n0.value.trim()) S.names[0]=n0.value.trim();
+  if(S.mode==='local'){ const ns=localNames(); for(let i=0;i<4;i++){ const el=document.getElementById('n'+i); if(el) ns[i]=el.value.trim()||ns[i]; } saveNames(ns); } };
 const ACTIONS = {
-  mode(v){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value; S.mode=v; if(v==='2p'){ const s=loadNames(); S.names[1]=(s&&s[1])||'Mia'; } },
+  mode(v){ keepNames(); S.mode=v; S.joinOpen=false; S.onlineMsg=''; useModeCfg(v); if(v==='local') S.names=localNames(); },
+  cfgplayers(v){ keepNames(); setCfg('players',+v); },
+  cfgbudget(v){ keepNames(); setCfg('budget',+v); },
+  cfgpool(v){ keepNames(); setCfg('poolType',v); },
+  cfglevel(v){ keepNames(); setCfg('level',v); },
   start: startDraft,
-  home(){ clearTimeout(S._t); if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=''; } S={phase:'setup',mode:S.mode,level:S.level,budget:loadBudget(),poolType:S.poolType,soundOn:S.soundOn,speed:S.speed,names:vsCpu()?[S.names[0],(loadNames()||[])[1]||'Mia']:S.names}; },
-  level(v){ S.level=v; saveLevel(v); },
+  home(){ clearTimeout(S._t); if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; }
+    const mode=S.mode==='story'?'story':S.mode; S={phase:'setup',mode,soundOn:S.soundOn,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+  vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); toSpin(); },
   spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
   toDraft(){ if(isOnline() && !iAmHost()) return; newDraft(S.spin.r); },
@@ -91,13 +107,11 @@ const ACTIONS = {
   ocreate(){ onlineCreate(); },
   ojoin(){ onlineJoin(); },
   ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
-  ostart(){ if(iAmHost() && S.lobby && S.lobby.peer) toSpin(); },
+  ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
-  sel(v){ if(S.mode==='cpu' && turn()===1) return; if(S.pool.includes(v)) S.sel=v; },
+  sel(v){ if(S.mode==='cpu' && turn()!==0) return; if(S.pool.includes(v)) S.sel=v; },
   unsel(){ S.sel=null; S.info=null; S.settings=false; },
   settings(){ S.settings=true; },
-  budget(v){ S.budget=+v; saveBudget(S.budget); },
-  pooltype(v){ S.poolType=v; savePoolType(v); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },
@@ -106,11 +120,14 @@ const ACTIONS = {
   repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
   speed(v){ S.speed=v; try{ localStorage.setItem('squad-draft-speed',v) }catch(e){} },
   sound(v){ S.soundOn=v==='on'; saveSoundOn(S.soundOn); if(S.soundOn) sfx('pick'); },
-  storymap(){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value.trim()||S.names[0]; clearTimeout(S._t); S.budget=loadBudget(); S.phase='story'; window.scrollTo(0,0); },
-  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); window.scrollTo(0,0); },
-  stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); window.scrollTo(0,0); },
-  scenenext(){ if(S.sceneAt+1<STAGES[S.stage].scene.length){ S.sceneAt++; sfx('pick'); return; } ACTIONS.sceneskip(); },
-  sceneskip(){ beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
+  storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; window.scrollTo(0,0); },
+  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
+  stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
+  scenenext(){ if(S.sceneVs) return;
+    if(!typingDone()){ S.sceneInstant=true; return; }
+    if(S.sceneAt+1<STAGES[S.stage].scene.length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('pick'); return; }
+    S.sceneVs=true; sfx('gong'); },
+  sceneskip(){ if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
   helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
@@ -124,17 +141,18 @@ const ACTIONS = {
     S.lastPlans[S.planFor]=JSON.parse(JSON.stringify(S.plans[S.planFor]));   // for "Repeat last round"
     if(S.scouting) return nextScoutOrFight();          // re-planned after a crow report
     if(vsCpu()){
-      cpuPlan(1, S.mode==='story'?stageLevel():S.level); cpuHelpers(1);
-      if(S.helperPlan[1].includes('crow')) cpuScout(1);   // the computer's crow sees your moves
+      others(0).filter(q=>alive(q).length).forEach(q=>{ cpuPlan(q, S.mode==='story'?stageLevel():S.level); cpuHelpers(q); });
+      others(0).forEach(q=>{ if(S.helperPlan[q].includes('crow')) cpuScout(q); });   // a computer's crow sees everyone's moves
       S.scoutQueue=S.helperPlan[0].includes('crow')?[0]:[];
       return nextScoutOrFight();
     }
-    if(S.planFor===0){ S.planFor=1; S.phase='pass'; return newPlanTurn(); }
-    S.scoutQueue=[0,1].filter(p=>S.helperPlan[p].includes('crow'));   // two players: each crow owner gets a private report
+    const nx=nextChooser(S.planFor);   // local: hand the phone to the next player still in the fight
+    if(nx>=0){ S.planFor=nx; S.phase='pass'; return newPlanTurn(); }
+    S.scoutQueue=players().filter(p=>alive(p).length && S.helperPlan[p].includes('crow'));   // each crow owner gets a private report
     nextScoutOrFight();
   },
   skip(){ clearTimeout(S._t); S.play.done=true; },
-  next(){ if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=0; S.play=null; S.phase=S.mode==='2p'?'pass':'plan'; newPlanTurn(); },
+  next(){ if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
   finish(){ if(isOnline()){ S.localOver=true; return window.scrollTo(0,0); } S.play=null; S.phase='over'; window.scrollTo(0,0); },
 };
 document.addEventListener('click',e=>{
@@ -164,27 +182,32 @@ function findArt(){
 ONLINE.hooks.roundPlayed = () => playRound();
 const FB_VERSION = '10.12.2';
 const loadScript = src => new Promise((ok,fail)=>{ const el=document.createElement('script'); el.src=src; el.onload=ok; el.onerror=()=>fail(new Error('Could not load '+src)); document.head.appendChild(el); });
-// The transport ONLINE uses: rooms/<CODE> holds host + guest names, the shared state (host writes) and actions (guest writes)
+// The transport ONLINE uses: rooms/<CODE> holds the host, guest seats 1–3 (name, on), one state copy per seat
+// (state/<seat>, host writes) and the guests' actions (acts, guests write)
 async function firebaseNet(role){
   if(!FIREBASE_CONFIG) throw new Error("Online play isn't set up yet (the Firebase config is missing).");
   if(!navigator.onLine) throw new Error("You're offline. Online play needs an internet connection.");
   if(!window.firebase) for(const m of ['app','auth','database']) await loadScript(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-${m}-compat.js`);
   if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   await firebase.auth().signInAnonymously();
-  const db=firebase.database(), offs=[]; let room=null;
+  const db=firebase.database(), offs=[]; let room=null, seat=0;
   const listen=(ref,ev,f)=>{ ref.on(ev,f); offs.push(()=>ref.off(ev,f)); };
   return {
     async create(code, name){ room=db.ref('rooms/'+code); if((await room.get()).exists()) return false;
       await room.set({created:Date.now(), host:{name, on:true}}); room.child('host/on').onDisconnect().set(false); return true; },
+    // a guest takes the first free seat (1–3); returns the room and the seat number
     async join(code, name){ room=db.ref('rooms/'+code); const snap=await room.get(); if(!snap.exists()) throw new Error('No game with that code.');
-      const v=snap.val(); if(v.guest && v.guest.on) throw new Error('That game already has two players.');
-      await room.child('guest').set({name, on:true}); room.child('guest/on').onDisconnect().set(false); return v; },
-    publish(json){ room.child('state').set(json); },
+      const v=snap.val(); if(v.state && v.state.started) throw new Error('That game has already started.');
+      const res=await room.child('seats').transaction(seats=>{ seats=seats||{}; for(let i=1;i<=3;i++){ if(!seats[i]||!seats[i].on){ seats[i]={name,on:true}; seat=i; return seats; } } return; });
+      if(!res.committed || !seat) throw new Error('That game is full (4 players).');
+      room.child('seats/'+seat+'/on').onDisconnect().set(false); return {room:v, seat}; },
+    publish(json, q){ room.child('state/'+q).set(json); },
     send(msg){ room.child('acts').push(JSON.parse(JSON.stringify(msg))); },   // Firebase rejects undefined (e.g. a Defend move's empty target)
-    onState(cb){ listen(room.child('state'),'value',s=>{ if(s.exists()) cb(s.val()); }); },
+    onState(cb){ listen(room.child('state/'+seat),'value',s=>{ if(s.exists()) cb(s.val()); }); },
     onAction(cb){ listen(room.child('acts'),'child_added',s=>{ cb(s.val()); s.ref.remove(); }); },
-    onPeer(cb){ listen(room.child(role==='host'?'guest':'host'),'value',s=>cb(s.val())); },
-    leave(){ offs.forEach(f=>f()); offs.length=0; if(room) room.child(role+'/on').set(false); },
+    onSeats(cb){ listen(room.child('seats'),'value',s=>{ const v=s.val()||{}; cb([1,2,3].map(i=>v[i]||null)); }); },
+    onHost(cb){ listen(room.child('host'),'value',s=>cb(s.val())); },
+    leave(){ offs.forEach(f=>f()); offs.length=0; if(room) room.child(role==='host'?'host/on':'seats/'+seat+'/on').set(false); },
   };
 }
 const myName = () => { const n0=document.getElementById('n0'); return (n0&&n0.value.trim()) || S.names[0] || 'Player'; };
@@ -194,10 +217,12 @@ async function onlineCreate(){
     const net=await firebaseNet('host'); let code=null;
     for(let i=0;i<8 && !code;i++){ const c=newRoomCode(); if(await net.create(c,name)) code=c; }
     if(!code) throw new Error('Could not make a room code. Try again.');
-    ONLINE.net=net; ONLINE.last='';
-    Object.assign(S,{me:0, planFor:0, names:[name,'…'], lobby:{code, peer:false}, phase:'lobby', onlineMsg:''});
+    ONLINE.net=net; ONLINE.last=null; useModeCfg('online');
+    Object.assign(S,{me:0, planFor:0, n:2, names:[name], lobbyHost:name, lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
     net.onAction(msg=>{ hostHandle(msg); render(); });
-    net.onPeer(v=>{ if(!v) return; S.names[1]=v.name; S.lobby.peer=!!v.on; if(!v.on && S.phase!=='lobby') S.onlineMsg=`${v.name} disconnected.`; render(); });
+    net.onSeats(seats=>{ if(S.phase==='lobby') S.lobby.seats=seats;
+      else seats.forEach((x,i)=>{ if(x && !x.on && i+1<nPlayers()) S.onlineMsg=`${x.name} disconnected.`; });
+      render(); });
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not connect.'; render(); }
 }
@@ -206,14 +231,15 @@ async function onlineJoin(){
   if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the 4-letter code from the other phone.'; return render(); }
   const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
   try{
-    const net=await firebaseNet('guest'), room=await net.join(code,name);
+    const net=await firebaseNet('guest'), {room, seat}=await net.join(code,name);
     ONLINE.net=net;
-    Object.assign(S,{me:1, planFor:1, names:[(room.host&&room.host.name)||'Host', name], lobby:{code}, phase:'lobby', onlineMsg:''});
+    Object.assign(S,{me:seat, planFor:seat, names:[(room.host&&room.host.name)||'Host', name], lobbyHost:(room.host&&room.host.name)||'Host', lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
     net.onState(json=>{ applySnapshot(json); render(); });
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not join.'; render(); }
 }
-S.soundOn=loadSoundOn(); S.speed=loadSpeed();
+S.soundOn=loadSoundOn(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
+useModeCfg(S.mode); S.names=localNames();
 render();
 findArt();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)

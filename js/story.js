@@ -156,8 +156,12 @@ const STAGES = [
       ['inosuke',"Wake up, Monjiro! Who's gonna be my rival?!"],
       ['zenitsu',"Nezuko's waiting for you! Come home!"]]},
 ];
-const STORY_KEY = 'squad-draft-story';
+// Story progress. CK reset everyone to 0 on Oct 26, 2026 (new key; the old 'squad-draft-story' is deleted on load).
+// From here on progress is kept: don't change this key again unless CK asks for another reset.
+const STORY_KEY = 'squad-draft-story-v2';
+try{ localStorage.removeItem('squad-draft-story') }catch(e){}
 function loadStory(){ try{ return JSON.parse(localStorage.getItem(STORY_KEY))||{cleared:[]} }catch(e){ return {cleared:[]} } }
+const storyWon = () => loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length;
 function saveStoryClear(id){ const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
 const stageCleared = i => loadStory().cleared.includes(STAGES[i].id);
 const stageUnlocked = i => i===0 || stageCleared(i-1) || stageCleared(i);
@@ -178,10 +182,12 @@ const storyCard = c => !c.spawn && !c.legend && (!c.demon || STORY_ALLIES.includ
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
   const st=STAGES[i];
-  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null,
+  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, n:2, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
   S.names=[S.names[0], st.foe];
 }
+// Which side of the scene a speaker stands on: your squad on the left, the enemy on the right
+const sceneSide = (st, id) => st.enemy.some(e=>BYID[e].fam===BYID[id].fam) && !st.mine.includes(id) ? 'r' : 'l';
 // After the scene: fight with the preset squad, or draft your own
 function beginStage(){
   const st=STAGES[S.stage];

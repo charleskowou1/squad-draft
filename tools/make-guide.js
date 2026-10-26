@@ -29,11 +29,15 @@ hr('1. THE GAME IN ONE MINUTE');
 out(`- Two sides draft a squad of fighters on a points budget, then battle in rounds.
 - Each round, every fighter secretly picks ATTACK, DEFEND or their SPECIAL. Then everything resolves.
 - Last side with anyone standing wins. A match stopped at round 40 is a draw.
-- Modes: 2 Players on one phone (moves hidden behind a hand-the-phone screen), Vs Computer (Easy/Normal/Hard),
-  and Story (9 stages against fixed enemy teams).`);
+- Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (2–4 phones, 4-letter room code),
+  Quickplay (you vs 1–3 computers: Easy/Normal/Hard) and Story Mode (21 battles with preset squads).
+- FREE-FOR-ALL (3 or 4 players): every team fights every other team; last team standing wins (places 1st–4th).
+  A special that hits "every enemy" hits every fighter on the ONE team you aim it at. Cards over 12 pts aren't dealt
+  (big single cards dominated: the first picker won ~60%; with the cap the pick order splits ~40/33/26%).
+  The computer gangs up on whichever team is ahead. Draft is snake order through all players (A B C C B A A B C…).`);
 
 hr('2. THE DRAFT');
-out(`- Budget: 10, 20 (default) or 30 points per side (set in Settings).
+out(`- Budget: 10, 20 (default) or 30 points per side (set per mode on the main menu).
 - Team size: 1 to 6 fighters. You can lock your team at any time ("Lock team"); you auto-lock if nothing is affordable.
 - A wheel spin decides who picks first. Then snake order: A, B, B, A, A, B, B, A…
   Once one side locks, the other keeps picking until they lock or can't afford anything.
@@ -161,7 +165,8 @@ out(`- Points efficiency matters more than raw power: what fits exactly into the
 - Stuns (Rui, Kyogai, Gyokko) are very strong in small teams (10-point games).
 - Demons regenerate every round: finish them, don't spread chip damage. Yoriichi's special stops regeneration.
 - The Crow is best on the round when the enemy's big specials come off cooldown.
-- Two players: moves are secret, so mixing Defend and Special timing ("mind games") matters.`);
+- Against people: moves are secret, so mixing Defend and Special timing ("mind games") matters.
+- Free-for-all: don't look like the leader. Everyone (the computer too) piles onto the strongest team.`);
 
 hr('11. WORKED EXAMPLES');
 out(`EXAMPLE DRAFT (20 points, Random pool). Dealt: Doma 11, Giyu 8, Rengoku 7, Tanjiro 5, Nezuko 4, Zenitsu 4,
