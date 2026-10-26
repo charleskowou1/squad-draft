@@ -19,6 +19,7 @@ function render(){
   // keep fold-out sections (How to play, records…) open across redraws
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
   document.body.classList.toggle('localmode', S.mode==='local');
+  cloudCheck();   // back up saved progress a few seconds after it changes
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
@@ -27,7 +28,7 @@ function render(){
   if(S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
   // online host: send each guest phone its own copy of the shared state (only when it changed)
   if(iAmHost() && ONLINE.net){ ONLINE.last=ONLINE.last||{};
-    const seats = S.phase==='lobby' ? (S.lobby.seats||[]).map((x,i)=>x&&x.on?i+1:0).filter(Boolean) : others(0);
+    const seats = S.phase==='lobby' ? (S.lobby.seats||[]).map((x,i)=>x&&x.on?i+1:0).filter(Boolean) : others(S.me);
     seats.forEach(q=>{ const j=snapshotFor(q); if(j!==ONLINE.last[q]){ ONLINE.last[q]=j; ONLINE.net.publish(j,q); } }); }
 }
 // Turn the freshly drawn wheel to its landing angle, then show who won
@@ -122,8 +123,8 @@ const ACTIONS = {
   cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
-  home(){ clearTimeout(S._t); if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; }
-    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+  home(){ clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
+    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
   spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -140,6 +141,14 @@ const ACTIONS = {
   settings(){ S.settings=true; },
   settab(v){ S.setTab=v; },
   theirs(){ S.showTheirs=!S.showTheirs; },
+  install(){ if(INSTALL_EVENT){ INSTALL_EVENT.prompt(); INSTALL_EVENT.userChoice.finally(()=>{ INSTALL_EVENT=null; installInfo(); render(); }); } },
+  installlater(){ try{ localStorage.setItem('squad-draft-install-later', Date.now()) }catch(e){} installInfo(); },
+  backupnow(){ cloudBackup(true); },
+  restore(){ cloudRestore(); },
+  restoreok(){ cloudApply(); },
+  unrestore(){ S.restoreFound=null; },
+  copycode(){ const c=showCode(loadCloud().code); try{ navigator.clipboard.writeText(c); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); }catch(e){} },
+  tipok(v){ try{ const t=JSON.parse(localStorage.getItem(TIPS_KEY))||[]; t.push(v); localStorage.setItem(TIPS_KEY,JSON.stringify([...new Set(t)])); }catch(e){} },
   codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
@@ -228,45 +237,91 @@ const FB_VERSION = '10.12.2';
 const loadScript = src => new Promise((ok,fail)=>{ const el=document.createElement('script'); el.src=src; el.onload=ok; el.onerror=()=>fail(new Error('Could not load '+src)); document.head.appendChild(el); });
 // The transport ONLINE uses: rooms/<CODE> holds the host, guest seats 1–3 (name, on), one state copy per seat
 // (state/<seat>, host writes) and the guests' actions (acts, guests write)
-async function firebaseNet(role){
+// Load Firebase (only when online play or cloud backup needs it) and sign in anonymously
+async function firebaseReady(){
   if(!FIREBASE_CONFIG) throw new Error("Online play isn't set up yet (the Firebase config is missing).");
-  if(!navigator.onLine) throw new Error("You're offline. Online play needs an internet connection.");
+  if(!navigator.onLine) throw new Error("You're offline. This needs an internet connection.");
   if(!window.firebase) for(const m of ['app','auth','database']) await loadScript(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-${m}-compat.js`);
   if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  await firebase.auth().signInAnonymously();
+  if(!firebase.auth().currentUser) await firebase.auth().signInAnonymously();
+  return firebase.database();
+}
+async function firebaseNet(role){
+  await firebaseReady();
   const db=firebase.database(), offs=[]; let room=null, seat=0;
-  const listen=(ref,ev,f)=>{ ref.on(ev,f); offs.push(()=>ref.off(ev,f)); };
+  const listen=(ref,ev,f)=>{ ref.on(ev,f); const off=()=>ref.off(ev,f); offs.push(off); return off; };
+  // presence: this seat is "on" while connected, and goes back on after any reconnect (switching apps or sites can drop it)
+  const presence=()=>{ const me=room.child(seat===0?'host/on':'seats/'+seat+'/on');
+    listen(db.ref('.info/connected'),'value',s=>{ if(s.val()){ me.onDisconnect().set(false); me.set(true); } }); };
   return {
     async create(code, name){ room=db.ref('rooms/'+code); if((await room.get()).exists()) return false;
-      await room.set({created:Date.now(), host:{name, on:true}}); room.child('host/on').onDisconnect().set(false); return true; },
+      await room.set({created:Date.now(), host:{name, on:true}, hostSeat:0}); presence(); return true; },
     // a guest takes the first free seat (1–3); returns the room and the seat number
     async join(code, name){ room=db.ref('rooms/'+code); const snap=await room.get(); if(!snap.exists()) throw new Error('No game with that code.');
-      const v=snap.val(); if(v.state && v.state.started) throw new Error('That game has already started.');
+      const v=snap.val();
       const res=await room.child('seats').transaction(seats=>{ seats=seats||{}; for(let i=1;i<=3;i++){ if(!seats[i]||!seats[i].on){ seats[i]={name,on:true}; seat=i; return seats; } } return; });
       if(!res.committed || !seat) throw new Error('That game is full (4 players).');
-      room.child('seats/'+seat+'/on').onDisconnect().set(false); return {room:v, seat}; },
+      presence(); return {room:v, seat}; },
     publish(json, q){ room.child('state/'+q).set(json); },
     send(msg){ room.child('acts').push(JSON.parse(JSON.stringify(msg))); },   // Firebase rejects undefined (e.g. a Defend move's empty target)
-    onState(cb){ listen(room.child('state/'+seat),'value',s=>{ if(s.exists()) cb(s.val()); }); },
-    onAction(cb){ listen(room.child('acts'),'child_added',s=>{ cb(s.val()); s.ref.remove(); }); },
-    onSeats(cb){ listen(room.child('seats'),'value',s=>{ const v=s.val()||{}; cb([1,2,3].map(i=>v[i]||null)); }); },
-    onHost(cb){ listen(room.child('host'),'value',s=>cb(s.val())); },
-    leave(){ offs.forEach(f=>f()); offs.length=0; if(room) room.child(role==='host'?'host/on':'seats/'+seat+'/on').set(false); },
+    onState(cb){ return listen(room.child('state/'+seat),'value',s=>{ if(s.exists()) cb(s.val()); }); },
+    // the host's queue of actions: an action is removed only once the host has taken it (cb returns true)
+    onAction(cb){ return listen(room.child('acts'),'child_added',s=>{ if(cb(s.val())) s.ref.remove(); }); },
+    onSeats(cb){ return listen(room.child('seats'),'value',s=>{ const v=s.val()||{}; cb([1,2,3].map(i=>v[i]||null)); }); },
+    onHost(cb){ return listen(room.child('host'),'value',s=>cb(s.val())); },
+    onHostSeat(cb){ return listen(room.child('hostSeat'),'value',s=>cb(s.val()||0)); },
+    // take over hosting from seat `from` (only one phone can win this)
+    async claimHost(from, to){ const r=await room.child('hostSeat').transaction(v=>(v||0)===from ? to : undefined); return r.committed; },
+    leave(){ offs.forEach(f=>f()); offs.length=0; if(room) room.child(seat===0?'host/on':'seats/'+seat+'/on').set(false); },
   };
 }
 const myName = () => { const n0=document.getElementById('n0'); return (n0&&n0.value.trim()) || S.names[0] || 'Player'; };
+/* ---------- online roles: host or guest, presence, and hand-off ----------
+   ONLINE.offActs / ONLINE.offState switch listening on and off when this phone becomes host or goes back to guest. */
+function listenAsHost(){
+  if(ONLINE.offState){ ONLINE.offState(); ONLINE.offState=null; }
+  if(!ONLINE.offActs) ONLINE.offActs=ONLINE.net.onAction(msg=>{
+    if(!iAmHost()) return false;                               // not for us (we're not hosting): leave it for the host
+    if(msg.to!==undefined && msg.to!==S.me && !(ONLINE.tookFrom||[]).includes(msg.to)) return false;
+    hostHandle(msg); render(); return true; });
+}
+function listenAsGuest(){
+  if(ONLINE.offActs){ ONLINE.offActs(); ONLINE.offActs=null; }
+  if(!ONLINE.offState) ONLINE.offState=ONLINE.net.onState(json=>{ applySnapshot(json); render(); });
+}
+// presence of every seat (true = connected); used for "(away)" labels and the hand-off timer
+function watchPresence(){
+  ONLINE.net.onHost(v=>{ S.away=Object.assign({},S.away,{0: !(v&&v.on)}); presenceChanged(); });
+  ONLINE.net.onSeats(seats=>{ if(S.phase==='lobby') S.lobby.seats=seats; const a=Object.assign({},S.away); seats.forEach((x,i)=>{ a[i+1]= !!x && !x.on; }); S.away=a; presenceChanged(); });
+  ONLINE.net.onHostSeat(h=>{ const was=iAmHost(); S.hostSeat=h; if(iAmHost()) listenAsHost(); else if(was || !ONLINE.offState) listenAsGuest(); presenceChanged(); });
+}
+// While the host is away mid-match, the first player still here takes over after HANDOFF_MS
+let HANDOFF=null;
+function presenceChanged(){
+  const h=hostSeat(), hostAway=S.away && S.away[h] && S.phase!=='lobby' && !S.final && !iAmHost();
+  if(!hostAway){ clearTimeout(HANDOFF); HANDOFF=null; S.hostAwaySince=null; render(); return; }
+  if(!S.hostAwaySince) S.hostAwaySince=Date.now();
+  if(!HANDOFF) HANDOFF=setTimeout(tryTakeOver, Math.max(0, S.hostAwaySince+HANDOFF_MS-Date.now()));
+  render();
+}
+async function tryTakeOver(){
+  HANDOFF=null; const h=hostSeat(); if(!(S.away&&S.away[h]) || iAmHost()) return;
+  // the lowest seat still here goes first; anyone else waits a little longer in case that phone can't
+  const here=players().filter(p=>p!==h && !(S.away&&S.away[p]));
+  if(here[0]!==S.me){ HANDOFF=setTimeout(tryTakeOver, 30000); return; }
+  if(await ONLINE.net.claimHost(h, S.me)){
+    ONLINE.tookFrom=[...(ONLINE.tookFrom||[]), h]; takeOverHost(S.names[h]); ONLINE.last={}; listenAsHost(); render();
+  }
+}
 async function onlineCreate(){
   const name=myName(); S.names[0]=name; S.onlineMsg='Connecting…'; render();
   try{
     const net=await firebaseNet('host'); let code=null;
     for(let i=0;i<8 && !code;i++){ const c=newRoomCode(); if(await net.create(c,name)) code=c; }
     if(!code) throw new Error('Could not make a room code. Try again.');
-    ONLINE.net=net; ONLINE.last=null; useModeCfg('online');
-    Object.assign(S,{me:0, planFor:0, n:2, names:[name], lobbyHost:name, lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
-    net.onAction(msg=>{ hostHandle(msg); render(); });
-    net.onSeats(seats=>{ if(S.phase==='lobby') S.lobby.seats=seats;
-      else seats.forEach((x,i)=>{ if(x && !x.on && i+1<nPlayers()) S.onlineMsg=`${x.name} disconnected.`; });
-      render(); });
+    ONLINE.net=net; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; ONLINE.tookFrom=[]; useModeCfg('online');
+    Object.assign(S,{me:0, planFor:0, n:2, hostSeat:0, away:{}, names:[name], lobbyHost:name, lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
+    listenAsHost(); watchPresence();
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not connect.'; render(); }
 }
@@ -276,14 +331,74 @@ async function onlineJoin(){
   const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
   try{
     const net=await firebaseNet('guest'), {room, seat}=await net.join(code,name);
-    ONLINE.net=net;
-    Object.assign(S,{me:seat, planFor:seat, names:[(room.host&&room.host.name)||'Host', name], lobbyHost:(room.host&&room.host.name)||'Host', lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
-    net.onState(json=>{ applySnapshot(json); render(); });
+    ONLINE.net=net; ONLINE.offActs=ONLINE.offState=null; ONLINE.tookFrom=[];
+    Object.assign(S,{me:seat, planFor:seat, hostSeat:room.hostSeat||0, away:{}, names:[(room.host&&room.host.name)||'Host', name], lobbyHost:(room.host&&room.host.name)||'Host', lobby:{code, seats:[]}, phase:'lobby', onlineMsg:''});
+    listenAsGuest(); watchPresence();
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not join.'; render(); }
 }
+/* ---------- cloud backup with a recovery code ----------
+   Every 'squad-draft…' setting and save on this phone (story, stars, stats, records, daily streak, names, settings) is
+   copied to Firebase at saves/<CODE> a few seconds after it changes. The code (like KMRT-7Q2X-9HEA) is shown in
+   Settings → Save; typing it on another phone (or after clearing the browser) restores everything.
+   Needs the 'saves' rule in the Firebase console (see CLAUDE.md). Until then backups fail quietly and Settings says so. */
+const CLOUD_KEY = 'squad-draft-cloud', CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const NOT_BACKED = ['squad-draft-cloud','squad-draft-data','squad-draft-install-later'];
+const loadCloud = () => { try{ return JSON.parse(localStorage.getItem(CLOUD_KEY))||{} }catch(e){ return {} } };
+const saveCloud = c => { try{ localStorage.setItem(CLOUD_KEY, JSON.stringify(c)) }catch(e){} };
+const newSaveCode = () => Array.from({length:12},()=>CODE_ABC[Math.floor(Math.random()*CODE_ABC.length)]).join('');
+const showCode = c => c ? c.match(/.{4}/g).join('-') : '';
+function saveData(){ const d={}; try{ Object.keys(localStorage).filter(k=>k.startsWith('squad-draft') && !NOT_BACKED.includes(k)).sort().forEach(k=>{ d[k]=localStorage.getItem(k); }); }catch(e){} return d; }
+// worth backing up once there's real progress (not a brand-new phone)
+const hasProgress = d => ['squad-draft-story-v2','squad-draft-records','squad-draft-score','squad-draft-daily'].some(k=>d[k] && d[k]!=='{}' && d[k]!=='{"cleared":[]}');
+let CLOUD = {timer:null, last:'', busy:false, status:''};
+function cloudCheck(){   // called after every redraw: schedule a backup when the saved data changed
+  if(!FIREBASE_CONFIG) return; const d=saveData(), j=JSON.stringify(d);
+  if(j===CLOUD.last || !hasProgress(d)) return;
+  clearTimeout(CLOUD.timer); CLOUD.timer=setTimeout(()=>cloudBackup(), 4000);
+}
+async function cloudBackup(force){
+  if(CLOUD.busy || (!navigator.onLine && !force)) return; CLOUD.busy=true;
+  const d=saveData(), j=JSON.stringify(d), c=loadCloud();
+  try{
+    const db=await firebaseReady(); if(!c.code){ c.code=newSaveCode(); }
+    await db.ref('saves/'+c.code).set({v:1, at:Date.now(), data:d});
+    c.last=Date.now(); saveCloud(c); CLOUD.last=j; CLOUD.status='';
+  }catch(e){ CLOUD.status = /permission/i.test(e.message||'') ? 'rules' : 'offline'; }
+  CLOUD.busy=false; if(S.settings && S.setTab==='save') render();
+}
+// Restore: first tap looks the code up, the second confirms (it replaces this phone's progress), then the game reloads
+async function cloudRestore(){
+  const el=document.getElementById('restorecode'), raw=((el&&el.value)||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  S.restoreCode=raw;
+  if(raw.length!==12){ S.restoreMsg='Type the 12-character code (dashes are optional).'; return render(); }
+  S.restoreMsg='Looking it up…'; render();
+  try{ const db=await firebaseReady(), snap=await db.ref('saves/'+raw).get();
+    if(!snap.exists()){ S.restoreMsg='No backup with that code.'; return render(); }
+    S.restoreFound={code:raw, at:snap.val().at, data:snap.val().data}; S.restoreMsg='';
+  }catch(e){ S.restoreMsg=/permission/i.test(e.message||'')?"Cloud backup isn't switched on yet.":'Could not connect. Check your internet.'; }
+  render();
+}
+function cloudApply(){
+  const f=S.restoreFound; if(!f) return;
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('squad-draft') && !NOT_BACKED.includes(k)).forEach(k=>localStorage.removeItem(k));
+    Object.entries(f.data||{}).forEach(([k,v])=>localStorage.setItem(k,v)); saveCloud({code:f.code, last:f.at}); }catch(e){}
+  location.reload();
+}
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
 useModeCfg(S.mode); S.names=localNames();
+// Add to Home Screen: what this phone can do (shown on the home screen until the game is installed)
+let INSTALL_EVENT=null;
+function installInfo(){
+  const ua=navigator.userAgent||'', ios=/iphone|ipad|ipod/i.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  let later=0; try{ later=+localStorage.getItem('squad-draft-install-later')||0 }catch(e){}
+  S.install={ ios, mobile: ios || /android/i.test(ua) || navigator.maxTouchPoints>1,
+    standalone: matchMedia('(display-mode: standalone)').matches || navigator.standalone===true,
+    canPrompt: !!INSTALL_EVENT, hidden: Date.now()-later < 3*24*3600e3 };
+}
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); INSTALL_EVENT=e; installInfo(); if(S.phase==='setup') render(); });
+window.addEventListener('appinstalled', ()=>{ INSTALL_EVENT=null; installInfo(); render(); });
+installInfo();
 // ask the browser to keep this game's saved data even when the phone is low on space (Android/Chrome grant it; harmless elsewhere)
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears

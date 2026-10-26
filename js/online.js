@@ -8,14 +8,16 @@
    tools/check-online.js), and app.js supplies ONLINE.hooks.roundPlayed (start the playback animation). */
 const ONLINE = { net:null, hooks:{ roundPlayed(){} } };
 const isOnline = () => S.mode==='online';
-const iAmHost = () => isOnline() && S.me===0;
+// The host is the phone that runs the game: the room creator (seat 0) unless hosting was handed off (S.hostSeat)
+const hostSeat = () => S.hostSeat||0;
+const iAmHost = () => isOnline() && S.me===hostSeat();
 // which side this phone plays: 0 except for an online guest
 const myP = () => isOnline() ? S.me : 0;
 const ROOM_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const newRoomCode = () => Array.from({length:4}, ()=>ROOM_LETTERS[Math.floor(Math.random()*ROOM_LETTERS.length)]).join('');
 
 // Game fields shared through the room. Everything else (menus, playback, selections, settings) stays on each phone.
-const SHARED = ['phase','n','duo','names','budget','poolType','maxTeam','banning','bans','first','lastPicker','history','picks','locked','k','pool','spin',
+const SHARED = ['phase','hostSeat','hostNote','n','duo','names','budget','poolType','maxTeam','banning','bans','first','lastPicker','history','picks','locked','k','pool','spin',
   'teams','sib','twins','syn','round','plans','helpers','helperPlan','log','stats','winner','final','movesLocked','readyNext',
   'scoutQueue','scoutP','roundId','lobby','outOrder'];
 // What the host sends to player q. While everyone is choosing, the other players' moves and helpers are left out
@@ -62,13 +64,13 @@ function hostFight(){
 // Every phone tapped "Next round" (knocked-out players keep watching, so they tap too)
 function hostMaybeNextRound(){
   if(!S.readyNext.every(Boolean) || S.final) return;
-  S.round++; S.phase='plan'; S.movesLocked=players().map(p=>!alive(p).length); S.readyNext=players().map(()=>false);
+  S.round++; S.phase='plan'; S.movesLocked=players().map(p=>!alive(p).length); S.readyNext=players().map(()=>false); S.hostNote=null;
 }
 function hostRematch(){ S.final=false; S.localOver=false; S.winner=undefined; S.phase='spin'; S.spin=null; }
 // An action from a guest phone (msg.p = its seat). Anything out of turn is ignored.
 function hostHandle(msg){
   const p=msg.p;
-  if(!(p>0 && p<nPlayers()) && msg.a!=='rematch') return;
+  if(!(p>=0 && p<nPlayers()) || p===hostSeat()) return;
   switch(msg.a){
     case 'pick': if(S.phase==='draft' && turn()===p && canPick(p,msg.id)) doPick(msg.id); break;
     case 'ban': if(S.phase==='draft' && canBan(p,msg.id)) doBan(msg.id); break;
@@ -87,6 +89,20 @@ function hostHandle(msg){
     case 'rematch': if(S.phase==='result' && S.final) hostRematch(); break;
   }
 }
+// Host hand-off: when the host has been away a long time, the next player still in the room takes over hosting.
+// Their copy of the game is complete except for moves still being chosen (hidden from them), so the current round's
+// choices are reopened: everyone keeps their own moves and just locks in again. The old host rejoins as a player.
+const HANDOFF_MS = (typeof window!=="undefined" && window.HANDOFF_TEST_MS) || 3*60*1000;   // tests can shorten it
+function takeOverHost(oldName){
+  S.hostSeat=S.me;
+  S.hostNote=`${oldName||'The host'} was away, so ${S.names[S.me]} is hosting now.`;
+  if(S.phase==='plan' || S.phase==='scout'){
+    S.phase='plan'; S.scouting=false; S.scoutQueue=[]; S.scoutP=null;
+    S.movesLocked=players().map(p=>!alive(p).length || (p===S.me && !!S.movesLocked[p]));
+    S.plans=players().map((pl,p)=>p===S.me ? (S.plans[p]||{}) : {}); S.helperPlan=players().map((h,p)=>p===S.me ? (S.helperPlan[p]||[]) : []);
+  }
+  if(S.phase==='spin' && S.spin && S.spin.state==='spinning') S.spin.state='done';
+}
 // Host lobby: start with the players seated now (seats 0..n-1; an empty seat in the middle has to be filled first)
 function hostStartMatch(){
   const seats=S.lobby.seats||[], n=1+seats.filter(x=>x&&x.on).length;
@@ -96,7 +112,8 @@ function hostStartMatch(){
 }
 
 /* ---------- actions from this phone (host applies them, guests send them) ---------- */
-const send = msg => ONLINE.net && ONLINE.net.send(Object.assign({p:S.me}, msg));
+// every action is addressed to the current host (so a host who was away and is catching up leaves it for the new one)
+const send = msg => ONLINE.net && ONLINE.net.send(Object.assign({p:S.me, to:hostSeat()}, msg));
 function onlineBan(id){
   if(!canBan(S.me,id)) return;
   if(iAmHost()) doBan(id); else send({a:'ban', id});
@@ -107,7 +124,7 @@ function onlinePick(id){
 }
 function onlineLockTeam(){
   if(S.phase!=='draft' || turn()!==S.me || !fighterIds(S.me).length) return;
-  if(iAmHost()) doLock(0); else send({a:'lock'});
+  if(iAmHost()) doLock(S.me); else send({a:'lock'});
 }
 function onlineUndo(){
   const u=undoable(); if(!u || u.p!==S.me) return;

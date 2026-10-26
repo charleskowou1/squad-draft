@@ -13,6 +13,10 @@ const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${
 const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
+// First-time tips: a small banner the first time a player reaches each screen. "Got it" hides it for good (TIPS_KEY).
+const TIPS_KEY = 'squad-draft-tips';
+const tipsSeen = () => { try{ return JSON.parse(localStorage.getItem(TIPS_KEY))||[] }catch(e){ return [] } };
+const tip = (id, text) => tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
@@ -117,9 +121,9 @@ function recordsPanel(){
 }
 // The four modes on the main menu: key, kanji, title, caption
 const MODE_CARDS = [
-  ['local','二','Local Multiplayer','One phone · 2–4 players'],
-  ['online','網','Online','2–4 phones'],
   ['cpu','機','Quickplay','You vs the computer'],
+  ['online','網','Online','2–4 phones'],
+  ['local','二','Local Multiplayer','One phone · 2–4 players'],
   ['practice','練','Practice','Draft every team yourself'],
   ['story','物','Story Mode','The Slayer’s journey'],
 ];
@@ -212,12 +216,14 @@ function codexSheet(){
 function dailyCard(){
   const ch=DAILY_CACHE&&DAILY_CACHE.day===todayKey()?DAILY_CACHE:null, done=dailyDone(), streak=dailyStreak();
   if(!ch) return `<div class="daily loading"><span class="dk">日</span><div><div class="eyebrow">Daily challenge</div><div class="muted">Preparing today's battle…</div></div></div>`;
-  const row=ids=>ids.map(id=>seal(BYID[id],'sm')).join('');
-  return `<div class="daily${done?' done':''}"><span class="dk">日</span>
-    <div class="dbody"><div class="eyebrow">Daily challenge${streak?` · 🔥 ${plural(streak,'day')}`:''}</div>
-      <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
-      <div class="dsq"><span class="svs">vs</span>${row(ch.enemy)}</div></div>
-    <button class="btn small${done?' ghost':''}" data-a="daily">${done?'Done ✓ Replay':'Play'}</button></div>`;
+  const lead=ch.enemy.slice().sort((a,b)=>BYID[b].cost-BYID[a].cost)[0], date=new Date().toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+  return `<div class="daily${done?' done':''}">
+    ${ART[lead]?`<span class="dart" aria-hidden="true"><img src="${ART[lead]}" alt=""></span>`:''}
+    <div class="dtop"><span class="dk">日</span><div><div class="eyebrow">Daily challenge · ${esc(date)}</div>
+      ${streak?`<span class="dstreak">🔥 ${plural(streak,'day')} in a row</span>`:'<span class="dstreak muted">Same challenge for everyone today</span>'}</div></div>
+    <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
+    <div class="dfoot"><div class="dsq"><span class="svs">vs</span>${ch.enemy.map(id=>seal(BYID[id],'sm')).join('')}</div>
+      <button class="btn small${done?' ghost':''}" data-a="daily">${done?'✓ Done · Replay':'Take it on'}</button></div></div>`;
 }
 // A mode's own page (opened from its card on the home screen): its settings and the Start button
 function vModeSet(){
@@ -226,6 +232,15 @@ function vModeSet(){
       <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="home">Back</button></div></header>
     ${art.length?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</div>`:''}
     <div class="panel modepanel">${modeSettings()}</div>`;
+}
+// "Add to Home Screen": installed, the game keeps its saved progress (iPhone Safari deletes website data after 7 days
+// without a visit, but not for Home Screen apps) and opens full screen. S.install is filled in by app.js.
+function installCard(){
+  const i=S.install; if(!i || i.standalone || !i.mobile || i.hidden) return '';
+  const steps = i.ios ? `<ol class="isteps"><li>Tap <b>Share</b> <span class="ishare" aria-hidden="true">⬆︎</span> at the bottom of Safari</li><li>Choose <b>Add to Home Screen</b></li></ol>`
+    : i.canPrompt ? '' : '<p class="muted">Open your browser menu (⋮) and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>';
+  return `<div class="install"><div class="ihead"><span class="ik">家</span><div><b>Keep your progress safe</b><span class="muted">Add Squad Draft to your Home Screen. It opens like an app, and your story and stats stay saved.</span></div></div>
+    ${steps}<div class="ibtns">${i.canPrompt?'<button class="btn small" data-a="install">Install</button>':''}<button class="btn ghost small" data-a="installlater">Later</button></div></div>`;
 }
 // Story on the home screen: a progress pie and one button to carry on where you left off
 function storyHome(){
@@ -243,25 +258,26 @@ function vSetup(){
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${artStrip()}
+  ${installCard()}
   ${dailyCard()}
   ${storyHome()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
     return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
-  <details class="panel" id="howto"><summary>How to play</summary><ul>
-    <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against the computer, Practice lets you draft every team (the computers’ too) to set up the match you want, and Story Mode is 21 battles with the canon squads.</li>
-    <li><b>Max fighters per team</b> (1–6, per mode) limits squad size, e.g. 1 for one-on-one duels.</li>
-    <li><b>Free-for-all</b> (3 or 4 players): every team fights every other team and the last one standing wins. A special that hits “every enemy” hits the whole team you aim at. Cards over ${FFA_MAX_COST} pts aren't dealt.</li>
-    <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A… or A, B, C, C, B, A…) on your points, up to 6 fighters. Tap <b>Lock team</b> when you're done; the others keep drafting until they lock or run out of points.</li>
-    <li><b>Pool notes</b> list the synergies and matchups possible with the characters dealt.</li>
-    <li><b>Legends:</b> Yoriichi (18) and Yoriichi at 85 (17) strike twice per Attack and cap the damage they take each round. They're rare.</li>
-    <li><b>Hantengu</b> splits into his four emotions when he falls; when the last one falls they merge into Zohakuten.</li>
-    <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
-    <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat copies your previous moves.</li>
-    <li><b>Back pocket:</b> you may draft one 1 pt helper (Chachamaru, Kasugai Crow, Muscle Mice or Hotaru). It doesn't fight; use it once, on the round you choose.</li>
-    <li><b>Health</b> is shown as a percent of each fighter's own max. It turns red at 25%.</li>
-    <li><b>Damage</b> = PWR − target's DEF, but never less than half the attacker's power. Demons regenerate; poison ticks.</li>
-    <li><b>Synergies</b> and matchups are listed in the draft's Pool notes and on each card.</li>
-  </ul></details>`;
+  <details class="panel" id="howto"><summary>How to play</summary>
+    <ol class="steps">
+      <li><span class="sk">選</span><div><b>Pick a mode</b>Quickplay vs the computer, Online or Local with friends, or the Story.</div></li>
+      <li><span class="sk">陣</span><div><b>Draft a squad</b>Take turns picking characters within your points. Tap a card to read it first.</div></li>
+      <li><span class="sk">技</span><div><b>Choose moves in secret</b>Each fighter picks Attack, Defend (half damage) or their Special, and a target.</div></li>
+      <li><span class="sk">斬</span><div><b>Watch the clash</b>The fastest act first. Health shows as a percent; red means 25% or less.</div></li>
+      <li><span class="sk">勝</span><div><b>Last team standing wins</b>Specials recharge, demons regenerate, and the sun burns demons after round 12.</div></li>
+    </ol>
+    <div class="goodtoknow"><div class="tlabel">Good to know</div>
+      <p><b>Synergies</b> (like Tanjiro + Nezuko) are listed in the draft's Pool notes and in the 📖 Codex.</p>
+      <p><b>Marks ✦</b> hit harder and recharge faster. <b>Legends</b> (Yoriichi) strike twice.</p>
+      <p><b>Back pocket:</b> one optional 1 pt helper you can use once, on any round.</p>
+      <p><b>3–4 players:</b> a free-for-all or 2v2 teams. Specials that hit "every enemy" hit the team you aim at.</p>
+      <p><b>Story</b> unlocks new characters for every mode as you win battles.</p>
+    </div></details>`;
 }
 
 /* ---------- who picks first ---------- */
@@ -323,6 +339,7 @@ function vDraft(){
     ${S.banning?`<p class="hint">Tap a card and ban it: nobody can pick that character this match.${S.bans.length?` Banned so far: ${S.bans.map(b=>esc(BYID[b.id].short)).join(', ')}.`:''}</p>`:''}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
     ${daily?`<p class="hint">Their team is set. Draft a squad to beat it with ${budget()} points, from the characters you've unlocked. Same challenge for everyone today.</p>`:''}
+    ${awayBanner()}${S.banning||cpuTurn?'':tip('draft','Tap a card to read it, then <b>Confirm</b> to pick it. Stay within your points (up to 6 fighters), and tap <b>Lock team</b> when you’re done.')}
     ${S.banning?'':orderStrip(p)}
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
     ${lockbar}
@@ -362,9 +379,18 @@ function vScout(){
     <p class="hint">You can change your moves now that you know theirs. Back-pocket choices stay as they are.</p>
     ${actionbar(`<button class="btn ghost" data-a="keepmoves">Keep my moves</button><button class="btn team" data-a="rescout" style="--bc:${pc(p)}">Change my moves</button>`)}`;
 }
+// Online: who's away, and what happens if the host stays away (the game waits; after a while hosting moves)
+const awayTag = q => isOnline() && S.away && S.away[q] ? ' <span class="awaytag">away</span>' : '';
+function awayBanner(){
+  if(!isOnline()) return '';
+  if(S.hostNote) return `<div class="netnote">${esc(S.hostNote)} If you’d already chosen your moves, tap Lock in moves again.</div>`;
+  if(!S.hostAwaySince) return '';
+  const h=hostSeat(), next=players().find(p=>p!==h && !(S.away&&S.away[p])), mins=Math.max(1, Math.ceil((S.hostAwaySince+HANDOFF_MS-Date.now())/60000));
+  return `<div class="netnote">${nm(h)} has stepped away. The game waits for them${next!==undefined?`; if they’re not back in about ${plural(mins,'minute')}, ${next===S.me?'you take':nm(next)+' takes'} over hosting so the game can go on`:''}.</div>`;
+}
 // A simple "waiting for the other phone" screen (online play)
 function waitScreen(eyebrow, title, line){
-  return `${topbar(eyebrow, title)}<div class="waiting"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><p class="muted">${line}</p></div>`;
+  return `${topbar(eyebrow, title)}${awayBanner()}<div class="waiting"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><p class="muted">${line}</p></div>`;
 }
 // Online lobby: the host shares the room code; up to three guests take seats 2–4. The host starts when ready.
 function vLobby(){
@@ -442,6 +468,23 @@ function vReady(){
     <p class="muted">Put the phone where everyone can see it.</p>
     <button class="btn" data-a="fight">Start the battle</button></div>`;
 }
+// Save (a tab in Settings): the cloud backup's recovery code, when it last backed up, and restoring on this phone
+function saveTab(){
+  const c=typeof loadCloud==='function'?loadCloud():{}, st=typeof CLOUD!=='undefined'?CLOUD.status:'', f=S.restoreFound;
+  const ago=c.last?Math.round((Date.now()-c.last)/60000):null;
+  return `<div class="setgroup"><div class="tlabel">Cloud backup</div>
+      ${st==='rules'?'<p class="hint warn">Cloud backup isn’t switched on yet (it needs one setting in the game’s Firebase).</p>'
+        : c.code?`<p class="hint">Your progress backs up automatically. ${ago===null?'':ago<1?'Last backup: just now.':`Last backup: ${ago<60?plural(ago,'minute'):plural(Math.round(ago/60),'hour')} ago.`}</p>`
+        : '<p class="hint">Your progress will back up automatically once you’ve played a little.</p>'}
+      ${c.code?`<div class="tlabel">Your recovery code</div><div class="savecode">${showCode(c.code)}</div>
+        <p class="hint">Write it down or screenshot it. On a new phone (or if this browser’s data is ever cleared), enter it below to get everything back.</p>
+        <div class="row"><button class="btn ghost small" data-a="copycode">${S.copied?'Copied ✓':'Copy code'}</button><button class="btn ghost small" data-a="backupnow">Back up now</button></div>`:''}</div>
+    <div class="setgroup"><div class="tlabel">Restore on this phone</div>
+      ${f?`<p class="hint">Found a backup from ${new Date(f.at).toLocaleString()}. Restoring replaces everything on this phone.</p>
+          <div class="row"><button class="btn ghost small" data-a="unrestore">Cancel</button><button class="btn small" data-a="restoreok">Replace and restore</button></div>`
+        :`<div class="joinrow"><input id="restorecode" type="text" maxlength="16" autocapitalize="characters" autocomplete="off" placeholder="XXXX-XXXX-XXXX" value="${esc(S.restoreCode||'')}" aria-label="Recovery code"><button class="btn small" data-a="restore">Restore</button></div>
+          ${S.restoreMsg?`<p class="hint">${esc(S.restoreMsg)}</p>`:''}`}</div>`;
+}
 // Stats (a tab in Settings): wins per player name and per-character records, on this phone.
 // Only Local, Online and Quickplay games count: not Story (preset, boosted fights) or Practice (curated matches).
 function statsTab(){
@@ -456,8 +499,8 @@ function vSettings(){
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in" role="dialog" aria-modal="true" aria-label="Settings">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     <h2>Settings</h2>
-    ${seg('settab',S.setTab||'general',[['general','General'],['stats','Stats']])}
-    ${S.setTab==='stats'?statsTab():`<div class="setgroup"><div class="tlabel">Playback speed</div>
+    ${seg('settab',S.setTab||'general',[['general','General'],['stats','Stats'],['save','Save']])}
+    ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
     <div class="setgroup"><div class="tlabel">Music</div>${seg('volmusic',(S.vol||loadVolumes()).music,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
@@ -555,14 +598,17 @@ function vPlan(){
   if(isOnline() && !mine.length) return waitScreen(`Round ${S.round}`, "You're out", 'Your squad has fallen. You can keep watching the others fight.');
   if(isOnline() && S.movesLocked && S.movesLocked[p] && !S.scouting){
     const wait=players().filter(q=>q!==p && alive(q).length && !S.movesLocked[q]);
-    return waitScreen(`Round ${S.round}`, 'Moves locked in', `Waiting for ${wait.length?wait.map(nm).join(', '):'the others'} to choose…`); }
+    return waitScreen(`Round ${S.round}`, 'Moves locked in', `Waiting for ${wait.length?wait.map(q=>nm(q)+awayTag(q)).join(', '):'the others'} to choose…`); }
   // the open fighter needs an enemy target: opponents become tappable
   const ou=open&&findU(open), opl=ou&&S.plans[p][ou.uid]||{}, picking=ou && needsTarget(ou,opl) && !isAllyMove(ou,opl);
   const aimers=e=>mine.filter(m=>{ const q=S.plans[p][m.uid]; return q && q.t===e.uid && needsTarget(m,q) && !isAllyMove(m,q); });
   // knocked-out fighters aren't shown on the move screen (either side)
   const enemyMoment=e=>!e.alive ? {hidden:true} : ({aimed:aimers(e), ...(picking?{tgtFor:ou.uid, picked:opl.t===e.uid}:{})});
   const goal = S.mode==='story' && STAGES[S.stage] ? twistText(STAGES[S.stage]) : '';
+  const tips = S.round===1 ? tip('moves','For each fighter, pick <b>Attack</b>, <b>Defend</b> (half damage) or their <b>Special</b>, then tap who to hit. When everyone has a move, tap <b>Lock in moves</b>.')
+    : tip('info','Tap any picture to see that fighter’s stats, special and status. A gold <b>Special ready</b> means that enemy can use their special this round.');
   return `${topbar(`Round ${S.round}`, `<span style="color:${pc(p)}">${nm(p)}</span>, choose`)}
+    ${tips}${awayBanner()}
     ${goal?`<div class="goal">${esc(goal)}${S.twist&&S.twist.survive?` · ${plural(Math.max(0,S.twist.survive-S.round+1),'round')} to go`:''}</div>`:''}
     ${strengthBar(p)}
     <div class="planwide"><div class="opps${nPlayers()>2?' many':''}">${enemiesOf(p).filter(q=>alive(q).length).map(q=>teamBlock(q,nPlayers()>2?null:'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')).join('')}
@@ -652,8 +698,9 @@ function vResult(){
   const waiting = isOnline() && S.readyNext && S.readyNext[me] && !S.final;
   const slow = them.filter(q=>S.readyNext&&!S.readyNext[q]);
   const next = S.final ? '<button class="btn" data-a="finish">See who won</button>'
-    : waiting ? `<button class="btn" disabled>Waiting for ${slow.length?slow.map(nm).join(', '):'the others'}…</button>` : '<button class="btn" data-a="next">Next round</button>';
+    : waiting ? `<button class="btn" disabled>Waiting for ${slow.length?slow.map(q=>nm(q)+(S.away&&S.away[q]?' (away)':'')).join(', '):'the others'}…</button>` : '<button class="btn" data-a="next">Next round</button>';
   return `${topbar(`Round ${S.round}${done?'':` · ${step} of ${total}`}`, done?'What happened':'The clash', false)}
+    ${done?'':tip('clash','The round plays out one move at a time, fastest first. Tap <b>Skip</b> if you’re in a hurry.')}${awayBanner()}
     ${strengthBar(me, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
     <div class="reswide${done?' done':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
     ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
@@ -751,6 +798,7 @@ function vScene(){
   const typed=esc(text);   // lines simply appear (CK didn't want the typing effect)
   return `<div class="scene arc-${st.arc}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+    ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
       ${c?`<span class="lead ${side}" key="${S.sceneAt}">${seal(c,'lg')}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}

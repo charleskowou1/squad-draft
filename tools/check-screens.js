@@ -10,7 +10,8 @@ function check(games){
       // cycles: 2, 3 and 4 players; Quickplay, Local and Online screens; every level, budget and pool type
       const level=['easy','normal','hard'][g%3], n=[2,3,4][g%3===0?0:(g%5)%3], mode=['cpu','local','online','practice'][g%4], maxTeam=[6,1,2,3,4,5,6][g%7];
       S={phase:'setup',mode,n,level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',maxTeam,unlockAll:g%2===0,bansOn:g%3===1,duo:n===4&&g%2===1,names:['A','B','C','D'].slice(0,n),me:mode==='online'?g%n:0};
-      ['local','online','cpu','practice','story'].forEach(m=>{ S.mode=m; vSetup(); if(m!=='story') vModeSet(); }); S.mode=mode; S.settings=true; vSheet(); S.setTab='stats'; vSheet(); S.setTab='general'; S.settings=false;
+      ['local','online','cpu','practice','story'].forEach(m=>{ S.mode=m; vSetup(); if(m!=='story') vModeSet(); }); S.mode=mode; S.settings=true; vSheet(); S.setTab='stats'; vSheet(); S.setTab='save'; vSheet(); S.setTab='general'; S.settings=false;
+      S.install={ios:g%2===0,mobile:true,standalone:false,canPrompt:g%3===0}; vSetup(); S.install=null;
       if(mode==='online'){ S.phase='lobby'; S.lobby={code:'TEST',seats:[{name:'B',on:true},{name:'C',on:n>2},null]}; vLobby(); S.phase='setup'; }
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
       if(S.spin.r<0||S.spin.r>=n) throw new Error('spin winner out of range');
