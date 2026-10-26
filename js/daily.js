@@ -30,10 +30,11 @@ function dailyMet(ch){
   if(g.type==='keep') return S.teams[0].some(u=>u.id===g.id && u.alive);
   return true;
 }
-// Set up the challenge's draft (enemy locked in, you pick within the points from `open` cards)
+// Set up the challenge's draft (enemy locked in, you pick within the points from `open` cards). A "keep X standing"
+// goal puts X on your squad from the start (its points already spent; not in the Undo history, so it stays).
 function dailyDraft(ch, open){
   Object.assign(S,{mode:'daily', n:2, duo:false, maxTeam:MAXTEAM, bansOn:false, banning:false, bans:[], daily:ch, budget:ch.budget, level:ch.level,
-    phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[[], ch.enemy.slice()], locked:[false,true], showTheirs:false});
+    phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[ch.goal.type==='keep'?[ch.goal.id]:[], ch.enemy.slice()], locked:[false,true], showTheirs:false});
   const enemyFams=new Set(ch.enemy.map(id=>BYID[id].fam));
   S.pool=ROSTER.filter(c=>!c.spawn && c.cost<=ch.budget && open(c) && !enemyFams.has(c.fam)).map(c=>c.id)
     .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
@@ -43,7 +44,6 @@ const starterCard = c => typeof lockable!=='function' || !lockable(c);
 function dailyTrial(ch){
   const keep=S; S={names:['You','Foe']};
   dailyDraft(ch, starterCard);
-  if(ch.goal.type==='keep' && S.pool.includes(ch.goal.id)) doPick(ch.goal.id);   // a player chasing "keep X alive" drafts X
   let k=0; while(S.phase==='draft' && k++<40) cpuDraftStep('hard');
   if(S.phase==='draft'){ S.locked=[true,true]; startBattle(); }
   while(S.phase!=='over'){ cpuPlan(0,'hard'); cpuPlan(1,ch.level); cpuHelpers(0); cpuHelpers(1); resolve(); if(S.phase==='result') S.round++; }
