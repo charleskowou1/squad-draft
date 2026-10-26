@@ -217,11 +217,11 @@ function codexSheet(){
 // Today's challenge on the main menu (built just after the menu first draws: it runs a few test battles)
 function dailyCard(){
   const ch=DAILY_CACHE&&DAILY_CACHE.day===todayKey()?DAILY_CACHE:null, done=dailyDone(), streak=dailyStreak();
-  if(!ch) return `<div class="daily loading"><span class="dk">日</span><div><div class="eyebrow">Daily challenge</div><div class="muted">Preparing today's battle…</div></div></div>`;
+  if(!ch) return `<div class="daily loading"><div><div class="eyebrow">Daily challenge</div><div class="muted">Preparing today's battle…</div></div></div>`;
   const lead=ch.enemy.slice().sort((a,b)=>BYID[b].cost-BYID[a].cost)[0], date=new Date().toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
   return `<div class="daily${done?' done':''}">
     ${ART[lead]?`<span class="dart" aria-hidden="true"><img src="${ART[lead]}" alt=""></span>`:''}
-    <div class="dtop"><span class="dk">日</span><div><div class="eyebrow">Daily challenge · ${esc(date)}</div>
+    <div class="dtop"><div><div class="eyebrow">Daily challenge · ${esc(date)}</div>
       ${streak?`<span class="dstreak">🔥 ${plural(streak,'day')} in a row</span>`:''}</div></div>
     <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
     <div class="dfoot"><div class="dsq"><span class="svs">vs</span>${ch.enemy.map(id=>seal(BYID[id],'sm')).join('')}</div>

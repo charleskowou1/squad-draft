@@ -123,7 +123,7 @@ const ACTIONS = {
   cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
-  home(){ clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
+  home(){ if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
@@ -406,4 +406,13 @@ setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
 render();
 findArt();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)
-if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Updates: a phone that keeps the game open in the background never reloads it, so check for a new version whenever
+// the game comes back to the screen; when one arrives, reload right away on the home screen, or on the next return home.
+let UPDATE_READY=false;
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  const hadSW=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) reg.update().catch(()=>{}); });
+  }).catch(()=>{});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!hadSW || UPDATE_READY) return; UPDATE_READY=true; if(S.phase==='setup') location.reload(); });
+}
