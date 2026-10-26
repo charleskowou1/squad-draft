@@ -90,6 +90,7 @@ const ACTIONS = {
   redeal(){ if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
   ocreate(){ onlineCreate(); },
   ojoin(){ onlineJoin(); },
+  ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
   ostart(){ if(iAmHost() && S.lobby && S.lobby.peer) toSpin(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
   sel(v){ if(S.mode==='cpu' && turn()===1) return; if(S.pool.includes(v)) S.sel=v; },

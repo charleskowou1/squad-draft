@@ -123,9 +123,11 @@ function vSetup(){
     ${S.mode==='cpu'?`<div class="levelpick"><span class="tlabel">Muzan AI difficulty</span><div class="seg">${Object.entries(LEVELS).map(([k,l])=>`<button data-a="level" data-v="${k}" class="${S.level===k?'on':''}">${l.label}</button>`).join('')}</div>
       <span class="hint">${{easy:'Picks moves almost at random. Good for learning the cards.',normal:'Plays sensibly but makes mistakes.',hard:'Goes for knockouts, spreads damage and saves its specials.'}[S.level]}</span></div>`:''}
     ${S.mode==='online'?`<div class="onlinebox">
-      <button class="btn" data-a="ocreate">Create a game</button>
-      <div class="joinrow"><input id="ocode" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.joinCode||'')}" aria-label="Room code"><button class="btn ghost" data-a="ojoin">Join</button></div>
-      ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:'<p class="hint">One phone creates a game and gets a 4-letter code; the other joins with it. Points and pool come from the creator\'s Settings.</p>'}</div>`
+      ${S.joinOpen?`<div class="joinrow"><input id="ocode" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.joinCode||'')}" aria-label="Room code"><button class="btn" data-a="ojoin">Join</button></div>
+      <button class="btn ghost" data-a="ojoinopen">Back</button>`
+      :`<button class="btn" data-a="ocreate">Create a game</button>
+      <button class="btn ghost" data-a="ojoinopen">Join a game</button>`}
+      ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:S.joinOpen?'<p class="hint">Type the 4-letter code shown on the other phone.</p>':'<p class="hint">One phone creates the game and gets a code; the other taps Join and types it. Points and pool come from the creator\'s Settings.</p>'}</div>`
     :S.mode==='story'?`<p class="hint">Fight through the arcs with the Demon Slayer Corps, from Final Selection to dawn. ${loadStory().cleared.length} of ${STAGES.length} stages cleared.</p>
     <button class="btn" data-a="storymap">${loadStory().cleared.length?'Continue the story':'Begin the story'}</button>`
     :'<button class="btn" data-a="start">Start the draft</button>'}
