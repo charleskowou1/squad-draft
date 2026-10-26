@@ -220,7 +220,7 @@ function dailyCard(){
   return `<div class="daily${done?' done':''}">
     ${ART[lead]?`<span class="dart" aria-hidden="true"><img src="${ART[lead]}" alt=""></span>`:''}
     <div class="dtop"><span class="dk">日</span><div><div class="eyebrow">Daily challenge · ${esc(date)}</div>
-      ${streak?`<span class="dstreak">🔥 ${plural(streak,'day')} in a row</span>`:'<span class="dstreak muted">Same challenge for everyone today</span>'}</div></div>
+      ${streak?`<span class="dstreak">🔥 ${plural(streak,'day')} in a row</span>`:''}</div></div>
     <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
     <div class="dfoot"><div class="dsq"><span class="svs">vs</span>${ch.enemy.map(id=>seal(BYID[id],'sm')).join('')}</div>
       <button class="btn small${done?' ghost':''}" data-a="daily">${done?'✓ Done · Replay':'Take it on'}</button></div></div>`;
@@ -338,7 +338,7 @@ function vDraft(){
       : forCpu?`Pick for <span style="color:${pc(p)}">${nm(p)}</span>`:`<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
     ${S.banning?`<p class="hint">Tap a card and ban it: nobody can pick that character this match.${S.bans.length?` Banned so far: ${S.bans.map(b=>esc(BYID[b.id].short)).join(', ')}.`:''}</p>`:''}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
-    ${daily?`<p class="hint">Their team is set. Draft a squad to beat it with ${budget()} points, from the characters you've unlocked. Same challenge for everyone today.</p>`:''}
+    ${daily?`<p class="hint">Their team is set. Draft a squad to beat it with ${budget()} points, from the characters you've unlocked.</p>`:''}
     ${awayBanner()}${S.banning||cpuTurn?'':tip('draft','Tap a card to read it, then <b>Confirm</b> to pick it. Stay within your points (up to 6 fighters), and tap <b>Lock team</b> when you’re done.')}
     ${S.banning?'':orderStrip(p)}
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
