@@ -16,7 +16,7 @@ add({id:'yoriichi',name:'Yoriichi Tsugikuni',short:'Yoriichi',g:'陽',type:'Sun 
   strikes:2,cap:18,
   passive:'Transparent World: strikes twice every Attack and never takes more than 18 damage in a round.',
   sig:{name:'Sun Breathing: Thirteenth Form',desc:'Every enemy takes PWR, ignores DEF. Demons it hits lose their regeneration for good.',cd:3,kind:'all'}});
-add({id:'yoriichi_old',fam:'yoriichi',sk:'yoriichi_old',name:'Yoriichi (Age 85)',short:'Old Yoriichi',g:'老',type:'Sun Breathing · Legend',legend:true,cost:15,hp:44,pow:13,spd:11,def:5,
+add({id:'yoriichi_old',fam:'yoriichi',sk:'yoriichi_old',name:'Yoriichi (Age 85)',short:'Old Yoriichi',g:'老',type:'Sun Breathing · Legend',legend:true,cost:17,hp:50,pow:14,spd:11,def:5,
   strikes:2,cap:12,
   passive:'Still the Strongest: strikes twice every Attack and never takes more than 12 damage in a round.',
   sig:{name:'The Last Strike',desc:'Strike for PWR+10, ignores DEF.',cd:3,kind:'single'}});
@@ -132,7 +132,7 @@ const tanjiro = add({id:'tanjiro',name:'Tanjiro Kamado',short:'Tanjiro',g:'日',
   sig:{name:'Hinokami Kagura',desc:'Strike for PWR+5, ignores DEF.',cd:3,kind:'single'}});
 markOf(tanjiro,{cost:8});
 // Demon King Tanjiro: the third version of Tanjiro (base, Mark or this one is dealt). Rare, like Final Muzan.
-add({id:'tanjiro_demon',fam:'tanjiro',sk:'tanjiro_demon',name:'Tanjiro Kamado (Demon King)',short:'Demon Tanjiro',g:'王',type:'Demon King · Sun-proof',demon:true,cost:15,hp:50,pow:17,spd:11,def:8,regen:4,
+add({id:'tanjiro_demon',fam:'tanjiro',sk:'tanjiro_demon',name:'Tanjiro Kamado (Demon King)',short:'Demon Tanjiro',g:'王',type:'Demon King · Sun-proof',demon:true,cost:17,hp:54,pow:18,spd:11,def:8,regen:4,
   sunproof:true,
   passive:"Sun-proof: Yoriichi's sun can't stop his regeneration. Still Tanjiro: Siblings, Kamaboko Squad and Mentor bonuses all apply.",
   sig:{name:"Demon King's Rampage",desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});

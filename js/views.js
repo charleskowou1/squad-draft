@@ -140,7 +140,7 @@ function vSetup(){
     <li><b>The pool:</b> each draft deals 10 random characters, one version of each (base, Mark-awakened, or Yoriichi young or old). Every card shows its cost and stats before you pick.</li>
     <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A, A, B…) on a ${budget()}-point budget (change it in ⚙ Settings: 10, 20 or 30), up to 6 fighters. Tap <b>Lock team</b> when you're done; the other player keeps drafting until they lock or run out of points.</li>
     <li><b>Pool notes</b> list the synergies and matchups possible with the characters dealt. In ⚙ Settings you can switch the pool from Random to All characters.</li>
-    <li><b>Legends:</b> Yoriichi (18) and Yoriichi at 85 (15) strike twice per Attack and cap the damage they take each round. They're rare: Yoriichi is dealt in about 1 draft in 8.</li>
+    <li><b>Legends:</b> Yoriichi (18) and Yoriichi at 85 (17) strike twice per Attack and cap the damage they take each round. They're rare: Yoriichi is dealt in about 1 draft in 8.</li>
     <li><b>Hantengu</b> splits when knocked out: into Sekido and Karaku, who become Aizetsu and Urogi when they fall. Beat all five.</li>
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
     <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat last round copies your previous moves.</li>
