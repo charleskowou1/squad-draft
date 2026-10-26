@@ -15,7 +15,7 @@ const ROOM_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const newRoomCode = () => Array.from({length:4}, ()=>ROOM_LETTERS[Math.floor(Math.random()*ROOM_LETTERS.length)]).join('');
 
 // Game fields shared through the room. Everything else (menus, playback, selections, settings) stays on each phone.
-const SHARED = ['phase','n','names','budget','poolType','first','lastPicker','history','picks','locked','k','pool','spin',
+const SHARED = ['phase','n','names','budget','poolType','maxTeam','first','lastPicker','history','picks','locked','k','pool','spin',
   'teams','sib','twins','syn','round','plans','helpers','helperPlan','log','stats','winner','final','movesLocked','readyNext',
   'scoutQueue','scoutP','roundId','lobby','outOrder'];
 // What the host sends to player q. While everyone is choosing, the other players' moves and helpers are left out

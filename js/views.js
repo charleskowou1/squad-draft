@@ -98,17 +98,18 @@ function recordsPanel(){
   const rec=loadRecords();
   const rows=Object.entries(rec).filter(([id])=>BYID[id]).map(([id,[g,w]])=>({c:BYID[id],g,w,r:Math.round(w/g*100)}))
     .sort((a,b)=>b.r-a.r||b.g-a.g);
-  if(!rows.length) return '';
-  return `<details class="panel records" id="records"><summary>Character records <span class="muted">· ${plural(rows.length,'character')} played</span></summary>
+  if(!rows.length) return '<p class="muted">No character records yet.</p>';
+  return `<div class="records"><div class="tlabel">Character records <span class="muted">· ${plural(rows.length,'character')} played</span></div>
     <div class="recs"><div class="rec head"><span></span><span>Character</span><span>Win rate</span><span>Won</span></div>
     ${rows.map(x=>`<div class="rec">${seal(x.c,'sm')}<span class="rn">${esc(x.c.short)}</span>
-      <span class="rbar"><i style="width:${x.r}%"></i><b>${x.r}%</b></span><span class="rw">${x.w} of ${x.g}</span></div>`).join('')}</div></details>`;
+      <span class="rbar"><i style="width:${x.r}%"></i><b>${x.r}%</b></span><span class="rw">${x.w} of ${x.g}</span></div>`).join('')}</div></div>`;
 }
 // The four modes on the main menu: key, kanji, title, caption
 const MODE_CARDS = [
   ['local','二','Local Multiplayer','One phone · 2–4 players'],
   ['online','網','Online','2–4 phones'],
   ['cpu','機','Quickplay','You vs the computer'],
+  ['practice','練','Practice','Draft every team yourself'],
   ['story','物','Story Mode','The Slayer’s journey'],
 ];
 // Names for local play: up to four, remembered on this phone
@@ -118,15 +119,17 @@ const seg = (act, cur, opts) => `<div class="seg">${opts.map(([v,l])=>`<button d
 function modeSettings(){
   const c=S.cfg||loadModeCfg(S.mode), n=c.players;
   const pts=`<div class="setline"><span class="tlabel">Points per team</span>${seg('cfgbudget',c.budget,BUDGETS.map(b=>[b,b]))}</div>`;
-  const pool=`<div class="setline"><span class="tlabel">Character pool</span>${seg('cfgpool',c.poolType,[['random','Random'],['all','All']])}</div>`;
+  const pool=`<div class="setline"><span class="tlabel">Character pool</span>${seg('cfgpool',c.poolType,[['random','Random'],['all','All']])}</div>
+    <div class="setline"><span class="tlabel">Max fighters per team</span>${seg('cfgmax',c.maxTeam,[1,2,3,4,5,6].map(k=>[k,k]))}</div>`;
   const note = n>2 ? `<p class="hint">Free-for-all: every team fights every other team; last one standing wins. Specials that hit “every enemy” hit the whole team you aim at, and cards over ${FFA_MAX_COST} pts aren't dealt.</p>`
     : `<p class="hint">${{10:'Quick, chaotic games with 2–3 fighters each.',20:'The standard game.',30:'Bigger squads and stronger cards. Yoriichi and Final-Form Muzan stay rare.'}[c.budget]}</p>`;
   if(S.mode==='local'){ const names=localNames();
     return `<div class="setline"><span class="tlabel">Players</span>${seg('cfgplayers',n,[[2,'2'],[3,'3 · Triple threat'],[4,'4 · 1v1v1v1']])}</div>
       <div class="names">${Array.from({length:n},(_,i)=>`<label class="pname" style="--tc:${pc(i)}"><span>Player ${i+1}</span><input id="n${i}" type="text" maxlength="14" value="${esc(names[i])}"></label>`).join('')}</div>
       ${pts}${pool}${note}<button class="btn" data-a="start">Start: spin for first pick</button>`; }
-  if(S.mode==='cpu')
-    return `<label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
+  if(S.mode==='cpu' || S.mode==='practice')
+    return `${S.mode==='practice'?'<p class="hint">Curate the match: you draft for every team, the computers’ too, then fight the computers. Practice games don’t count toward your records.</p>':''}
+      <label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
       <div class="setline"><span class="tlabel">Opponents</span>${seg('cfgplayers',n,[[2,'1'],[3,'2'],[4,'3']])}</div>
       <div class="setline"><span class="tlabel">Difficulty</span>${seg('cfglevel',c.level,Object.entries(LEVELS).map(([k,l])=>[k,l.label]))}</div>
       <p class="hint">${{easy:'Picks moves almost at random. Good for learning the cards.',normal:'Plays sensibly but makes mistakes.',hard:'Goes for knockouts, spreads damage and saves its specials.'}[c.level]}</p>
@@ -146,7 +149,6 @@ function modeSettings(){
     <button class="btn" data-a="storymap">${won?'Continue the story':'Begin the story'}</button>`;
 }
 function vSetup(){
-  const sc = loadScore();
   return `
   <div class="setbar"><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
@@ -155,12 +157,9 @@ function vSetup(){
   ${artStrip()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>`<button class="mode${S.mode===k?' on':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}"><span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`).join('')}</div>
   <div class="panel modepanel"><div class="eyebrow">${esc(MODE_CARDS.find(m=>m[0]===S.mode)[2])}</div>${modeSettings()}</div>
-  <div class="panel"><div class="eyebrow">All-time wins on this phone</div>
-    <div class="score">${Object.keys(sc).length ? Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k,v])=>`<div><b>${v}</b>${esc(k)}</div>`).join('') : '<div class="muted">No matches yet</div>'}</div>
-  </div>
-  ${recordsPanel()}
   <details class="panel" id="howto"><summary>How to play</summary><ul>
-    <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against 1–3 computers, and Story Mode is 21 battles with the canon squads.</li>
+    <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against 1–3 computers, Practice lets you draft every team (the computers’ too) to set up the match you want, and Story Mode is 21 battles with the canon squads.</li>
+    <li><b>Max fighters per team</b> (1–6, per mode) limits squad size, e.g. 1 for one-on-one duels.</li>
     <li><b>Free-for-all</b> (3 or 4 players): every team fights every other team and the last one standing wins. A special that hits “every enemy” hits the whole team you aim at. Cards over ${FFA_MAX_COST} pts aren't dealt.</li>
     <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A… or A, B, C, C, B, A…) on your points, up to 6 fighters. Tap <b>Lock team</b> when you're done; the others keep drafting until they lock or run out of points.</li>
     <li><b>Pool notes</b> list the synergies and matchups possible with the characters dealt.</li>
@@ -210,24 +209,24 @@ function teamBox(q,p){
   return `<div class="tbox${p===q&&!S.locked[q]?' active':''}" style="--tc:${pc(q)}">
     <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}</span><span>${S.mode==='story'&&q===1?'Enemy':S.locked[q]?'Locked':left+' pts left'}</span></div>
     <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${Math.min(100,spent(q)/budget()*100)}%"></i></div>
-    <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&S.picks[q].length<MAXTEAM?'<span class="slot empty"></span>':''}</div></div>`;
+    <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></div>`;
 }
 function vDraft(){
   // cpuTurn = the other side is picking (the computer, or the other phone online): this phone waits
-  const p = turn(), cpuTurn = (S.mode==='cpu' && p!==0) || (isOnline() && p!==S.me), story = S.mode==='story';
+  const p = turn(), cpuTurn = (S.mode==='cpu' && p!==0) || (isOnline() && p!==S.me), story = S.mode==='story', forCpu = isPractice() && p!==0;
   const fresh = allPicks().length===0, left=budget()-spent(p);
   // second pick in a row (snake order), or everyone else has locked and this one keeps going
   const restLocked = others(p).every(q=>S.locked[q]);
   const again = S.lastPicker===p && !restLocked;
   const verb = restLocked && others(p).some(q=>S.picks[q].length) ? 'keeps picking' : again ? 'picks again' : cpuTurn ? 'is picking' : 'picks';
-  const lockbar = !cpuTurn && fighterIds(p).length ? `<div class="lockbar"><span>${story?'Ready to fight?':'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
-    <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${story?'Fight':'Lock team'}</button></div>` : '';
+  const lockbar = !cpuTurn && fighterIds(p).length ? `<div class="lockbar"><span>${story?'Ready to fight?':forCpu?`Done picking for ${nm(p)}?`:'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
+    <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${story?'Fight':forCpu?`Lock ${nm(p)}`:'Lock team'}</button></div>` : '';
   // Undo the latest pick (2 players: either player's; vs computer: only your own)
-  const un=undoable(), undo = un && (S.mode==='local' || un.p===myP())
+  const un=undoable(), undo = un && (S.mode==='local' || isPractice() || un.p===myP())
     ? `<button class="btn ghost small undo" data-a="undo">↶ Undo ${nm(un.p)}'s ${esc(BYID[un.id].short)}</button>` : '';
   const st=story&&STAGES[S.stage];
   return `<div class="draftlayout"><div class="dtop">
-    ${story?topbar(`Story · Battle ${S.stage+1} · ${esc(st.title)}`,'Draft replay'):topbar('Draft', `<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
+    ${story?topbar(`Story · Battle ${S.stage+1} · ${esc(st.title)}`,'Draft replay'):topbar(forCpu?'Practice · you pick for the computer':'Draft', forCpu?`Pick for <span style="color:${pc(p)}">${nm(p)}</span>`:`<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
     ${orderStrip(p)}
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
@@ -347,18 +346,28 @@ function vReady(){
     <p class="muted">Put the phone where everyone can see it.</p>
     <button class="btn" data-a="fight">Start the battle</button></div>`;
 }
+// Stats (a tab in Settings): wins per player name and per-character records, on this phone.
+// Only Local, Online and Quickplay games count: not Story (preset, boosted fights) or Practice (curated matches).
+function statsTab(){
+  const sc=loadScore(), top=Object.entries(sc).sort((a,b)=>b[1]-a[1]);
+  return `<div class="setgroup"><div class="tlabel">All-time wins</div>
+      <div class="score">${top.length ? top.slice(0,6).map(([k,v])=>`<div><b>${v}</b>${esc(k)}</div>`).join('') : '<div class="muted">No matches yet</div>'}</div></div>
+    ${recordsPanel()}
+    <div class="hint">Counts Local, Online and Quickplay games on this phone. Story and Practice battles don't count.</div>`;
+}
 // Settings (gear on the main screen): general options only. Match settings live with each mode on the main menu.
 function vSettings(){
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in" role="dialog" aria-modal="true" aria-label="Settings">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     <h2>Settings</h2>
-    <div class="setgroup"><div class="tlabel">Playback speed</div>
+    ${seg('settab',S.setTab||'general',[['general','General'],['stats','Stats']])}
+    ${S.setTab==='stats'?statsTab():`<div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
     <div class="setgroup"><div class="tlabel">Sound effects</div>${seg('sound',S.soundOn?'on':'off',[['on','On'],['off','Off']])}</div>
     <div class="setgroup"><div class="tlabel">Vibration on knockouts</div>${seg('vibe',S.vibeOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Android phones only (iPhones don't allow it).</div></div>
-    <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>
+    <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>`}
     <div class="row"><button class="btn" data-a="unsel">Done</button></div>
   </div></div>`;
 }

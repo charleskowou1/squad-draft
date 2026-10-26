@@ -15,8 +15,8 @@ function poolNotes(){
   const cheapest = (fs,n) => fs.slice().sort((a,b)=>cost(a)-cost(b)).slice(0,n);
   const fighters = p => S.picks[p].filter(id=>!BYID[id].helper).length;
   // can team p still add these (not yet picked) characters: enough points left and fighter slots, and not locked
-  const canAdd = (p,fs) => !S.locked[p] && spent(p)+sum(fs) <= budget() && fighters(p)+fs.length <= MAXTEAM;
-  const fits = fs => sum(fs) <= budget() && fs.length <= MAXTEAM;   // affordable at all on a fresh team
+  const canAdd = (p,fs) => !S.locked[p] && spent(p)+sum(fs) <= budget() && fighters(p)+fs.length <= teamCap();
+  const fits = fs => sum(fs) <= budget() && fs.length <= teamCap();   // affordable at all on a fresh team
 
   // state of a note: 'on' (a team has it, p = that team), 'open' (still possible), 'off' (can't happen any more),
   // or 'never' (no team could ever afford it in this match: the note isn't shown)
@@ -82,7 +82,7 @@ function poolNotes(){
   if(has('muzan')&&kin.length) add('team', ['muzan',...kin], "Muzan's Blood", 'Muzan plus another demon (not Nezuko) on one team: Muzan and those demons get +1 PWR.', withAnchor('muzan',kin));
 
   const pupils=['tanjiro','giyu','sabito'].filter(has);
-  if(has('urokodaki')&&pupils.length) add('team', ['urokodaki',...pupils], 'Mentor', 'Urokodaki plus Tanjiro, Giyu or Sabito & Makomo on one team: his pupils get +1 DEF.', withAnchor('urokodaki',pupils));
+  if(has('urokodaki')&&pupils.length) add('team', ['urokodaki',...pupils], 'Mentor', 'Urokodaki plus Tanjiro, Giyu or Sabito on one team: his pupils get +1 DEF.', withAnchor('urokodaki',pupils));
   if(has('kagaya')&&hashira.length) add('team', ['kagaya',...hashira], 'Corps Master', 'Kagaya plus any Hashira on one team: every Hashira on that team gets +1 DEF.', withAnchor('kagaya',hashira));
 
   // opposing teams
@@ -118,7 +118,7 @@ function notesForCard(id, p){
   const c=BYID[id], f=c.fam, notes=poolNotes().filter(n=>n.ids.includes(id));
   if(others(p).some(q=>S.picks[q].includes(id))) return notes;      // another player has it: show as is
   const owned=S.picks[p].includes(id);
-  const left=budget()-spent(p)-(owned?0:c.cost), slots=MAXTEAM-fighterIds(p).length-(owned||c.helper?0:1);
+  const left=budget()-spent(p)-(owned?0:c.cost), slots=teamCap()-fighterIds(p).length-(owned||c.helper?0:1);
   const mine=fam=>S.picks[p].some(x=>BYID[x].fam===fam);
   const free=fam=>!allPicks().some(x=>BYID[x].fam===fam);
   const cost=fam=>Math.min(...S.pool.filter(x=>BYID[x].fam===fam).map(x=>BYID[x].cost));

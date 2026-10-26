@@ -816,3 +816,6 @@ details ul b{color:var(--fg)}
 .opps.many .tiles.simple .hprow{gap:4px}
 .opps.many .tiles.simple .bar{min-width:24px}
 .opps.many .tiles.simple .hp{font-size:.72rem}
+
+/* five mode cards: Story takes the full last row */
+.modes .mode:last-child{grid-column:1/-1}

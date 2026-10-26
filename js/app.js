@@ -10,8 +10,9 @@ const viewName = () => isOnline() && S.final && S.localOver ? 'over' : S.phase==
 function render(){
   if(isOnline()) S.planFor=S.me;
   const view=viewName();
+  if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
+    if(S.mode==='story' && S.winner===0) saveStoryClear(STAGES[S.stage].id); sfx(S.winner!==0?'lose':'win'); }
   if(view==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(), n=S.names[S.winner]; sc[n]=(sc[n]||0)+1; saveScore(sc); } recordMatch();
-    if(S.mode==='story' && S.winner===0) saveStoryClear(STAGES[S.stage].id);
     sfx(S.winner<0 || (soloView() && S.winner!==myP()) ? 'lose' : 'win'); }
   if(view!=='over') scored=false;
   // keep fold-out sections (How to play, records…) open across redraws
@@ -96,6 +97,7 @@ const ACTIONS = {
   cfgbudget(v){ keepNames(); setCfg('budget',+v); },
   cfgpool(v){ keepNames(); setCfg('poolType',v); },
   cfglevel(v){ keepNames(); setCfg('level',v); },
+  cfgmax(v){ keepNames(); setCfg('maxTeam',+v); },
   start: startDraft,
   home(){ clearTimeout(S._t); if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; }
     const mode=S.mode==='story'?'story':S.mode; S={phase:'setup',mode,soundOn:S.soundOn,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
@@ -112,6 +114,7 @@ const ACTIONS = {
   sel(v){ if(S.mode==='cpu' && turn()!==0) return; if(S.pool.includes(v)) S.sel=v; },
   unsel(){ S.sel=null; S.info=null; S.settings=false; },
   settings(){ S.settings=true; },
+  settab(v){ S.setTab=v; },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },

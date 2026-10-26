@@ -156,14 +156,14 @@ add({id:'tamayo',name:'Tamayo',short:'Tamayo',g:'薬',type:'Physician · Demon a
   sig:{name:'Healing Blood Art',desc:'Heal an ally (or herself) for 10 and cure poison.',cd:2,kind:'ally'}});
 add({id:'yushiro',name:'Yushiro',short:'Yushiro',g:'紙',type:'Tamayo\'s guardian · Demon ally',demon:true,cost:3,hp:20,pow:6,spd:9,def:3,regen:1,
   sig:{name:'Concealment Talisman',desc:'Moves first. Hide an ally (or himself): attacks against them miss this round.',cd:3,kind:'ally',prio:3}});
-add({id:'sabito',name:'Sabito & Makomo',short:'Sabito & Makomo',g:'錆',type:'Spirits · Urokodaki\'s students',cost:4,hp:24,pow:7,spd:10,def:3,
-  passive:"Urokodaki's students: they get his Mentor bonus too.",
-  sig:{name:'Spirit Training',desc:'Train an ally (or themselves): +2 PWR for the rest of the match.',cd:3,kind:'ally'}});
+add({id:'sabito',name:'Sabito',short:'Sabito',g:'錆',type:'Spirit · Urokodaki\'s student',cost:4,hp:24,pow:7,spd:10,def:3,
+  passive:"Urokodaki's student: he gets the Mentor bonus too.",
+  sig:{name:'Spirit Training',desc:'Train an ally (or himself): +2 PWR for the rest of the match.',cd:3,kind:'ally'}});
 add({id:'typezero',name:'Yoriichi Type Zero',short:'Type Zero',g:'傀',type:'Training puppet',cost:4,hp:28,pow:4,spd:8,def:4,strikes:3,
   passive:"Six Arms: strikes three times every Attack. Only a puppet: it doesn't count as Yoriichi, so Muzan isn't scared of it. Training partner: Muichiro gets +1 PWR on its team.",
   sig:{name:'Training Drill',desc:'Drill an ally (or itself): +2 SPD for the rest of the match.',cd:3,kind:'ally'}});
 add({id:'urokodaki',name:'Sakonji Urokodaki',short:'Urokodaki',g:'師',type:'Former Water Hashira',cost:4,hp:26,pow:7,spd:7,def:4,
-  passive:'Mentor: Tanjiro, Giyu and Sabito & Makomo on his team get +1 DEF.',
+  passive:'Mentor: Tanjiro, Giyu and Sabito on his team get +1 DEF.',
   sig:{name:'Water Wheel',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
 add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:14,pow:2,spd:5,def:1,
   passive:'Master of the Corps: every Hashira on his team gets +1 DEF.',

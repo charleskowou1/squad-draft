@@ -30,7 +30,9 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
 - Each round, every fighter secretly picks ATTACK, DEFEND or their SPECIAL. Then everything resolves.
 - Last side with anyone standing wins. A match stopped at round 40 is a draw.
 - Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (2–4 phones, 4-letter room code),
-  Quickplay (you vs 1–3 computers: Easy/Normal/Hard) and Story Mode (21 battles with preset squads).
+  Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
+  them; doesn't count toward records) and Story Mode (21 battles with preset squads).
+- Each mode (not Story) also sets MAX FIGHTERS PER TEAM, 1–6 (default 6). 1 = one-on-one duels.
 - FREE-FOR-ALL (3 or 4 players): every team fights every other team; last team standing wins (places 1st–4th).
   A special that hits "every enemy" hits every fighter on the ONE team you aim it at. Cards over 12 pts aren't dealt
   (big single cards dominated: the first picker won ~60%; with the cap the pick order splits ~40/33/26%).
@@ -77,7 +79,7 @@ out(`Same team:
 - Marks spread: 2+ Mark ✦ fighters → each +1 SPD.
 - Devoted: Tamayo + Yushiro → Yushiro +2 PWR.
 - Sun Lineage: Yoriichi (either) + Tanjiro → Tanjiro +2 PWR.
-- Mentor: Urokodaki + Tanjiro / Giyu / Sabito & Makomo → those pupils +1 DEF.
+- Mentor: Urokodaki + Tanjiro / Giyu / Sabito → those pupils +1 DEF.
 - Corps Master: Kagaya + any Hashira → every Hashira +1 DEF.
 - Two as One: Gyutaro + Daki → Gyutaro +2 PWR, and if one falls while the other still stands, they get back up at the
   end of the round with 30% (once each). Knock both out in the same round to stop it. (Strong: ~58% when paired.)

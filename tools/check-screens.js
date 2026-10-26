@@ -8,9 +8,9 @@ function check(games){
   for(let g=0;g<games;g++){
     try{
       // cycles: 2, 3 and 4 players; Quickplay, Local and Online screens; every level, budget and pool type
-      const level=['easy','normal','hard'][g%3], n=[2,3,4][g%3===0?0:(g%5)%3], mode=['cpu','local','online','cpu'][g%4];
-      S={phase:'setup',mode,n,level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',names:['A','B','C','D'].slice(0,n),me:mode==='online'?g%n:0};
-      ['local','online','cpu','story'].forEach(m=>{ S.mode=m; vSetup(); }); S.mode=mode; S.settings=true; vSheet(); S.settings=false;
+      const level=['easy','normal','hard'][g%3], n=[2,3,4][g%3===0?0:(g%5)%3], mode=['cpu','local','online','practice'][g%4], maxTeam=[6,1,2,3,4,5,6][g%7];
+      S={phase:'setup',mode,n,level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',maxTeam,names:['A','B','C','D'].slice(0,n),me:mode==='online'?g%n:0};
+      ['local','online','cpu','practice','story'].forEach(m=>{ S.mode=m; vSetup(); }); S.mode=mode; S.settings=true; vSheet(); S.setTab='stats'; vSheet(); S.setTab='general'; S.settings=false;
       if(mode==='online'){ S.phase='lobby'; S.lobby={code:'TEST',seats:[{name:'B',on:true},{name:'C',on:n>2},null]}; vLobby(); S.phase='setup'; }
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
       if(S.spin.r<0||S.spin.r>=n) throw new Error('spin winner out of range');
@@ -20,6 +20,7 @@ function check(games){
       let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
       if(S.phase==='draft') throw new Error('draft did not finish');
       if(S.teams.length!==n) throw new Error('wrong number of teams');
+      if(S.teams.some(t=>t.length>maxTeam)) throw new Error('a team is over the max fighters setting');
       S.helpers[0]=['crow']; vPass();
       while(S.phase!=='over'){
         const me=S.me||0;

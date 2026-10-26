@@ -16,9 +16,9 @@ const ARCS = {
 };
 // scene lines: [speaker card id, or '' for the narrator, text]
 const STAGES = [
-  {id:'training', arc:'prologue', title:'The Boulder', place:'Mount Sagiri', foe:'Sabito & Makomo', mine:['tanjiro'], enemy:['sabito'], level:'easy',
-    boosts:[{side:1, hp:1.75, pow:1, label:'Spirits: +75% HP, +1 PWR'}],
-    blurb:'Two spirits in fox masks test Tanjiro before he can cut the boulder.',
+  {id:'training', arc:'prologue', title:'The Boulder', place:'Mount Sagiri', foe:'Sabito', mine:['tanjiro'], enemy:['sabito'], level:'easy',
+    boosts:[{side:1, hp:1.75, pow:1, label:'Sabito: +75% HP, +1 PWR'}],
+    blurb:'A boy in a fox mask tests Tanjiro before he can cut the boulder.',
     scene:[['','Mount Sagiri. Half a year of training, and the boulder still stands.'],
       ['sabito',"You're slow. Your body has learned everything, but you haven't."],
       ['tanjiro',"Then I'll fight you until I understand!"],
@@ -182,7 +182,7 @@ const storyCard = c => !c.spawn && !c.legend && (!c.demon || STORY_ALLIES.includ
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
   const st=STAGES[i];
-  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, n:2, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null,
+  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
   S.names=[S.names[0], st.foe];
 }

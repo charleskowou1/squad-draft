@@ -1,6 +1,8 @@
 /* ================= ENGINE =================
    Game state, draft rules and battle rules. No DOM in this file: tools/balance-sim.js runs it in Node. */
 const MAXTEAM = 6;
+// Fighters allowed per team in this match: 1–6, chosen per mode on the main menu (story is always 6)
+const teamCap = () => S.maxTeam || MAXTEAM;
 // Points per team: chosen in Settings (10, 20 or 30) and remembered on this phone
 const BUDGETS = [10, 20, 30], DEFAULT_BUDGET = 20;
 const budget = () => S.budget || DEFAULT_BUDGET;
@@ -47,15 +49,15 @@ function loadLevel(){ try{ return localStorage.getItem('squad-draft-level')||'no
 function saveLevel(v){ try{ localStorage.setItem('squad-draft-level',v) }catch(e){} }
 // Each mode keeps its own match settings on this phone: players (2–4), points, pool and (Quickplay) computer level.
 // Online: the room creator's settings are used. Story sets its own. The ⚙ Settings menu only has general options.
-const MODES = ['local','online','cpu','story'];
-const MODE_DEFAULTS = {local:{players:2}, online:{players:2}, cpu:{players:2}, story:{players:2}};
+const MODES = ['local','online','cpu','practice','story'];
+const MODE_DEFAULTS = {local:{players:2}, online:{players:2}, cpu:{players:2}, practice:{players:2, poolType:'all'}, story:{players:2}};
 function loadModeCfg(mode){
   let c=null; try{ c=JSON.parse(localStorage.getItem('squad-draft-mode-'+mode)) }catch(e){}
-  return Object.assign({players:2, budget:loadBudget(), poolType:loadPoolType(), level:loadLevel()}, MODE_DEFAULTS[mode], c||{});
+  return Object.assign({players:2, budget:loadBudget(), poolType:loadPoolType(), level:loadLevel(), maxTeam:MAXTEAM}, MODE_DEFAULTS[mode], c||{});
 }
 function saveModeCfg(mode, c){ try{ localStorage.setItem('squad-draft-mode-'+mode, JSON.stringify(c)) }catch(e){} }
 // Copy a mode's settings into the game state (points, pool, players, level)
-function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); S.cfg=c; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; if(mode!=='online') S.n=c.players; return c; }
+function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); S.cfg=c; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; if(mode!=='online') S.n=c.players; return c; }
 const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
 let S = {phase:'setup', mode:'local', n:2, level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), soundOn: true, names: loadNames() || ['CK','Mia']};
@@ -68,7 +70,9 @@ const allPicks = () => (S.picks||[]).flat();
 const allUnits = () => (S.teams||[]).flat();
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Playing against the computer (normal vs-computer games and story mode); the screen belongs to player 1
-const vsCpu = () => S.mode==='cpu' || S.mode==='story';
+const vsCpu = () => S.mode==='cpu' || S.mode==='story' || S.mode==='practice';
+// Practice: you draft for every team (the computers' picks too), then fight the computers. Doesn't count toward records.
+const isPractice = () => S.mode==='practice';
 // One person per screen (vs computer, story, online): label sides "You" / "Opponent" from that person's view
 const soloView = () => S.mode!=='local';
 // Health is shown as a percent of each fighter's own max HP (display only; the engine keeps raw HP)
@@ -134,7 +138,7 @@ const spent = p => S.picks[p].reduce((a,id)=>a+BYID[id].cost,0);
 const famTaken = fam => allPicks().some(id=>BYID[id].fam===fam);
 const taken = id => famTaken(BYID[id].fam);
 // helpers don't take one of the 6 fighter slots, but each player may have only one helper
-function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<MAXTEAM) && c.cost <= budget()-spent(p); }
+function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<teamCap()) && c.cost <= budget()-spent(p); }
 const canAny = p => S.pool.some(id=>canPick(p,id));
 // Whose pick it is: snake order, skipping a player who has locked
 function turn(){ return turnAt(S.k); }
@@ -448,7 +452,7 @@ function special(u,pl){
     case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h',fx('heal',null,u)); break; }
     case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h',fx('heal',u,t)); break; }
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t); } break; }
-    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito & Makomo train ${t===u?'themselves':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
+    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito trains ${t===u?'himself':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-6,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
     case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }

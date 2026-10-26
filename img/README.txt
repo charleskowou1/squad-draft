@@ -68,7 +68,7 @@ genya              Genya Shinazugawa  (Sanemi's brother)
 tamayo             Tamayo
 yushiro            Yushiro
 urokodaki          Sakonji Urokodaki                <-- last name
-sabito             Sabito & Makomo (one picture for both)
+sabito             Sabito (fox mask, alone)
 kagaya             Kagaya Ubuyashiki
 murata             Murata
 typezero           Yoriichi Type Zero (the six-armed training puppet)
