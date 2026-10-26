@@ -890,3 +890,12 @@ details ul b{color:var(--fg)}
   .localmode .reswide.done .rcol{display:flex;flex-direction:column;gap:14px}
   .localmode .reswide.done .vsdiv{display:none}
 }
+
+/* story: ending scene unlock reveal */
+.unlockcard{cursor:pointer}
+.unlocktitle{position:relative;z-index:3;margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.unlocktitle b{font-family:var(--display);font-size:1.9rem;color:var(--gold);animation:enter .5s both}
+.unlockcard .ulist{position:relative;z-index:3}
+.unlockcard .ucard small{font-size:.66rem;color:var(--muted);max-width:110px;text-align:center}
+.unlockcard .ucard .gl.lg{width:96px;height:118px}
+.ucap{position:relative;z-index:3;text-align:center}

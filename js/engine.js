@@ -60,6 +60,13 @@ function saveModeCfg(mode, c){ try{ localStorage.setItem('squad-draft-mode-'+mod
 function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
 const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
+// Saved data reset: when DATA_VERSION changes, every 'squad-draft…' key on this phone is cleared once (story, stats,
+// daily streak, names, settings), then saving carries on as normal. Bumped to 3 on Oct 26, 2026 at CK's request
+// ("clear all my data and save from this point on"). Don't bump it again unless CK asks for another wipe.
+const DATA_VERSION = '3';
+try{ if(localStorage.getItem('squad-draft-data')!==DATA_VERSION){
+  Object.keys(localStorage).filter(k=>k.startsWith('squad-draft')).forEach(k=>localStorage.removeItem(k));
+  localStorage.setItem('squad-draft-data', DATA_VERSION); } }catch(e){}
 let S = {phase:'setup', mode:'local', n:2, level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), soundOn: true, names: loadNames() || ['CK','Mia']};
 // Players in the match: 2, 3 (triple threat) or 4 (1 v 1 v 1 v 1). Every team fights every other team; last one standing wins.
 const MAX_PLAYERS = 4;

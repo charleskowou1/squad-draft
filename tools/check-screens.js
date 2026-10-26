@@ -55,6 +55,9 @@ function check(games){
       if(S.phase==='result'){ S.round++; S.phase='plan'; repeatPlans(0); vPlan(); }
       while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,stageLevel()); resolve(); vResult(); if(S.phase==='result') S.round++; }
       vOver(); mvpPanel();
+      // the ending scene, every line, then the unlock reveal
+      Object.assign(S,{phase:'scene', sceneOutro:true, sceneVs:false, sceneUnlock:false, newUnlocks:STAGE_UNLOCKS[STAGES[i].id]});
+      for(S.sceneAt=0;S.sceneAt<STAGES[i].outro.length;S.sceneAt++) vScene(); S.sceneAt=0; S.sceneUnlock=true; vScene(); S.sceneOutro=false; S.sceneUnlock=false;
       startStage(i,true); vScene(); beginStage(); vDraft();
       const cheap=S.pool.filter(id=>canPick(0,id)).sort((x,y)=>BYID[x].cost-BYID[y].cost)[0]; doPick(cheap); vDraft(); if(!undoable()) throw new Error('no undo after a pick'); undoPick();
       if(S.picks[0].length) throw new Error('undo did not remove the pick');

@@ -672,6 +672,13 @@ function vScene(){
   const fx=`<span class="particles p-${ARC_FX[st.arc]||'dust'}" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i*0.73)%6}s;--s:${0.6+(i%5)*0.15}"></i>`).join('')}</span>`;
   const head=`<div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · Battle ${S.stage+1} of ${STAGES.length}</div><div class="title">${esc(st.title)}</div><div class="splace">${esc(st.place)}</div></div>
       <button class="btn ghost small" data-a="sceneskip">Skip</button></div>`;
+  if(S.sceneUnlock){   // after the ending scene: what this win unlocked
+    return `<div class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+      <div class="unlocktitle"><span class="eyebrow">Battle won</span><b>You have unlocked</b></div>
+      <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b><small>${esc(BYID[id].type)}</small></span>`).join('')}</div>
+      <p class="muted ucap">Now playable in Local, Online, Quickplay and Practice.</p>
+      <button class="btn big" data-a="scenenext">Continue</button><span class="lbox b" aria-hidden="true"></span></div>`;
+  }
   if(S.sceneVs){
     const tw=twistText(st), row=ids=>ids.filter(id=>!BYID[id].helper).map(id=>`<span class="vsc">${seal(BYID[id],'lg')}<small>${esc(BYID[id].short)}</small></span>`).join('');
     const mine=S.storyDraft?'<span class="muted">Your draft</span>':row(st.mine);
@@ -680,9 +687,9 @@ function vScene(){
       ${tw||st.boosts?`<div class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</div>`:''}
       <button class="btn big" data-a="sceneskip">Fight</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
-  const [who,text]=lines[S.sceneAt], c=who&&BYID[who], side=c?sceneSide(st,who):'n';
+  const shown=sceneLines(), [who,text]=shown[S.sceneAt], c=who&&BYID[who], side=c?sceneSide(st,who):'n';
   // the other speakers in this scene stand dimmed behind the line
-  const cast=[...new Set(lines.map(l=>l[0]).filter(Boolean))].filter(id=>id!==who).slice(0,2);
+  const cast=[...new Set(shown.map(l=>l[0]).filter(Boolean))].filter(id=>id!==who).slice(0,2);
   const typed=S.sceneInstant ? esc(text) : [...text].map((ch,i)=>`<span style="--i:${i}">${esc(ch)}</span>`).join('');
   return `<div class="scene arc-${st.arc}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
@@ -690,7 +697,7 @@ function vScene(){
       ${c?`<span class="lead ${side}" key="${S.sceneAt}">${seal(c,'lg')}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
       <p class="typed">${typed}</p></div>
-    <div class="scenefoot"><span class="dots">${lines.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>
+    <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>
       <span class="muted">Tap to continue</span></div><span class="lbox b" aria-hidden="true"></span></div>`;
 }
 function vOver(){
@@ -703,7 +710,7 @@ function vOver(){
     ${S.mode==='daily' ? `<p class="dres ${S.dailyMet?'ok':''}">${S.dailyMet?'Challenge complete!':'Challenge not met.'} <span class="muted">${esc(DAILY_GOALS[S.daily.goal.type](S.daily.goal))}</span></p>` : ''}
     <p class="muted">${S.mode==='daily' ? (S.dailyMet?`Come back tomorrow for a new one.${dailyStreak()>1?` Streak: ${plural(dailyStreak(),'day')}.`:''}`:'Try again: same squads, same goal.') : S.mode==='story' ? (w===0 ? (S.survived?'You held out until dawn. ':'')+(S.stage+1<STAGES.length?`Battle ${S.stage+1} won. ${esc(STAGES[S.stage+1].title)} is unlocked.`:'The sun rises. The story is complete!') : S.storyDraft ? 'Defeated. Rethink your squad and try again.' : 'Defeated. Try a different plan.')
       : w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>
-    ${S.mode==='story' && S.newUnlocks && S.newUnlocks.length ? `<section class="unlocked"><div class="tlabel">Unlocked for every mode</div>
+    ${S.mode==='story' && S.newUnlocks && S.newUnlocks.length ? `<section class="unlocked"><div class="tlabel">Unlocked this battle</div>
       <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</div></section>` : ''}
     ${mvpPanel()}
     <div class="overteams${nPlayers()>2?' many':''}">${players().map(q=>teamBlock(q)).join('')}</div>

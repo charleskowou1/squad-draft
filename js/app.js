@@ -12,8 +12,7 @@ function render(){
   const view=viewName();
   if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
-    if(S.mode==='story' && S.winner===0){ const id=STAGES[S.stage].id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id); }
-    sfx(S.winner!==0?'lose':'win'); }
+    if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
   if(view==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
     sfx(S.winner<0 || (soloView() && !sameSide(S.winner,myP())) ? 'lose' : 'win'); }
   if(view!=='over') scored=false;
@@ -74,7 +73,14 @@ function toSpin(){ S.phase='spin'; S.spin=null; window.scrollTo(0,0); }
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 // Scene lines type themselves out; a tap while typing shows the whole line, the next tap moves on
-const typingDone = () => S.sceneInstant || Date.now()-(S.sceneShownAt||0) > (STAGES[S.stage].scene[S.sceneAt][1].length*28+250);
+const typingDone = () => S.sceneInstant || Date.now()-(S.sceneShownAt||0) > (sceneLines()[S.sceneAt][1].length*28+250);
+// A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
+function storyWon_(){
+  const id=STAGES[S.stage].id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
+  Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
+}
+// After the ending scene: reveal new unlocks (if any), then the results screen
+function afterOutro(){ if(!S.sceneUnlock && S.newUnlocks && S.newUnlocks.length){ S.sceneUnlock=true; sfx('ding'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
 // After both sides lock in: give each crow owner their report (and a chance to re-plan), then fight
 function nextScoutOrFight(){
   S.scouting=false;
@@ -137,10 +143,13 @@ const ACTIONS = {
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   scenenext(){ if(S.sceneVs) return;
+    if(S.sceneUnlock) return afterOutro();
     if(!typingDone()){ S.sceneInstant=true; return; }
-    if(S.sceneAt+1<STAGES[S.stage].scene.length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('pick'); return; }
+    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('pick'); return; }
+    if(S.sceneOutro) return afterOutro();
     S.sceneVs=true; sfx('gong'); },
-  sceneskip(){ if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
+  sceneskip(){ if(S.sceneOutro){ if(!S.sceneUnlock && S.newUnlocks && S.newUnlocks.length){ S.sceneUnlock=true; return; } return afterOutro(); }
+    if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
   helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
@@ -166,7 +175,9 @@ const ACTIONS = {
   },
   skip(){ clearTimeout(S._t); S.play.done=true; },
   next(){ if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
-  finish(){ if(isOnline()){ S.localOver=true; return window.scrollTo(0,0); } S.play=null; S.phase='over'; window.scrollTo(0,0); },
+  finish(){ if(isOnline()){ S.localOver=true; return window.scrollTo(0,0); } S.play=null;
+    if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
+    S.phase='over'; window.scrollTo(0,0); },
 };
 document.addEventListener('click',e=>{
   unlockSound();   // phones only allow sound after a tap
