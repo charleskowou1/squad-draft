@@ -13,9 +13,10 @@ const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${
 const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
+// Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
-    ${quit?'<button class="btn ghost small" data-a="home">Quit</button>':''}</header>`;
+    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?'<button class="btn ghost small" data-a="home">Quit</button>':''}</div></header>`;
 }
 const actionbar = inner => `<div class="actionbar"><div class="in">${inner}</div></div>`;
 const statCells = c => `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
@@ -57,7 +58,7 @@ function statusChips(u, showSpecial){
 }
 // Tiny status marks for the compact opponent cards: special ready, poison, stun, Shinobu's wisteria, sunburn, guarding
 function statusMarks(u, ready){
-  const m=[ready?['技','Special ready','s']:null, u.poison?['毒',`Poisoned ${u.poison.turns} more round${u.poison.turns>1?'s':''}`,'b']:null,
+  const m=[ready?['Special ready','Their special is ready this round','s txt']:null, u.poison?['毒',`Poisoned ${u.poison.turns} more round${u.poison.turns>1?'s':''}`,'b']:null,
     u.stun?['眠','Stunned this round','b']:null, u.devoured?['藤',"Eating Shinobu's wisteria poison",'b']:null, u.sunburn?['陽','Sunburned: no regeneration','b']:null].filter(Boolean);
   return m.length?`<span class="smarks">${m.map(([k,t,c])=>`<span class="sm ${c}" title="${t}" aria-label="${t}">${k}</span>`).join('')}</span>`:'';
 }
@@ -664,22 +665,31 @@ function mvpPanel(){
 // (squads, twist, star goals, Play / Draft replay). It opens on the next battle to play.
 const starRow = (n, of=3) => `<span class="stars" aria-label="${n} of ${of} stars">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}">★</i>`).join('')}</span>`;
 function vStory(){
-  const won=storyWon(); let arc='';
+  const won=storyWon(), stars=totalStars(); let arc='', html='';
+  STAGES.forEach((st,i)=>{
+    if(st.arc!==arc){ if(arc) html+='</div></section>'; arc=st.arc;
+      html+=`<section class="chap arc-${st.arc}"><div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}</b></div><div class="chaprows">`; }
+    const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, unl=STAGE_UNLOCKS[st.id]||[];
+    html+=`<div class="srow${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}">
+      <button class="srowbtn" data-a="storysel" data-v="${i}" ${open?'':'disabled'} aria-expanded="${sel}">
+        <span class="snum">${clear?'✓':open?i+1:'🔒'}</span>
+        <span class="sinfo"><b>${esc(st.title)}</b>
+          <span class="sfaces"><span class="muted">vs</span>${st.enemy.map(id=>seal(BYID[id],'xs')).join('')}${clear?starRow(stageStars(st.id)):''}</span></span>
+        ${unl.length?`<span class="sunl"><small>Unlocks</small><span>${unl.slice(0,3).map(id=>seal(BYID[id],'xs')).join('')}${unl.length>3?`<i>+${unl.length-3}</i>`:''}</span></span>`:''}
+      </button>${sel&&open?stageDetail(st,i,clear):''}</div>`;
+  });
+  html+='</div></section>';
   return `${topbar('Story mode', 'The Slayer’s journey')}
-    <div class="storytotals"><span><b>${won}</b> of ${STAGES.length} battles won</span><span class="st3">${starRow(1,1)} <b>${totalStars()}</b> of ${STAGES.length*3}</span></div>
-    <div class="path">${STAGES.map((st,i)=>{ const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, side=i%2?'r':'l', n=stageStars(st.id);
-      const head = st.arc!==arc ? `<div class="parc arc-${st.arc}">${(arc=st.arc, `<span class="arcg">${ARCS[st.arc].g}</span>${esc(ARCS[st.arc].title)}`)}</div>` : '';
-      return `${head}<div class="pnode ${side}${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}">
-        <button class="pdot" data-a="storysel" data-v="${i}" ${open?'':'disabled'} aria-expanded="${sel}">${clear?'✓':open?i+1:'🔒'}</button>
-        <button class="plabel" data-a="storysel" data-v="${i}" ${open?'':'disabled'}><b>${esc(st.title)}</b><small>vs ${esc(st.foe)}</small>${clear?starRow(n):''}</button>
-        ${sel&&open?stageDetail(st,i,clear):''}</div>`; }).join('')}</div>`;
+    <div class="storytotals"><span><b>${won}</b> of ${STAGES.length} battles won</span>${stars?`<span class="st3">${starRow(1,1)} <b>${stars}</b> of ${STAGES.length*3}</span>`:''}</div>
+    <div class="chapters">${html}</div>`;
 }
 function stageDetail(st,i,clear){
-  const tw=twistText(st), goals=starGoals(st), n=stageStars(st.id);
+  const tw=twistText(st), n=stageStars(st.id), unl=STAGE_UNLOCKS[st.id]||[];
   return `<div class="pcard"><span class="splace">${esc(st.place)}</span><span class="sblurb">${esc(st.blurb)}</span>
     ${tw||st.boosts?`<span class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</span>`:''}
     <span class="sseals">${st.mine.map(id=>seal(BYID[id],'sm')).join('')}<span class="svs">vs</span>${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span>
-    <div class="goals">${goals.map((g,k)=>`<span class="${k<n?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
+    ${unl.length&&!clear?`<span class="unlpreview"><small>Win to unlock</small>${unl.map(id=>`<span>${seal(BYID[id],'sm')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</span>`:''}
+    ${clear?`<div class="goals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${k<n?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>`:''}
     <span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span></div>`;
 }
 // Particles drifting over each arc's scene (embers, snow, petals…)
@@ -690,7 +700,7 @@ function vScene(){
   const st=STAGES[S.stage], lines=st.scene;
   const fx=`<span class="particles p-${ARC_FX[st.arc]||'dust'}" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i*0.73)%6}s;--s:${0.6+(i%5)*0.15}"></i>`).join('')}</span>`;
   const head=`<div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · Battle ${S.stage+1} of ${STAGES.length}</div><div class="title">${esc(st.title)}</div><div class="splace">${esc(st.place)}</div></div>
-      <button class="btn ghost small" data-a="sceneskip">Skip</button></div>`;
+      <span class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="sceneskip">Skip</button></span></div>`;
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
     return `<div class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starRow(S.starsGot||1)}
@@ -707,19 +717,19 @@ function vScene(){
     return `<div class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="vsrow l">${mine}</div><div class="vsmid"><span>VS</span></div><div class="vsrow r">${row(st.enemy)}</div>
       ${tw||st.boosts?`<div class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</div>`:''}
-      <div class="goals vsgoals">${starGoals(st).map((g,k)=>`<span>${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
+      ${stageCleared(S.stage)?`<div class="goals vsgoals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${k<stageStars(st.id)?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>`:''}
       <button class="btn big" data-a="sceneskip">Fight</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
   const shown=sceneLines(), [who,text]=shown[S.sceneAt], c=who&&BYID[who], side=c?sceneSide(st,who):'n';
   // the other speakers in this scene stand dimmed behind the line
   const cast=[...new Set(shown.map(l=>l[0]).filter(Boolean))].filter(id=>id!==who).slice(0,2);
-  const typed=S.sceneInstant ? esc(text) : [...text].map((ch,i)=>`<span style="--i:${i}">${esc(ch)}</span>`).join('');
+  const typed=esc(text);   // lines simply appear (CK didn't want the typing effect)
   return `<div class="scene arc-${st.arc}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
       ${c?`<span class="lead ${side}" key="${S.sceneAt}">${seal(c,'lg')}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
-      <p class="typed">${typed}</p></div>
+      <p class="popline" key="${S.sceneAt}">${typed}</p></div>
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>
       <span class="muted">Tap to continue</span></div><span class="lbox b" aria-hidden="true"></span></div>`;
 }

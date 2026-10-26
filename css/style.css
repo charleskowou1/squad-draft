@@ -808,14 +808,14 @@ details ul b{color:var(--fg)}
 /* free-for-all move screen: opponents three to a row, so your own team stays in view */
 .opps{display:flex;flex-direction:column;gap:10px}
 .opps.many .side{gap:6px}
-.opps.many .tiles.simple{grid-template-columns:repeat(3,1fr);gap:6px}
-.opps.many .tiles.simple .tile{padding:6px}
-.opps.many .tiles.simple .nm{font-size:.78rem}
+.opps .tiles.simple{grid-template-columns:repeat(3,1fr);gap:6px}
+.opps .tiles.simple .tile{padding:6px}
+.opps .tiles.simple .nm{font-size:.78rem}
 .opps.many .sidehead .tname{font-size:1rem}
-.opps.many .tiles .tile .gl{width:30px;height:36px;font-size:1rem;border-radius:6px}
-.opps.many .tiles.simple .hprow{gap:4px}
-.opps.many .tiles.simple .bar{min-width:24px}
-.opps.many .tiles.simple .hp{font-size:.72rem}
+.opps .tiles .tile .gl{width:30px;height:36px;font-size:1rem;border-radius:6px}
+.opps .tiles.simple .hprow{gap:4px}
+.opps .tiles.simple .bar{min-width:24px}
+.opps .tiles.simple .hp{font-size:.72rem}
 
 /* five mode cards: Story takes the full last row */
 .modes .mode:last-child{grid-column:1/-1}
@@ -1006,3 +1006,46 @@ details ul b{color:var(--fg)}
 .theirs{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .theirs .card.off{opacity:1;filter:none}
 .theirs .card{border-color:rgba(139,156,240,.45)}
+
+.popline{animation:enter .35s both}
+
+/* compact opponents (move screen): small section header, three cards to a row */
+.opps .side{gap:6px}
+.opps .sidehead .tname{font-size:1rem}
+.opps .tiles.simple .bar{height:6px}
+.sm.txt{width:auto;padding:0 6px;font-size:.58rem;letter-spacing:.02em;white-space:nowrap}
+.topbtns{display:flex;gap:6px;align-items:center}
+.gearmini{padding:6px 10px;font-size:1rem}
+
+/* story map: one chapter card per arc, a row per battle (enemies and unlock rewards always visible) */
+.chapters{display:flex;flex-direction:column;gap:14px;padding-bottom:20px}
+.chap{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--line-2);background:var(--grain),linear-gradient(160deg,var(--sc1,var(--surface)) 0%,var(--surface) 55%)}
+.chap::after{content:attr(data-k);}
+.chaphead{display:flex;align-items:center;gap:10px;padding:12px 14px 6px}
+.chapk{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--sc2,var(--accent));color:#16130f;font-weight:800;font-size:1.15rem}
+.chaphead b{font-family:var(--display);font-size:1.15rem}
+.chaprows{display:flex;flex-direction:column;padding:4px 8px 10px}
+.srow{border-radius:12px;transition:background .15s}
+.srow.sel{background:rgba(10,9,8,.35)}
+.srowbtn{width:100%;display:flex;align-items:center;gap:10px;padding:8px 6px;background:transparent;color:inherit;text-align:left}
+.srow .snum{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1rem;background:var(--accent);color:#fff8ee}
+.srow.clear .snum{background:var(--p1);color:#10241a}
+.srow.flash .snum{background:var(--gold);color:#1a1714}
+.srow.locked .snum{background:var(--bg-2);color:var(--muted);font-size:.8rem}
+.srow .sinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.srow .sinfo b{font-family:var(--display);font-size:.98rem;line-height:1.15}
+.srow.locked .sinfo b{color:var(--ink-2)}
+.sfaces{display:flex;align-items:center;gap:3px;flex-wrap:wrap;font-size:.72rem}
+.sfaces .stars{margin-left:6px}
+.gl.xs{width:24px;height:24px;font-size:.8rem;border-radius:6px}
+.sunl{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.sunl small{font-size:.58rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.sunl span{display:flex;gap:2px;align-items:center}
+.sunl .gl{box-shadow:0 0 0 1.5px var(--gold)}
+.sunl i{font-style:normal;font-size:.68rem;color:var(--gold);font-weight:800;margin-left:2px}
+.srow .pcard{margin:2px 6px 8px}
+.unlpreview{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.unlpreview small{width:100%;font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.unlpreview span{display:flex;align-items:center;gap:5px;font-size:.78rem}
+.unlpreview .gl{box-shadow:0 0 0 1.5px var(--gold)}
+.smarks{flex-wrap:wrap}

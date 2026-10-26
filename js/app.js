@@ -22,7 +22,7 @@ function render(){
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
-  if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.pnode.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
+  if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
   if(S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
   // online host: send each guest phone its own copy of the shared state (only when it changed)
@@ -51,7 +51,7 @@ const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GRO
 function playRound(){
   S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
-    if(S.info){ S._t=setTimeout(step,300); return; }   // paused while a fighter's info card is open
+    if(S.info || S.settings){ S._t=setTimeout(step,300); return; }   // paused while an info card or Settings is open
     if(S.play.k>=S.play.steps.length-1){ S.play.done=true; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
@@ -76,16 +76,14 @@ function toSpin(){ S.phase='spin'; S.spin=null; window.scrollTo(0,0); }
 // After a fighter's move is complete, open the next one that still needs a move
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
-// Scene lines type themselves out; a tap while typing shows the whole line, the next tap moves on
-const typingDone = () => S.sceneInstant || Date.now()-(S.sceneShownAt||0) > (sceneLines()[S.sceneAt][1].length*28+250);
 // A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
 function storyWon_(){
   const st=STAGES[S.stage], id=st.id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
   S.starsGot=starsEarned(st); S.starsBest=stageStars(id); saveStars(id,S.starsGot);
-  Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win'); typeTicks(st.outro[0][1].length);
+  Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
 }
 // After the ending scene: the stars earned (and any unlocks), then the results screen
-function afterOutro(){ stopTypeTicks(); if(!S.sceneUnlock){ S.sceneUnlock=true; sfx('unlock'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
+function afterOutro(){ if(!S.sceneUnlock){ S.sceneUnlock=true; sfx('unlock'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
 // After both sides lock in: give each crow owner their report (and a chance to re-plan), then fight
 function nextScoutOrFight(){
   S.scouting=false;
@@ -148,16 +146,15 @@ const ACTIONS = {
   volsfx(v){ S.vol={...S.vol, sfx:+v}; saveVolumes(S.vol); applyVolumes(); sfx('pick'); },
   storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; S.storySel=nextStage(); S.storyScroll=true; },
   storysel(v){ S.storySel = S.storySel===+v ? -1 : +v; },
-  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; typeTicks(sceneLines()[0][1].length); window.scrollTo(0,0); },
+  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   scenenext(){ if(S.sceneVs) return;
     if(S.sceneUnlock) return afterOutro();
-    if(!typingDone()){ S.sceneInstant=true; stopTypeTicks(); return; }
-    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('page'); typeTicks(sceneLines()[S.sceneAt][1].length); return; }
-    stopTypeTicks();
+    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('page'); return; }
+   
     if(S.sceneOutro) return afterOutro();
     S.sceneVs=true; sfx('vs'); },
-  sceneskip(){ stopTypeTicks(); if(S.sceneOutro) return afterOutro();
+  sceneskip(){ if(S.sceneOutro) return afterOutro();
     if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
