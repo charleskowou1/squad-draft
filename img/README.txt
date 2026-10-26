@@ -102,3 +102,9 @@ TIPS
   the Demon Slayer fan wiki.
 - These are for playing at home only. If the game is ever shared publicly or sold,
   use original art instead.
+
+Story scene pictures go in img/scenes/ (jpg, png or webp), named after the slot:
+  scenes/boulder.jpg         The Boulder ending: Tanjiro has cut the boulder (Sabito's line)
+  scenes/akaza-sunrise.jpg   Set Your Heart Ablaze ending: Akaza trying to flee the sunrise
+  scenes/rengoku-heart.jpg   Set Your Heart Ablaze ending: Rengoku's "set your heart ablaze"
+A line without its picture shows the character portraits instead.
