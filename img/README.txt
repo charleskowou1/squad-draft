@@ -25,7 +25,7 @@ akaza              Akaza (Upper Moon 3)
 hantengu           Hantengu (Upper Moon 4)
 nakime             Nakime (Upper Moon 4, the biwa player)
 gyokko             Gyokko (Upper Moon 5)
-gyutaro            Gyutaro (Upper Moon 6), now his own card
+gyutaro            Gyutaro (Upper Moon 6)
 daki               Daki (Upper Moon 6), now her own card
 kaigaku            Kaigaku (Upper Moon 6)
 enmu               Enmu (Lower Moon 1)
