@@ -507,6 +507,8 @@ function vSettings(){
       <div class="hint">How long each action stays on screen during a round.</div></div>
     <div class="setgroup"><div class="tlabel">Music</div>${seg('volmusic',(S.vol||loadVolumes()).music,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
     <div class="setgroup"><div class="tlabel">Sound effects</div>${seg('volsfx',(S.vol||loadVolumes()).sfx,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
+    <div class="setgroup"><div class="tlabel">Move clips</div>${seg('clips',S.clipsOn===false?'off':'on',[['on','On'],['off','Off']])}
+      <div class="hint">Short anime clips for some specials and moments during a round. Needs internet.</div></div>
     <div class="setgroup"><div class="tlabel">Vibration on knockouts</div>${seg('vibe',S.vibeOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Android phones only (iPhones don't allow it).</div></div>
     <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>`}
@@ -647,13 +649,20 @@ function stage(line){
 }
 // Special-move cut-in: the fighter's art slides across a slanted band with the move's name and their line,
 // from the left for the team on the left of the stage, from the right for everyone else
-function cutin(u){
+function cutin(u, clip){
   const style=styleOf(u,'special'), right=u.p!==leftSide();
-  return `<div class="cutin sty sty-${style}${right?' right':''}" style="--tc:${pc(u.p)}" aria-hidden="true">
-    <span class="lines"></span>
+  return `<div class="cutin sty sty-${style}${right?' right':''}${clip?' hasclip':''}" style="--tc:${pc(u.p)}" aria-hidden="true">
+    ${clip?clipVideo(clip):'<span class="lines"></span>'}
     <div class="band"><span class="cimg">${ART[u.id]?`<img src="${ART[u.id]}" alt="">`:`<span class="ck">${u.g}</span>`}</span>
       <div class="ctext"><span class="cwho" style="color:${pc(u.p)}">${esc(u.name)}</span><span class="cmove">${esc(u.sig.name)}</span>${u.sig.quote?`<span class="cquote">“${esc(u.sig.quote)}”</span>`:''}</div></div>
     <span class="ckanji">${STYLE_KANJI[style]||'技'}</span></div>`;
+}
+// A move clip: muted, plays once inline (app.js keeps the same element across redraws of the beat, using data-k)
+const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}" muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
+// A beat with a move clip that isn't a special (regen, heal, guard, knockout…): the clip with who and what over it
+function clipBeat(c, line){
+  const u=findU(c.uid);
+  return `<div class="clipbox" style="--tc:${pc(u.p)}">${clipVideo(c)}<span class="cliptag"><b style="color:${pc(u.p)}">${esc(u.name)}</b>${CLIP_ACTS[c.act]?` · ${CLIP_ACTS[c.act]}`:''}</span></div><span>${fmtLog(line.t)}</span>`;
 }
 // One beat for a special that hits several enemies: the attacker strikes once, every target recoils together with
 // its own damage number, and any it knocks out topple over
@@ -687,7 +696,7 @@ const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<di
 function vResult(){
   const done=!S.play||S.play.done, steps=S.play&&S.play.steps;
   const [from,to]=done?[S.log.length-1,S.log.length-1]:steps[S.play.k], k=to, cur=S.log[to], prev=S.log[Math.max(0,from-1)];
-  const lines=S.log.slice(from,to+1), group=to>from;
+  const lines=S.log.slice(from,to+1), group=to>from, clip=!done&&!group&&S.play.clip&&findU(S.play.clip.uid)?S.play.clip:null;
   // the fighter acting: the line's attacker, or the one whose name starts it
   const actor=done?null:(cur.by&&findU(lines[0].by))||allUnits().filter(u=>cur.t.startsWith(u.name)).sort((a,b)=>b.name.length-a.name.length)[0];
   const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
@@ -707,7 +716,8 @@ function vResult(){
     <div class="reswide${done?' done':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
     ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
       :k&&cur.fx==='say'&&findU(cur.by)?`<div class="now saybeat" aria-live="polite" style="--tc:${pc(findU(cur.by).p)}">${seal(findU(cur.by),'stg')}<div><span class="sayn">${esc(findU(cur.by).name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>`
-      :k&&cur.fx==='special'&&findU(cur.by)?`<div class="now cut" aria-live="polite">${cutin(findU(cur.by))}<span class="sr">${fmtLog(cur.t)}</span></div>`
+      :k&&cur.fx==='special'&&findU(cur.by)?`<div class="now cut${clip?' clip':''}" aria-live="polite">${cutin(findU(cur.by),clip)}<span class="sr">${fmtLog(cur.t)}</span></div>`
+      :k&&clip?`<div class="now clipbeat${bigHit(cur)?' big':''}" aria-live="polite">${clipBeat(clip,cur)}</div>`
       :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
     <div class="rcol">${done?teamBlock(me,solo?'Your team':null,moment):miniTeam(me,moment,involved)}</div></div>

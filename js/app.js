@@ -21,7 +21,10 @@ function render(){
   document.body.classList.toggle('localmode', S.mode==='local');
   cloudCheck();   // back up saved progress a few seconds after it changes
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
+  const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
+  app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else v.play().catch(()=>{}); });
+  warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
@@ -48,6 +51,13 @@ const pace = () => SPEEDS[S.speed]||1;
 const readTime = line => quickMotion() ? 300 : (2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0) + (line.fx==='special' ? 500 : 0)) * pace();   // cut-ins stay up a bit longer
 // a grouped special (several targets in one beat): longer for more targets and any knockouts
 const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GROUP_FX.includes(l.fx)).length + (lines.some(l=>l.ko) ? 1100 : 0)) * pace();
+// Move clips (js/clips.js): beats with a clip stay up at least this long; clips download when a battle starts
+const CLIP_MIN = 3600, CLIP_PENDING = new Set();
+function warmClips(){
+  if(S.clipsOn===false || !S.teams || !navigator.onLine) return;
+  matchClips().forEach(url=>{ if(CLIP_BLOB[url] || CLIP_PENDING.has(url)) return; CLIP_PENDING.add(url);
+    fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b); }).catch(()=>{}).finally(()=>CLIP_PENDING.delete(url)); });
+}
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
 function playRound(){
   S.play={k:0, done:false, steps:playSteps(S.log)};
@@ -55,10 +65,12 @@ function playRound(){
     if(S.info || S.settings){ S._t=setTimeout(step,300); return; }   // paused while an info card or Settings is open
     if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd()) return; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
+    S.play.clip = b>a || quickMotion() ? null : clipStep(line);   // a move clip for this beat, if the fighter has one
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
-    if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else sfxForLine(line);
+    if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line);
     render();
-    S._t=setTimeout(step, b>a ? groupTime(lines) : readTime(line));
+    const t = b>a ? groupTime(lines) : readTime(line);
+    S._t=setTimeout(step, S.play.clip ? Math.max(t, CLIP_MIN*pace()) : t);   // a clip beat stays up long enough to watch
   };
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
@@ -124,7 +136,8 @@ const ACTIONS = {
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
   home(){ if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
-    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+  clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
   spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -385,7 +398,7 @@ function cloudApply(){
     Object.entries(f.data||{}).forEach(([k,v])=>localStorage.setItem(k,v)); saveCloud({code:f.code, last:f.at}); }catch(e){}
   location.reload();
 }
-S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
+S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off' }catch(e){}
 useModeCfg(S.mode); S.names=localNames();
 // Add to Home Screen: what this phone can do (shown on the home screen until the game is installed)
 let INSTALL_EVENT=null;

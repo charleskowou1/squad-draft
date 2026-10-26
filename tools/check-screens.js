@@ -2,9 +2,11 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js', 'sound.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'clips.js', 'views.js', 'sound.js'], `
 function check(games){
   let errors=0, first='';
+  // every character gets a test clip for every moment, so each clip beat gets drawn
+  ROSTER.forEach(c=>{ CLIPS[c.id]=Object.assign(Object.fromEntries(Object.keys(CLIP_ACTS).map(a=>[a,'test.mp4'])), CLIPS[c.id]); });
   for(let g=0;g<games;g++){
     try{
       // cycles: 2, 3 and 4 players; Quickplay, Local and Online screens; every level, budget and pool type
@@ -32,7 +34,7 @@ function check(games){
           if(!planReady(p)) throw new Error('plan not ready after choosing every move'); });
         players().forEach(p=>cpuHelpers(p)); S.scoutP=0; S.phase='scout'; vScout(); S.scouting=true; S.planFor=0; vPlan(); S.scouting=false; S.phase='ready'; vReady(); allUnits().forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
         resolve(); const ph=S.phase; S.phase='result';
-        const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; vResult(); }
+        const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; S.play.clip=steps[i][1]>steps[i][0]?null:clipStep(S.log[steps[i][0]]); vResult(); }
         S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
       }
       vOver(); recordMatch(); if(n>2 && !S.duo && placings().flat().length!==n && S.winner>=0 && S.round<40) throw new Error('placings missing a team'); vSetup();

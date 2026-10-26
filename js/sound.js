@@ -136,6 +136,15 @@ const sfxOn = () => AC && (S.vol||loadVolumes()).sfx>0;
 function sfx(name){ if(!sfxOn()) return; try{ if(AC.state!=='running') AC.resume(); SFX[name] && SFX[name](); }catch(e){} }
 function styleSfx(style, v){ if(!sfxOn()) return; try{ (STYLE_SFX[style]||STYLE_SFX.slash)(v); }catch(e){} }
 // The sound for one playback line: the base sound plus the attacker's breathing style
+// A character's own sound for a clip moment (js/clips.js CLIP_SOUNDS): downloaded once, played at the effects volume
+const CLIP_AUDIO = {};
+function clipSound(url){
+  if(!sfxOn()) return;
+  const go=buf=>{ try{ if(AC.state!=='running') AC.resume(); const s=AC.createBufferSource(); s.buffer=buf; s.connect(SFX_OUT); s.start(); }catch(e){} };
+  if(CLIP_AUDIO[url] instanceof AudioBuffer) return go(CLIP_AUDIO[url]);
+  if(CLIP_AUDIO[url]) return;   // still loading
+  CLIP_AUDIO[url]=fetch(url).then(r=>r.arrayBuffer()).then(a=>AC.decodeAudioData(a)).then(b=>{ CLIP_AUDIO[url]=b; go(b); }).catch(()=>{ delete CLIP_AUDIO[url]; });
+}
 function sfxForLine(line){
   if(line.c==='r') return sfx('gong');
   if(line.fx==='say') return sfx('page');

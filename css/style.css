@@ -1141,3 +1141,20 @@ details ul b{color:var(--fg)}
 /* online: away players and hand-off notes */
 .awaytag{font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:0 6px;vertical-align:middle}
 .netnote{padding:10px 12px;border-radius:12px;border:1px dashed var(--p2);background:rgba(139,156,240,.08);font-size:.86rem;color:var(--ink-2)}
+
+/* move clips (js/clips.js): the special's clip fills the cut-in with the band along the bottom; other moments get a clip box */
+.now.cut.clip{min-height:0}
+.cutin.hasclip{height:auto;aspect-ratio:16/9;max-height:300px;align-items:flex-end;background:#000}
+.cutin .cvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.cutin.hasclip .cimg,.cutin.hasclip .ckanji{display:none}
+.now.cut.clip .cutin{width:100%}
+.cutin.hasclip .band,.cutin.hasclip.right .band{width:100%;margin:0;padding:16px 14px 8px;gap:0;clip-path:none;border-top:0;
+  background:linear-gradient(transparent,rgba(10,9,8,.88) 45%)}
+.cutin.hasclip .cwho{font-size:.7rem}
+.cutin.hasclip .cmove{font-size:1.15rem}
+.cutin.hasclip .cquote{font-size:.78rem}
+.now.clipbeat{padding:10px;gap:8px}
+.clipbox{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;box-shadow:0 0 0 2px var(--tc),0 10px 26px rgba(0,0,0,.5);animation:imgpop .45s cubic-bezier(.2,1.2,.3,1) both}
+.clipbox video{width:100%;height:100%;object-fit:cover;display:block}
+.clipbox .cliptag{position:absolute;left:0;right:0;bottom:0;padding:18px 12px 8px;text-align:left;font-size:.86rem;color:var(--fg);background:linear-gradient(transparent,rgba(10,9,8,.85))}
+@media (prefers-reduced-motion: reduce){.clipbox{animation:none}}
