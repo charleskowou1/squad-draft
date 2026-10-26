@@ -13,6 +13,17 @@ const CLIPS = {
   giyu: {
     special: 'https://media.tenor.com/xHYvGutUP_kAAAPo/giyuu-tamioka.mp4',                   // Dead Calm
   },
+  rengoku:      {special: 'https://media.tenor.com/Bk9kw_WGE5wAAAPo/demon-slayer-demon-slayer-season-2.mp4'},   // Ninth Form
+  zenitsu:      {special: 'https://media.tenor.com/E-dg68_nbcgAAAPo/good-morning.mp4'},       // Thunderclap and Flash
+  tanjiro:      {special: 'https://media.tenor.com/u2dl8xjsDO0AAAPo/tanjiro-demon-slayer.mp4'},   // Hinokami Kagura
+  tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4'},       // Hinokami Kagura (Mark)
+  tanjiro_demon:{},                                                                           // not Hinokami: no clip yet
+  akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4'}, // Destructive Death: Compass Needle
+  inosuke:      {special: 'https://media.tenor.com/J08tCPlL6dIAAAPo/inosuke-demon-slayer.mp4'},   // Fang Frenzy
+  nezuko:       {special: 'https://media.tenor.com/MuLdehLf5WcAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Exploding Blood
+  kokushibo:    {special: 'https://media.tenor.com/HL0GFe-7zPkAAAPo/kokushibo-aura.mp4'},     // Moon Breathing (aura)
+  yoriichi:     {special: 'https://media.tenor.com/yncZvQ9iX6MAAAPo/yoriichi-tsugikuni.mp4'}, // Sun Breathing (aura)
+  muichiro:     {special: 'https://media.tenor.com/ynS0sUD6YbEAAAPo/tokito.mp4'},             // Obscuring Clouds
 };
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.

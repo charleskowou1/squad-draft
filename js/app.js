@@ -23,7 +23,7 @@ function render(){
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
-  app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else v.play().catch(()=>{}); });
+  app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else { v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; v.play().catch(()=>{}); } }; v.play().catch(()=>{}); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
@@ -52,11 +52,15 @@ const readTime = line => quickMotion() ? 300 : (2200 + line.t.length*30 + (line.
 // a grouped special (several targets in one beat): longer for more targets and any knockouts
 const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GROUP_FX.includes(l.fx)).length + (lines.some(l=>l.ko) ? 1100 : 0)) * pace();
 // Move clips (js/clips.js): beats with a clip stay up at least this long; clips download when a battle starts
-const CLIP_MIN = 3600, CLIP_PENDING = new Set();
+// Clips shorter than CLIP_LOOP seconds loop (instead of freezing on their last frame); longer ones keep the beat up
+// until they finish (up to CLIP_MAX ms), since many build up to the strike at the very end.
+const CLIP_MIN = 3600, CLIP_MAX = 6000, CLIP_LOOP = 2.2, CLIP_PENDING = new Set(), CLIP_DUR = {};
 function warmClips(){
   if(S.clipsOn===false || !(S.teams||S.picks) || !navigator.onLine) return;
   matchClips().forEach(url=>{ if(CLIP_BLOB[url] || CLIP_PENDING.has(url)) return; CLIP_PENDING.add(url);
-    fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b); }).catch(()=>{}).finally(()=>CLIP_PENDING.delete(url)); });
+    fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b);
+      const v=document.createElement('video'); v.preload='metadata'; v.muted=true; v.onloadedmetadata=()=>{ CLIP_DUR[url]=v.duration; v.removeAttribute('src'); v.load(); }; v.src=CLIP_BLOB[url];
+    }).catch(()=>{}).finally(()=>CLIP_PENDING.delete(url)); });
 }
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
 function playRound(){
@@ -70,7 +74,8 @@ function playRound(){
     if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line);
     render();
     const t = b>a ? groupTime(lines) : readTime(line);
-    S._t=setTimeout(step, S.play.clip ? Math.max(t, CLIP_MIN*pace()) : t);   // a clip beat stays up long enough to watch
+    const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
+    S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
   };
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
