@@ -63,8 +63,9 @@ const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
 // Saved data reset: when DATA_VERSION changes, every 'squad-draft…' key on this phone is cleared once (story, stats,
 // daily streak, names, settings), then saving carries on as normal. Bumped to 3 on Oct 26, 2026 at CK's request
-// ("clear all my data and save from this point on"). Don't bump it again unless CK asks for another wipe.
-const DATA_VERSION = '3';
+// ("clear all my data and save from this point on"), and to 4 on Oct 26, 2026 (CK: wipe all existing data for
+// everyone again). Don't bump it again unless CK asks for another wipe.
+const DATA_VERSION = '4';
 try{ if(localStorage.getItem('squad-draft-data')!==DATA_VERSION){
   Object.keys(localStorage).filter(k=>k.startsWith('squad-draft')).forEach(k=>localStorage.removeItem(k));
   localStorage.setItem('squad-draft-data', DATA_VERSION); } }catch(e){}

@@ -16,7 +16,9 @@ const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${ART[c.id]?
 // First-time tips: a small banner the first time a player reaches each screen. "Got it" hides it for good (TIPS_KEY).
 const TIPS_KEY = 'squad-draft-tips';
 const tipsSeen = () => { try{ return JSON.parse(localStorage.getItem(TIPS_KEY))||[] }catch(e){ return [] } };
-const tip = (id, text) => tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
+// Tips only show in the story's Prologue (the first battles); after that the player knows the ropes (CK)
+const inPrologue = () => S.mode==='story' && STAGES[S.stage] && STAGES[S.stage].arc==='prologue';
+const tip = (id, text) => !inPrologue() || tipsSeen().includes(id) ? '' : `<div class="tip"><span class="tipk">Tip</span><p>${text}</p><button class="btn ghost small" data-a="tipok" data-v="${id}">Got it</button></div>`;
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
