@@ -55,6 +55,12 @@ function statusChips(u, showSpecial){
   if(showSpecial) out.push(u.cd>0?`<span class="chip">Special in ${u.cd}</span>`:'<span class="chip s">Special ready</span>');
   return out.length?`<div class="chips">${out.join('')}</div>`:'';
 }
+// Tiny status marks for the compact opponent cards: special ready, poison, stun, Shinobu's wisteria, sunburn, guarding
+function statusMarks(u, ready){
+  const m=[ready?['技','Special ready','s']:null, u.poison?['毒',`Poisoned ${u.poison.turns} more round${u.poison.turns>1?'s':''}`,'b']:null,
+    u.stun?['眠','Stunned this round','b']:null, u.devoured?['藤',"Eating Shinobu's wisteria poison",'b']:null, u.sunburn?['陽','Sunburned: no regeneration','b']:null].filter(Boolean);
+  return m.length?`<span class="smarks">${m.map(([k,t,c])=>`<span class="sm ${c}" title="${t}" aria-label="${t}">${k}</span>`).join('')}</span>`:'';
+}
 const synChips = p => S.syn[p].length ? `<div class="chips">${S.syn[p].map(s=>s[0]==='!'?`<span class="chip bad">${esc(s.slice(1))}</span>`:`<span class="chip s">${esc(s)}</span>`).join('')}</div>` : '';
 
 // Fighter tile: enemies, results and the end screen. `o` is the playback moment (see health()), plus o.flash.
@@ -64,9 +70,11 @@ const synChips = p => S.syn[p].length ? `<div class="chips">${S.syn[p].map(s=>s[
 function tile(u, o={}){
   if(o.hidden) return '';
   const playing=o.hp!==undefined, up=playing?o.hp>0:u.alive, tap=o.tgtFor && up;
-  const cls=`tile${up?'':' dead'}${o.flash?' '+o.flash:''}${tap?' targetable':''}${o.picked?' picked':''}`;
+  // on the move screen an enemy whose special is ready this round glows, and small marks show poison, stun and so on
+  const ready=o.simple && up && !playing && u.cd===0 && !u.stun;
+  const cls=`tile${up?'':' dead'}${o.flash?' '+o.flash:''}${tap?' targetable':''}${o.picked?' picked':''}${ready?' sready':''}`;
   const aimed=o.aimed&&o.aimed.length?`<span class="aimed"><span class="aimx" aria-hidden="true">◎</span>${o.aimed.map(a=>seal(a,'pip')).join('')}<span class="sr">by ${o.aimed.map(a=>esc(a.name)).join(', ')}</span></span>`:'';
-  const body=`<div class="tb">${health(u,o)}${aimed}${up&&!o.simple?meta(u)+(playing?'':statusChips(u,true)):''}</div>`;
+  const body=`<div class="tb">${health(u,o)}${aimed}${up&&o.simple&&!playing?statusMarks(u,ready):''}${up&&!o.simple?meta(u)+(playing?'':statusChips(u,true)):''}</div>`;
   // the picture opens the info card; when targeting, the rest of the tile is the target button
   const main = tap ? `<button class="tilebtn" data-a="tgt" data-u="${o.tgtFor}" data-v="${u.uid}" aria-pressed="${!!o.picked}" aria-label="Target ${esc(u.name)}">${body}</button>` : body;
   const art=ART[u.id]?`;--art:url('${ART[u.id]}')`:'';
