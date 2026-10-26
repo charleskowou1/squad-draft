@@ -33,6 +33,16 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
   Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
   them; doesn't count toward records) and Story Mode (21 battles with preset squads).
 - Each mode (not Story) also sets MAX FIGHTERS PER TEAM, 1–6 (default 6). 1 = one-on-one duels.
+- 2v2 TEAMS (4 players): players 1 & 3 vs 2 & 4 (Quickplay: you + an allied computer vs two). Each player drafts
+  and controls their own squad; heals, hides, shields and training can target the partner's fighters; Giyu's Dead
+  Calm covers both squads; a side wins when the other side has nobody left. The 12-pt card cap applies.
+- OPTIONAL BANS (off by default, under "More options"): before the draft each player bans one character.
+- SUNRISE: from round 12 (not in Story) demons burn 10% of their max HP every round and stop regenerating
+  (Demon King Tanjiro is sun-proof). Long games end; Final Muzan got weaker in long fights.
+- STORY UNLOCKS: winning a story battle unlocks the demons, Marks, Legends and alternate versions it introduces for
+  every other mode. Base slayers, allies, Hand/Swamp Demon and helpers are always available.
+- DAILY CHALLENGE: one preset battle per day with a goal (win / win within N rounds / keep X standing / no losses),
+  the same on every phone. Doesn't count toward stats.
 - FREE-FOR-ALL (3 or 4 players): every team fights every other team; last team standing wins (places 1st–4th).
   A special that hits "every enemy" hits every fighter on the ONE team you aim it at. Cards over 12 pts aren't dealt
   (big single cards dominated: the first picker won ~60%; with the cap the pick order splits ~40/33/26%).

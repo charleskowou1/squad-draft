@@ -4,8 +4,8 @@
 // guest receives anyone else's moves while choosing (except when that guest's Kasugai Crow is scouting).
 // Usage: node tools/check-online.js [matches]
 const { loadGame } = require('./load-game');
-const FILES = ['roster.js', 'engine.js', 'story.js', 'online.js', 'notes.js', 'effects.js', 'views.js'];
-const EXTRA = `function S_(){ return S; } function OL(){ return ONLINE; } function api(){ return {isHelper, fighterIds, alive, players}; }`;
+const FILES = ['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js'];
+const EXTRA = `function S_(){ return S; } function OL(){ return ONLINE; } function api(){ return {isHelper, fighterIds, alive, players, canBan}; }`;
 
 function match(seed, opts = {}) {
   const n = opts.n || 2, names = ['CK', 'Mia', 'Tom', 'Ana'].slice(0, n);
@@ -21,10 +21,15 @@ function match(seed, opts = {}) {
   Object.assign(H, { mode: 'online', me: 0, planFor: 0, n: 2, names: [names[0]], budget: opts.budget || 20, poolType: 'random',
     lobby: { code: 'TEST', seats: [1, 2, 3].map(i => i < n ? { name: names[i], on: true } : null) }, phase: 'lobby' });
   phones.forEach((ph, q) => { if (q) Object.assign(ph.S_(), { mode: 'online', me: q, planFor: q, names: [names[0], names[q]], phase: 'lobby' }); });
+  H.cfg = { duo: seed % 3 === 0 };   // some 4-phone matches are 2v2
   if (!host.hostStartMatch()) problems.push('host could not start with ' + n + ' players');
+  if (n === 4 && H.duo !== H.cfg.duo) problems.push('2v2 setting not applied');
   publish();
   // host spins and starts the draft
+  H.bansOn = seed % 2 === 0;   // half the matches start with a ban round: each phone bans on its own turn
   H.phase = 'spin'; H.spin = Object.assign(host.spinWheel(), { state: 'done' }); host.newDraft(H.spin.r); publish();
+  for (let b = 0; b < n && H.banning; b++) { const p = host.turn(), ctx = phones[p], id = ctx.S_().pool.find(x => ctx.api().canBan(p, x)); ctx.onlineBan(id); if (p === 0) publish(); }
+  if (H.bansOn && (H.banning || H.bans.length !== n)) problems.push('ban round did not finish');
   for (let k = 0; k < 120 && H.phase === 'draft'; k++) {
     const p = host.turn(), ctx = phones[p], S = ctx.S_();
     phones.forEach((ph, q) => { if (q && (ph.S_().phase !== 'draft' || ph.turn() !== p)) problems.push('phones disagree on whose turn it is'); });

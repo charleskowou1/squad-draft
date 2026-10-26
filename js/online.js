@@ -15,7 +15,7 @@ const ROOM_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const newRoomCode = () => Array.from({length:4}, ()=>ROOM_LETTERS[Math.floor(Math.random()*ROOM_LETTERS.length)]).join('');
 
 // Game fields shared through the room. Everything else (menus, playback, selections, settings) stays on each phone.
-const SHARED = ['phase','n','names','budget','poolType','maxTeam','first','lastPicker','history','picks','locked','k','pool','spin',
+const SHARED = ['phase','n','duo','names','budget','poolType','maxTeam','banning','bans','first','lastPicker','history','picks','locked','k','pool','spin',
   'teams','sib','twins','syn','round','plans','helpers','helperPlan','log','stats','winner','final','movesLocked','readyNext',
   'scoutQueue','scoutP','roundId','lobby','outOrder'];
 // What the host sends to player q. While everyone is choosing, the other players' moves and helpers are left out
@@ -71,6 +71,7 @@ function hostHandle(msg){
   if(!(p>0 && p<nPlayers()) && msg.a!=='rematch') return;
   switch(msg.a){
     case 'pick': if(S.phase==='draft' && turn()===p && canPick(p,msg.id)) doPick(msg.id); break;
+    case 'ban': if(S.phase==='draft' && canBan(p,msg.id)) doBan(msg.id); break;
     case 'lock': if(S.phase==='draft' && turn()===p && fighterIds(p).length) doLock(p); break;
     case 'undo': { const u=undoable(); if(u && u.p===p) undoPick(); break; }
     case 'moves':
@@ -90,12 +91,16 @@ function hostHandle(msg){
 function hostStartMatch(){
   const seats=S.lobby.seats||[], n=1+seats.filter(x=>x&&x.on).length;
   if(n<2 || seats.slice(0,n-1).some(x=>!x||!x.on)) return false;
-  S.n=n; S.names=[S.names[0], ...seats.slice(0,n-1).map(x=>x.name)];
+  S.n=n; S.duo=n===4 && !!(S.cfg||{}).duo; S.names=[S.names[0], ...seats.slice(0,n-1).map(x=>x.name)];
   return true;
 }
 
 /* ---------- actions from this phone (host applies them, guests send them) ---------- */
 const send = msg => ONLINE.net && ONLINE.net.send(Object.assign({p:S.me}, msg));
+function onlineBan(id){
+  if(!canBan(S.me,id)) return;
+  if(iAmHost()) doBan(id); else send({a:'ban', id});
+}
 function onlinePick(id){
   if(S.phase!=='draft' || turn()!==S.me || !canPick(S.me,id)) return;
   if(iAmHost()) doPick(id); else send({a:'pick', id});

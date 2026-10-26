@@ -2,14 +2,14 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'online.js', 'notes.js', 'effects.js', 'views.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js'], `
 function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
     try{
       // cycles: 2, 3 and 4 players; Quickplay, Local and Online screens; every level, budget and pool type
       const level=['easy','normal','hard'][g%3], n=[2,3,4][g%3===0?0:(g%5)%3], mode=['cpu','local','online','practice'][g%4], maxTeam=[6,1,2,3,4,5,6][g%7];
-      S={phase:'setup',mode,n,level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',maxTeam,names:['A','B','C','D'].slice(0,n),me:mode==='online'?g%n:0};
+      S={phase:'setup',mode,n,level,budget:[10,20,30][Math.floor(g/3)%3],poolType:g%10===0?'all':'random',maxTeam,unlockAll:g%2===0,bansOn:g%3===1,duo:n===4&&g%2===1,names:['A','B','C','D'].slice(0,n),me:mode==='online'?g%n:0};
       ['local','online','cpu','practice','story'].forEach(m=>{ S.mode=m; vSetup(); }); S.mode=mode; S.settings=true; vSheet(); S.setTab='stats'; vSheet(); S.setTab='general'; S.settings=false;
       if(mode==='online'){ S.phase='lobby'; S.lobby={code:'TEST',seats:[{name:'B',on:true},{name:'C',on:n>2},null]}; vLobby(); S.phase='setup'; }
       S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
@@ -17,6 +17,8 @@ function check(games){
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
       if(S.pool.some(id=>BYID[id].cost>maxCardCost())) throw new Error('card over the cost cap dealt');
+      if(S.bansOn){ for(let b=0;b<n;b++){ if(!S.banning) throw new Error('ban round ended early'); vDraft(); S.sel=S.pool[0]; vSheet(); S.sel=null; cpuBan(); }
+        if(S.banning || S.bans.length!==n) throw new Error('ban round did not finish'); if(S.pool.some(id=>S.bans.some(b=>BYID[b.id].fam===BYID[id].fam) && canPick(turn(),id))) throw new Error('banned card can be picked'); }
       let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
       if(S.phase==='draft') throw new Error('draft did not finish');
       if(S.teams.length!==n) throw new Error('wrong number of teams');
@@ -32,9 +34,16 @@ function check(games){
         const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; vResult(); }
         S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
       }
-      vOver(); recordMatch(); if(n>2 && placings().flat().length!==n && S.winner>=0 && S.round<40) throw new Error('placings missing a team'); vSetup();
+      vOver(); recordMatch(); if(n>2 && !S.duo && placings().flat().length!==n && S.winner>=0 && S.round<40) throw new Error('placings missing a team'); vSetup();
     }catch(e){ errors++; if(!first) first=e.stack; }
   }
+  // codex: every filter and every card's entry
+  try{ S={phase:'codex',mode:'cpu',names:['A']}; CODEX_GROUPS.forEach(([f])=>{ S.codexF=f; vCodex(); }); ROSTER.filter(c=>!c.spawn).forEach(c=>{ S.codexSel=c.id; vSheet(); }); }
+  catch(e){ errors++; if(!first) first='codex: '+e.stack; }
+  // daily challenge: the menu card, the battle and the result
+  try{ S={phase:'setup',mode:'cpu',names:['A']}; vSetup(); dailyChallenge(); vSetup(); startDaily(); vPlan();
+    while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,S.level); resolve(); if(S.phase==='result') S.round++; } S.dailyMet=dailyMet(S.daily); vOver();
+  }catch(e){ errors++; if(!first) first='daily: '+e.stack; }
   // story mode: every stage's map and scene, the preset battle (with repeat), a draft replay (with undo) and results
   let storyErrors=0;
   for(let i=0;i<STAGES.length;i++){

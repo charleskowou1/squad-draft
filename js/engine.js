@@ -35,7 +35,7 @@ const RECORDS_KEY = 'squad-draft-records';
 function loadRecords(){ try{ return JSON.parse(localStorage.getItem(RECORDS_KEY))||{} }catch(e){ return {} } }
 function recordMatch(){
   const rec=loadRecords();
-  players().forEach(p=>S.teams[p].filter(u=>!u.spawn).forEach(u=>{ const r=rec[u.id]||(rec[u.id]=[0,0]); r[0]++; if(S.winner===p) r[1]++; }));
+  players().forEach(p=>S.teams[p].filter(u=>!u.spawn).forEach(u=>{ const r=rec[u.id]||(rec[u.id]=[0,0]); r[0]++; if(S.winner>=0 && sameSide(S.winner,p)) r[1]++; }));
   try{ localStorage.setItem(RECORDS_KEY,JSON.stringify(rec)) }catch(e){}
 }
 
@@ -50,14 +50,14 @@ function saveLevel(v){ try{ localStorage.setItem('squad-draft-level',v) }catch(e
 // Each mode keeps its own match settings on this phone: players (2–4), points, pool and (Quickplay) computer level.
 // Online: the room creator's settings are used. Story sets its own. The ⚙ Settings menu only has general options.
 const MODES = ['local','online','cpu','practice','story'];
-const MODE_DEFAULTS = {local:{players:2}, online:{players:2}, cpu:{players:2}, practice:{players:2, poolType:'all'}, story:{players:2}};
+const MODE_DEFAULTS = {local:{players:2}, online:{players:2}, cpu:{players:2}, practice:{players:2, poolType:'all'}, story:{players:2}};   // + maxTeam 6, bans off
 function loadModeCfg(mode){
   let c=null; try{ c=JSON.parse(localStorage.getItem('squad-draft-mode-'+mode)) }catch(e){}
-  return Object.assign({players:2, budget:loadBudget(), poolType:loadPoolType(), level:loadLevel(), maxTeam:MAXTEAM}, MODE_DEFAULTS[mode], c||{});
+  return Object.assign({players:2, budget:loadBudget(), poolType:loadPoolType(), level:loadLevel(), maxTeam:MAXTEAM, bans:false}, MODE_DEFAULTS[mode], c||{});
 }
 function saveModeCfg(mode, c){ try{ localStorage.setItem('squad-draft-mode-'+mode, JSON.stringify(c)) }catch(e){} }
 // Copy a mode's settings into the game state (points, pool, players, level)
-function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); S.cfg=c; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; if(mode!=='online') S.n=c.players; return c; }
+function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
 const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
 let S = {phase:'setup', mode:'local', n:2, level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), soundOn: true, names: loadNames() || ['CK','Mia']};
@@ -66,11 +66,16 @@ const MAX_PLAYERS = 4;
 const nPlayers = () => S.n || 2;
 const players = () => Array.from({length:nPlayers()}, (_,i)=>i);
 const others = p => players().filter(q=>q!==p);
+// 2v2 (4 players, teams on): players 1 & 3 are one team, 2 & 4 the other (side = seat % 2). Otherwise everyone is alone.
+const sideOf = p => S.duo ? p%2 : p;
+const sameSide = (p,q) => sideOf(p)===sideOf(q);
+const enemiesOf = p => players().filter(q=>!sameSide(p,q));
+const partnersOf = p => players().filter(q=>q!==p && sameSide(p,q));
 const allPicks = () => (S.picks||[]).flat();
 const allUnits = () => (S.teams||[]).flat();
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 // Playing against the computer (normal vs-computer games and story mode); the screen belongs to player 1
-const vsCpu = () => S.mode==='cpu' || S.mode==='story' || S.mode==='practice';
+const vsCpu = () => S.mode==='cpu' || S.mode==='story' || S.mode==='practice' || S.mode==='daily';
 // Practice: you draft for every team (the computers' picks too), then fight the computers. Doesn't count toward records.
 const isPractice = () => S.mode==='practice';
 // One person per screen (vs computer, story, online): label sides "You" / "Opponent" from that person's view
@@ -110,7 +115,9 @@ const HELPERS = ROSTER.filter(c=>c.helper).map(c=>c.id);
 const isHelper = id => !!BYID[id].helper;
 const fighterIds = p => S.picks[p].filter(id=>!isHelper(id));
 function buildPool(){
-  const cards=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=maxCardCost()), fams=[...new Set(cards.map(c=>c.fam))];
+  // story unlocks (story.js): only characters this phone has unlocked are dealt (the host's phone, online)
+  const open = c => S.unlockAll || typeof isUnlocked!=='function' || isUnlocked(c.id);
+  const cards=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=maxCardCost() && open(c)), fams=[...new Set(cards.map(c=>c.fam))];
   // "All" pool: every character and every version (still one version per character per draft, via famTaken)
   if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(HELPERS);
   for(let tries=0;tries<200;tries++){
@@ -123,7 +130,8 @@ function buildPool(){
 }
 // first = the player who won the spin and picks first (0 or 1)
 function newDraft(first=0){
-  Object.assign(S,{phase:'draft', first, lastPicker:null, history:[], picks:players().map(()=>[]), locked:players().map(()=>false), k:0, sel:null, pool:buildPool()});
+  Object.assign(S,{phase:'draft', first, lastPicker:null, history:[], picks:players().map(()=>[]), locked:players().map(()=>false), k:0, sel:null, pool:buildPool(),
+    banning:!!S.bansOn, bans:[]});
 }
 // Who picks first: a fair coin flip, shown as a wheel. Returns the winner and how far to turn the wheel.
 const WHEEL_SEGS = 8;
@@ -136,12 +144,20 @@ function spinWheel(){
 }
 const spent = p => S.picks[p].reduce((a,id)=>a+BYID[id].cost,0);
 const famTaken = fam => allPicks().some(id=>BYID[id].fam===fam);
-const taken = id => famTaken(BYID[id].fam);
+const banned = fam => (S.bans||[]).some(b=>BYID[b.id].fam===fam);
+const taken = id => famTaken(BYID[id].fam) || banned(BYID[id].fam);
+// Optional bans (per-mode setting, off by default): before the first pick each player, in order from the first
+// picker, bans one character (every version of it). The draft then starts as usual.
+const banTurn = () => ((S.first||0) + S.bans.length) % nPlayers();
+const canBan = (p,id) => S.banning && banTurn()===p && S.pool.includes(id) && !BYID[id].helper && !banned(BYID[id].fam);
+function doBan(id){ const p=banTurn(); S.bans.push({p,id}); S.sel=null; if(S.bans.length>=nPlayers()) S.banning=false; }
+// The computer bans the priciest card still in the pool
+function cpuBan(){ const ok=S.pool.filter(id=>canBan(banTurn(),id)).sort((a,b)=>BYID[b].cost-BYID[a].cost || Math.random()-.5); doBan(ok[0]); }
 // helpers don't take one of the 6 fighter slots, but each player may have only one helper
-function canPick(p,id){ const c=BYID[id]; return !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<teamCap()) && c.cost <= budget()-spent(p); }
+function canPick(p,id){ const c=BYID[id]; return !S.banning && !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<teamCap()) && c.cost <= budget()-spent(p); }
 const canAny = p => S.pool.some(id=>canPick(p,id));
 // Whose pick it is: snake order, skipping a player who has locked
-function turn(){ return turnAt(S.k); }
+function turn(){ return S.banning ? banTurn() : turnAt(S.k); }
 // Snake order from the first picker: 2 players A B B A A B…, 3 players A B C C B A A B C…, and so on
 function rawTurn(k){ const n=nPlayers(), r=Math.floor(k/n), i=k%n, j=r%2 ? n-1-i : i; return ((S.first||0)+j)%n; }
 function turnAt(k){ for(let j=k;j<k+4*nPlayers();j++){ const p=rawTurn(j); if(!S.locked[p]) return p; } return rawTurn(k); }
@@ -200,7 +216,7 @@ function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
-  const t=S.teams[p], e=others(p).flatMap(q=>S.teams[q]), has=f=>t.some(u=>u.fam===f), out=[];
+  const t=S.teams[p], e=enemiesOf(p).flatMap(q=>S.teams[q]), has=f=>t.some(u=>u.fam===f), out=[];
   if(has('tanjiro')&&has('zenitsu')&&has('inosuke')){ t.forEach(u=>u.spd+=2); out.push('Kamaboko Squad +2 SPD'); }
   if(has('tanjiro')&&has('nezuko')){ S.sib[p]=true; out.push('Siblings counter'); }
   const ha=t.filter(u=>BYID[u.id].hashira); if(ha.length>=2){ ha.forEach(u=>u.pow+=1); out.push('Hashira +1 PWR'); }
@@ -242,14 +258,16 @@ function startBattle(){
 const alive = p => S.teams[p].filter(u=>u.alive);
 const findU = uid => allUnits().find(u=>u.uid===uid);
 // Every enemy fighter still standing, from all the other teams
-const foes = p => others(p).flatMap(q=>alive(q));
+const foes = p => enemiesOf(p).flatMap(q=>alive(q));
+// Your fighters and (2v2) your partner's: who ally moves (heals, hides, shields, training) can target
+const friends = p => players().filter(q=>sameSide(p,q)).flatMap(q=>alive(q));
 
 /* ---------- move planning ---------- */
 const isAllyMove = (u,pl) => pl.type==='special' && u.sig.kind==='ally';
 // Free-for-all (3–4 players): a special that hits "every enemy" hits every fighter on the team you aim at, so you pick a target
 const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2;
 const needsTarget = (u,pl) => pl.type==='attack' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
-const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? alive(u.p) : foes(u.p);
+const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p) : foes(u.p);
 function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; return !needsTarget(u,pl) || !!pl.t; }
 const planReady = p => alive(p).every(unitReady);
 function setMove(u,type){
@@ -343,7 +361,7 @@ function cpuPlan(p, level='hard'){
   const left = t => t.hp - (planned[t.uid]||0);
   const threat = t => t.pow*t.strikes + (t.cd===0?4:0);
   // free-for-all: gang up on the team that's ahead (most health × power left), like real players would
-  const power = q => alive(q).reduce((a,x)=>a+x.hp*x.pow,0), top=Math.max(1,...others(p).map(power));
+  const power = q => alive(q).reduce((a,x)=>a+x.hp*x.pow,0), top=Math.max(1,...enemiesOf(p).map(power));
   const lead = t => nPlayers()>2 ? FFA_FOCUS*power(t.p)/top : 0;
   const score = (t,d) => { const l=left(t); if(l<=0) return 0; d=Math.min(d,l); return d/t.max*100 + (d>=l ? 40+threat(t) : 0) + (d>0?lead(t):0); };
   const best = (base,o) => foesNow.reduce((b,t)=>{ const s=score(t,estHit(t,base,o))+threat(t)*.5+Math.random()*noise; return s>b.s?{t,s}:b; },{t:foesNow[0],s:-1}).t;
@@ -357,7 +375,7 @@ function cpuPlan(p, level='hard'){
     if(u.cd===0){
       const e=SIG_EST[u.sk]; let sp=null;
       if(e){ const x=e(u);
-        if(x.all){ const teams=aimsTeam(u) ? others(p).map(q=>alive(q)).filter(a=>a.length) : [foesNow];
+        if(x.all){ const teams=aimsTeam(u) ? enemiesOf(p).map(q=>alive(q)).filter(a=>a.length) : [foesNow];
           teams.forEach(team=>{ const c={type:'special', t:team[0].uid, v:0, hits:[]}; team.forEach(t=>{ const d=estHit(t,x.base,x.o); c.v+=score(t,d); c.hits.push([t,d]); }); if(!sp||c.v>sp.v) sp=c; }); }
         else if(x.random){ sp={type:'special', v:x.random*foesNow.reduce((a,t)=>a+score(t,estHit(t,x.base)),0)/foesNow.length, hits:[]}; }
         else { const t=best(x.base,x.o), d=estHit(t,x.base,x.o); sp={type:'special', t:t.uid, v:score(t,d)*(x.bonus||1)+(x.stun?10+threat(t):0), hits:[[t,d]]}; }
@@ -395,7 +413,7 @@ function cpuPlan(p, level='hard'){
 // move = 'attack' or 'special' while a fighter is acting (null for end-of-round effects), for the breathing-style effects and grouping
 const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, move:S.curMove||null});
 function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
-function target(u,tid){ let t=findU(tid); if(!t||!t.alive||t.p===u.p){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
+function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',fx('revive',null,t)); return; }
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ...fx('ko',a,t)});
   // Gyutaro and Daki (Two as One): a fallen sibling gets back up (once each) at the end of the round if the other is still standing
@@ -450,14 +468,14 @@ function special(u,pl){
     case 'inosuke': for(let i=0;i<2;i++){ const e=en(); if(e.length) hit(u,rnd(e),u.pow-1); } break;
     case 'kanao': hit(u,target(u,pl.t),u.pow+4); break;
     case 'genya': { const h=Math.min(8,u.max-u.hp); u.hp+=h; u.pow+=2; L(`Genya eats demon flesh ${gained(u,h)}, PWR now ${u.pow}.`,'h',fx('heal',null,u)); break; }
-    case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h',fx('heal',u,t)); break; }
+    case 'tamayo': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; const h=Math.min(10,t.max-t.hp); t.hp+=h; t.poison=null; L(`Tamayo heals ${t===u?'herself':t.name} ${gained(t,h)} and clears any poison.`,'h',fx('heal',u,t)); break; }
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t); } break; }
-    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.pow+=2; L(`Sabito trains ${t===u?'himself':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
+    case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.pow+=2; L(`Sabito trains ${t===u?'himself':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-6,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
-    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
-    case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }
+    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
+    case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'giyu': S.shield[u.p]=true; L(`${S.names[u.p]}'s team can't be hurt this round.`,'h',fx('guard',u,null)); break;
+    case 'giyu': players().filter(q=>sameSide(q,u.p)).forEach(q=>{ S.shield[q]=true; }); L(`${S.names[u.p]}'s team can't be hurt this round.`,'h',fx('guard',u,null)); break;
     case 'gyomei': en().forEach(e=>hit(u,e,s.dmg,{ignoreDef:true,counter:false})); break;
     case 'sanemi': { const t=target(u,pl.t); hit(u,t,u.pow); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow); break; }
     case 'muichiro': hit(u,target(u,pl.t),u.pow+2); break;
@@ -480,7 +498,7 @@ function special(u,pl){
     case 'kanae': { hit(u,target(u,pl.t),u.pow+3); const m=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(m){ const h=Math.min(4,m.max-m.hp); if(h){ m.hp+=h; L(`Kanae's petals heal ${m===u?'her':m.name} ${gained(m,h)}.`,'h',fx('heal',u,m)); } } break; }
     case 'tanjiro_demon': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'nezuko_awakened': { en().forEach(e=>hit(u,e,10,{ignoreDef:true,counter:false})); const sick=alive(u.p).filter(m=>m.poison); sick.forEach(m=>{ m.poison=null; }); if(sick.length) L(`Nezuko's blood burns the poison off ${sick.map(m=>m.name).join(', ')}.`,'h',fx('heal',u,null)); break; }
-    case 'typezero': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.spd+=2; L(`Type Zero drills ${t===u?'itself':t.name}: +2 SPD for the rest of the match.`,'h',fx('buff',u,t)); break; }
+    case 'typezero': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.spd+=2; L(`Type Zero drills ${t===u?'itself':t.name}: +2 SPD for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'doma': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'kokushibo': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'sekido': en().forEach(e=>hit(u,e,4,{ignoreDef:true,counter:false})); break;
@@ -511,7 +529,7 @@ function aloneCheck(){
     a.forEach(u=>{ u.alive=false; u.hp=0; L(`${u.name} is alone. She flees into the castle.`,'k',{ko:u.uid, ...fx('ko',null,u)}); }); });
 }
 // Free-for-all: the team an "every enemy" special lands on (the aimed fighter's team; if it's gone, a random team still standing)
-function aimedTeam(u,pl){ const t=findU(pl.t), q=t && t.p!==u.p && alive(t.p).length ? t.p : rnd(others(u.p).filter(q=>alive(q).length)); return q===undefined ? [] : alive(q); }
+function aimedTeam(u,pl){ const t=findU(pl.t), q=t && !sameSide(t.p,u.p) && alive(t.p).length ? t.p : rnd(enemiesOf(u.p).filter(q=>alive(q).length)); return q===undefined ? [] : alive(q); }
 // A back-pocket helper's effect, at the start of the round it's used. It then leaves the back pocket.
 function useHelper(p, id){
   S.helpers[p]=S.helpers[p].filter(h=>h!==id);
@@ -615,14 +633,17 @@ function resolve(){
     if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!foes(u.p).length) break; hit(u,target(u,x.pl.t),u.pow); }
     if(x.pl.type==='special') special(u,x.pl);
     aloneCheck();
-    if(standing().length<=1) break;
+    if(sidesUp().length<=1) break;
   }
   S.curMove=null;
-  // end of round: poison, Shinobu's devour damage, regeneration, cooldowns
+  // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
+  const sun=sunUp();
+  if(sun && S.round===SUNRISE_ROUND) L('The sun rises! From now on demons burn every round and stop regenerating.','h',fx('burn',null,null));
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
-    if(u.alive && u.regen && u.hp<u.max){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',fx('heal',null,u)); }
+    if(sun && u.alive && u.demon && !u.sunproof){ const d=Math.ceil(u.max*SUN_BURN); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u); }
+    if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !u.sunproof)){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',fx('heal',null,u)); }
     if(u.cd>0) u.cd--;
     u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false;
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
@@ -633,13 +654,19 @@ function resolve(){
   // teams knocked out this round, in order (free-for-all places: last out = 2nd…). Several at once share a place.
   const out=players().filter(p=>!alive(p).length && !S.outOrder.some(o=>o.includes(p))); if(out.length) S.outOrder.push(out);
   const up=standing(), tw=S.twist||{};
-  if(up.length<=1){ S.winner = up.length ? up[0] : -1; S.phase='over'; }
+  if(sidesUp().length<=1){ S.winner = up.length ? up[0] : -1; S.phase='over'; }   // 2v2: any player of the winning side
   else if(tw.survive && S.round>=tw.survive){ S.winner=0; S.survived=true; S.phase='over'; L(`The sun rises. ${S.names[0]}'s team held out!`,'h',fx('burn',null,null)); }
   else if(S.round>=40){ S.winner=-1; S.phase='over'; }   // nobody wins after 40 rounds
   else { S.phase='result'; reinforcements(); }
 }
+// Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
+// round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
+const SUNRISE_ROUND = 12, SUN_BURN = .1;
+const sunUp = () => S.mode!=='story' && S.round>=SUNRISE_ROUND;
 // Teams with anyone still standing
 const standing = () => players().filter(p=>alive(p).length);
+// Sides with anyone standing (in 2v2 a side is two players)
+const sidesUp = () => [...new Set(standing().map(sideOf))];
 // Final places for the win screen: [[winner], [2nd…], …], best first; teams that fell together share a place
 function placings(){ const out=(S.outOrder||[]).slice().reverse(); return S.winner>=0 ? [[S.winner], ...out] : out; }
 // story: allies who join your team at the start of a given round (they arrive at the end of the round before)

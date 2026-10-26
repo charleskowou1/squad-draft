@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {setup:vSetup, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
@@ -10,16 +10,19 @@ const viewName = () => isOnline() && S.final && S.localOver ? 'over' : S.phase==
 function render(){
   if(isOnline()) S.planFor=S.me;
   const view=viewName();
+  if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
-    if(S.mode==='story' && S.winner===0) saveStoryClear(STAGES[S.stage].id); sfx(S.winner!==0?'lose':'win'); }
-  if(view==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(), n=S.names[S.winner]; sc[n]=(sc[n]||0)+1; saveScore(sc); } recordMatch();
-    sfx(S.winner<0 || (soloView() && S.winner!==myP()) ? 'lose' : 'win'); }
+    if(S.mode==='story' && S.winner===0){ const id=STAGES[S.stage].id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id); }
+    sfx(S.winner!==0?'lose':'win'); }
+  if(view==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
+    sfx(S.winner<0 || (soloView() && !sameSide(S.winner,myP())) ? 'lose' : 'win'); }
   if(view!=='over') scored=false;
   // keep fold-out sections (How to play, records…) open across redraws
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
+  document.body.classList.toggle('localmode', S.mode==='local');   // wide landscape layout (tablets) for Local games
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
-  if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ cpuDraftStep(S.level); render(); },700); }
+  if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
   if(S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
   // online host: send each guest phone its own copy of the shared state (only when it changed)
   if(iAmHost() && ONLINE.net){ ONLINE.last=ONLINE.last||{};
@@ -40,7 +43,7 @@ function animateSpin(){
 const SPEEDS = {slow:1.4, normal:1, fast:.55};
 function loadSpeed(){ try{ const v=localStorage.getItem('squad-draft-speed'); return v in SPEEDS ? v : 'normal' }catch(e){ return 'normal' } }
 const pace = () => SPEEDS[S.speed]||1;
-const readTime = line => quickMotion() ? 300 : (2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0)) * pace();
+const readTime = line => quickMotion() ? 300 : (2200 + line.t.length*30 + (line.ko||line.spawn ? 1100 : 0) + (line.fx==='special' ? 500 : 0)) * pace();   // cut-ins stay up a bit longer
 // a grouped special (several targets in one beat): longer for more targets and any knockouts
 const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GROUP_FX.includes(l.fx)).length + (lines.some(l=>l.ko) ? 1100 : 0)) * pace();
 // Play the round back one log line at a time. Knockouts buzz the phone (Android; iPhones don't allow vibration).
@@ -61,7 +64,7 @@ function playRound(){
 function startDraft(){
   const c=useModeCfg(), field=i=>{ const el=document.getElementById('n'+i); return el&&el.value.trim(); };
   if(S.mode==='local'){ S.names=Array.from({length:c.players},(_,i)=>field(i)||`Player ${i+1}`); saveNames(S.names.concat(localNames().slice(S.names.length))); }
-  else S.names=[field(0)||S.names[0]||'Player 1', ...CPU_NAMES.slice(0,c.players-1)];
+  else { S.names=[field(0)||S.names[0]||'Player 1', ...CPU_NAMES.slice(0,c.players-1)]; if(S.duo) S.names[2]='Rengoku AI'; }   // 2v2: your ally is a slayer
   S.n=c.players; toSpin();
 }
 // The next player (after p) who still has fighters, or -1
@@ -98,9 +101,11 @@ const ACTIONS = {
   cfgpool(v){ keepNames(); setCfg('poolType',v); },
   cfglevel(v){ keepNames(); setCfg('level',v); },
   cfgmax(v){ keepNames(); setCfg('maxTeam',+v); },
+  cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
+  cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
   home(){ clearTimeout(S._t); if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; }
-    const mode=S.mode==='story'?'story':S.mode; S={phase:'setup',mode,soundOn:S.soundOn,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,soundOn:S.soundOn,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); toSpin(); },
   spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
@@ -112,13 +117,18 @@ const ACTIONS = {
   ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
   sel(v){ if(S.mode==='cpu' && turn()!==0) return; if(S.pool.includes(v)) S.sel=v; },
-  unsel(){ S.sel=null; S.info=null; S.settings=false; },
+  unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
   settab(v){ S.setTab=v; },
+  codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
+  codexf(v){ S.codexF=v; },
+  codexsel(v){ S.codexSel=v; },
+  daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); newPlanTurn(); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },
-  confirmPick(){ if(isOnline()){ sfx('pick'); onlinePick(S.sel); S.sel=null; return; } if(!canPick(turn(),S.sel)) return; sfx('pick'); doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
+  confirmPick(){ if(S.banning){ if(isOnline()) return onlineBan(S.sel); if(canBan(turn(),S.sel)){ sfx('pick'); doBan(S.sel); } return; }
+    if(isOnline()){ sfx('pick'); onlinePick(S.sel); S.sel=null; return; } if(!canPick(turn(),S.sel)) return; sfx('pick'); doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
   undo(){ if(isOnline()) return onlineUndo(); undoPick(); },
   repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
   speed(v){ S.speed=v; try{ localStorage.setItem('squad-draft-speed',v) }catch(e){} },
@@ -243,6 +253,8 @@ async function onlineJoin(){
 }
 S.soundOn=loadSoundOn(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
 useModeCfg(S.mode); S.names=localNames();
+// today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
+setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
 render();
 findArt();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)

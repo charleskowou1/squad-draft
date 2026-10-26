@@ -200,3 +200,26 @@ function beginStage(){
   S.pool=ROSTER.filter(c=>(storyCard(c) || fams.has(c.fam)) && !c.spawn && c.cost<=S.budget).map(c=>c.id)
     .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
 }
+
+/* ---------- unlocks ----------
+   Winning a story battle unlocks the characters it introduces for every other mode (Local, Online, Quickplay,
+   Practice, the daily challenge). Starting roster: the Corps' base slayers and allies (Nezuko, Tamayo, Yushiro),
+   the small demons (Hand Demon, Swamp Demon) and the back-pocket helpers. Locked until the story reaches them:
+   every other demon, every Mark ✦ version, the Legends and the alternate versions. */
+const STARTER_DEMONS = ['nezuko','tamayo','yushiro','hand','swamp'];
+const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.includes(c.id)) || c.mark || c.legend || c.id!==c.fam || c.id==='typezero');
+// Extra unlocks that never fight in a story battle themselves, tied to the battle where they belong in canon
+const UNLOCK_EXTRAS = {district:['nezuko_awakened','tengen_retired'], kokushibo:['sanemi_mark','gyomei_mark']};
+// stage id → the card ids winning it unlocks (each card is unlocked by the first battle it appears in)
+const STAGE_UNLOCKS = (()=>{ const seen=new Set(), out={};
+  STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(UNLOCK_EXTRAS[st.id]||[])];
+    out[st.id]=[...new Set(ids)].filter(id=>BYID[id] && lockable(BYID[id]) && !seen.has(id)); out[st.id].forEach(id=>seen.add(id)); });
+  return out; })();
+// Lockable cards that no battle unlocks start unlocked
+const UNLOCKED_FROM_STORY = new Set(Object.values(STAGE_UNLOCKS).flat());
+function isUnlocked(id){
+  const c=BYID[id]; if(!c || !UNLOCKED_FROM_STORY.has(id)) return true;
+  const won=loadStory().cleared; return STAGES.some(st=>won.includes(st.id) && STAGE_UNLOCKS[st.id].includes(id));
+}
+// Which story battle unlocks a card (for the Codex and locked cards), or null
+const unlockStage = id => STAGES.findIndex(st=>STAGE_UNLOCKS[st.id].includes(id));

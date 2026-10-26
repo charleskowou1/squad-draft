@@ -111,6 +111,12 @@ function poolNotes(){
   return N.sort((a,b)=>rank[a.state]-rank[b.state]);
 }
 
+// Every synergy and matchup a character can ever be part of (for the Codex): the notes for a pool holding every card
+function allNotesFor(id){
+  const keep={pool:S.pool, picks:S.picks, locked:S.locked, n:S.n, budget:S.budget, maxTeam:S.maxTeam, duo:S.duo};
+  Object.assign(S,{pool:ROSTER.filter(c=>!c.spawn).map(c=>c.id), picks:[[],[]], locked:[false,false], n:2, budget:30, maxTeam:MAXTEAM, duo:false});
+  try{ return poolNotes().filter(n=>n.ids.includes(id)); } finally { Object.assign(S,keep); }
+}
 // Notes for one card, from the point of view of the player who'd draft it (p): a "same team" note only appears if p
 // could afford that character together with the partners it needs (points left and fighter slots), and only those
 // partners are listed. Example at 20 pts: viewing Giyu ✦ (10) won't suggest Gyomei ✦ (12) for the Hashira bonus.
