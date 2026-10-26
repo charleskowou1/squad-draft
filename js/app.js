@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
@@ -105,6 +105,8 @@ const keepNames = () => { const n0=document.getElementById('n0'); if(n0 && n0.va
   if(S.mode==='local'){ const ns=localNames(); for(let i=0;i<4;i++){ const el=document.getElementById('n'+i); if(el) ns[i]=el.value.trim()||ns[i]; } saveNames(ns); } };
 const ACTIONS = {
   mode(v){ keepNames(); S.mode=v; S.joinOpen=false; S.onlineMsg=''; useModeCfg(v); if(v==='local') S.names=localNames(); },
+  // a mode card on the home screen: Story goes straight to the map, the others open their settings page
+  openmode(v){ ACTIONS.mode(v); if(v==='story') return ACTIONS.storymap(); S.phase='modeset'; window.scrollTo(0,0); },
   cfgplayers(v){ keepNames(); setCfg('players',+v); },
   cfgbudget(v){ keepNames(); setCfg('budget',+v); },
   cfgpool(v){ keepNames(); setCfg('poolType',v); },

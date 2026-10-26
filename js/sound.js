@@ -232,7 +232,7 @@ function startMusic(name){
 function music(name){ if((S.vol||loadVolumes()).music===0){ startMusic(null); MUSIC.want=name; return; } startMusic(name); }
 function musicFor(view){
   const st = S.mode==='story' && typeof STAGES!=='undefined' && STAGES[S.stage];
-  if(['setup','codex','lobby'].includes(view)) return 'menu';
+  if(['setup','modeset','codex','lobby'].includes(view)) return 'menu';
   if(['spin','draft'].includes(view)) return 'draft';
   if(view==='story') return 'calm';
   if(view==='scene') return st ? ARC_MOOD[st.arc]||'calm' : 'calm';

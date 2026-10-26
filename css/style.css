@@ -1075,3 +1075,10 @@ details ul b{color:var(--fg)}
 .srow .gl.xs{width:28px;height:28px}
 .srow.locked .srowbtn{opacity:.82}
 .srow:not(.locked) .srowbtn:hover{background:rgba(255,255,255,.03);border-radius:12px}
+
+/* a mode's settings page: a faint art banner above the settings */
+.modehero{position:relative;height:120px;border-radius:16px;overflow:hidden;display:flex;justify-content:flex-end;border:1px solid var(--line-2);background:var(--grain),var(--surface)}
+.modehero img{height:100%;width:50%;object-fit:cover;object-position:50% 18%;opacity:.55;-webkit-mask:linear-gradient(90deg,transparent,#000 45%);mask:linear-gradient(90deg,transparent,#000 45%)}
+.modehero .mk{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:var(--display);font-size:3.6rem;font-weight:800;color:var(--accent);text-shadow:0 4px 16px rgba(0,0,0,.6)}
+.modehero img{width:36%}
+.modehero .mk{z-index:2}

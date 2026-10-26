@@ -219,6 +219,14 @@ function dailyCard(){
       <div class="dsq"><span class="svs">vs</span>${row(ch.enemy)}</div></div>
     <button class="btn small${done?' ghost':''}" data-a="daily">${done?'Done ✓ Replay':'Play'}</button></div>`;
 }
+// A mode's own page (opened from its card on the home screen): its settings and the Start button
+function vModeSet(){
+  const [,kj,title,sub]=MODE_CARDS.find(m=>m[0]===S.mode), art=(MODE_ART[S.mode]||[]).filter(id=>ART[id]);
+  return `<header class="top"><div><div class="eyebrow">${esc(sub)}</div><div class="title">${esc(title)}</div></div>
+      <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="home">Back</button></div></header>
+    ${art.length?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</div>`:''}
+    <div class="panel modepanel">${modeSettings()}</div>`;
+}
 function vSetup(){
   return `
   <div class="setbar"><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
@@ -229,8 +237,7 @@ function vSetup(){
   ${artStrip()}
   ${dailyCard()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
-    return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
-  <div class="panel modepanel"><div class="eyebrow">${esc(MODE_CARDS.find(m=>m[0]===S.mode)[2])}</div>${modeSettings()}</div>
+    return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <details class="panel" id="howto"><summary>How to play</summary><ul>
     <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against the computer, Practice lets you draft every team (the computers’ too) to set up the match you want, and Story Mode is 21 battles with the canon squads.</li>
     <li><b>Max fighters per team</b> (1–6, per mode) limits squad size, e.g. 1 for one-on-one duels.</li>
