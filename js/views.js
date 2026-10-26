@@ -22,7 +22,7 @@ const tip = (id, text) => !inPrologue() || tipsSeen().includes(id) ? '' : `<div 
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
-    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?'<button class="btn ghost small" data-a="home">Quit</button>':''}</div></header>`;
+    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(S.mode==='story'?'<button class="btn ghost small" data-a="storymap">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
 }
 const actionbar = inner => `<div class="actionbar"><div class="in">${inner}</div></div>`;
 const statCells = c => `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
@@ -784,10 +784,12 @@ function stageDetail(st,i,clear){
 const ARC_FX = {prologue:'snow', asakusa:'petal', flashback:'ember', tsuzumi:'dust', natagumo:'thread', mugen:'ember', district:'petal', swordsmith:'leaf', castle:'dust', dawn:'ember'};
 // The scene before a story battle: allies speak from the left, enemies from the right, the line types itself out.
 // Tap to finish the line, tap again for the next. After the last line, a versus card shows both squads and the twist.
+// Scene pictures found in img/scenes/ (app.js fills this at startup)
+const SCENE_ART = {};
 function vScene(){
   const st=STAGES[S.stage], lines=st.scene;
   const fx=`<span class="particles p-${ARC_FX[st.arc]||'dust'}" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i*0.73)%6}s;--s:${0.6+(i%5)*0.15}"></i>`).join('')}</span>`;
-  const head=`<div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · Battle ${S.stage+1} of ${STAGES.length}</div><div class="title">${esc(st.title)}</div><div class="splace">${esc(st.place)}</div></div>
+  const head=`<div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · ${S.sceneMid?`Round ${S.round}`:`Battle ${S.stage+1} of ${STAGES.length}`}</div><div class="title">${esc(st.title)}</div><div class="splace">${esc(st.place)}</div></div>
       <span class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="sceneskip">Skip</button></span></div>`;
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
     return `<div class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
@@ -795,9 +797,11 @@ function vScene(){
         <div class="goals">${starGoals(st).map((g,k)=>`<span class="${k<(S.starsGot||1)?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
         ${(S.starsGot||0)>(S.starsBest||0)&&S.starsBest?'<span class="muted">New best!</span>':''}
         ${S.newUnlocks&&S.newUnlocks.length?'<b>You have unlocked</b>':''}</div>
-      <div class="ulist">${(S.newUnlocks||[]).map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b><small>${esc(BYID[id].type)}</small></span>`).join('')}</div>
+      ${(()=>{ const all=S.newUnlocks||[], at=Math.min(S.unlockAt||0, all.length-1), id=all[at]; if(!id) return '';   // one at a time: tap for the next
+        return `<div class="ulist one"><span class="ucard big" key="${id}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].name)}</b><small>${esc(BYID[id].type)}</small></span></div>
+          ${all.length>1?`<span class="udots">${all.map((_,i)=>`<i class="${i===at?'on':i<at?'done':''}"></i>`).join('')}</span>`:''}`; })()}
       ${S.newUnlocks&&S.newUnlocks.length?'<p class="muted ucap">Now playable in Local, Online, Quickplay and Practice.</p>':''}
-      <button class="btn big" data-a="scenenext">Continue</button><span class="lbox b" aria-hidden="true"></span></div>`;
+      <button class="btn big" data-a="scenenext">${(S.unlockAt||0)+1<(S.newUnlocks||[]).length?`Next (${(S.unlockAt||0)+2} of ${S.newUnlocks.length})`:'Continue'}</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
   if(S.sceneVs){
     const tw=twistText(st), row=ids=>ids.filter(id=>!BYID[id].helper).map(id=>`<span class="vsc">${seal(BYID[id],'lg')}<small>${esc(BYID[id].short)}</small></span>`).join('');
@@ -808,15 +812,16 @@ function vScene(){
       ${stageCleared(S.stage)?`<div class="goals vsgoals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${k<stageStars(st.id)?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>`:''}
       <button class="btn big" data-a="sceneskip">Fight</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
-  const shown=sceneLines(), [who,text]=shown[S.sceneAt], c=who&&BYID[who], side=c?sceneSide(st,who):'n';
+  const shown=sceneLines(), [who,text,opt={}]=shown[S.sceneAt], c=who&&BYID[who], side=c?sceneSide(st,who):'n', pic=opt.img&&SCENE_ART[opt.img];
   // the other speakers in this scene stand dimmed behind the line
   const cast=[...new Set(shown.map(l=>l[0]).filter(Boolean))].filter(id=>id!==who).slice(0,2);
   const typed=esc(text);   // lines simply appear (CK didn't want the typing effect)
-  return `<div class="scene arc-${st.arc}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
+  return `<div class="scene arc-${st.arc}${opt.awaken?' awakening':''}${S.sceneMid?' midscene':''}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
-    <div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
-      ${c?`<span class="lead ${side}" key="${S.sceneAt}">${seal(c,'lg')}</span>`:''}</div>
+    ${pic?`<div class="scenepic" key="${S.sceneAt}"><img src="${pic}" alt=""></div>`
+    :`<div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
+      ${c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${seal(c,'lg')}${opt.awaken?'<span class="markstamp" aria-hidden="true">痣</span><span class="markburst" aria-hidden="true"></span>':''}</span>`:''}</div>`}
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
       <p class="popline" key="${S.sceneAt}">${typed}</p></div>
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>

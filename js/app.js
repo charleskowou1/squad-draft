@@ -67,7 +67,7 @@ function playRound(){
   S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
     if(S.info || S.settings){ S._t=setTimeout(step,300); return; }   // paused while an info card or Settings is open
-    if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd()) return; render(); return; }
+    if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd() || storyMid()) return; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
     S.play.clip = b>a || quickMotion() ? null : clipStep(line);   // a move clip for this beat, if the fighter has one
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
@@ -82,6 +82,13 @@ function playRound(){
 // Start a Local or Quickplay match with the mode's settings: names from the boxes (computers get demon names)
 // Story: when the last round has played out, go straight on (the ending scene after a win, the defeat screen after
 // a loss) instead of stopping on a "See who won" button. Returns true if it moved on.
+// Story: a Mark awakened this round, so its short cutscene plays now, then the next round starts
+function storyMid(){
+  if(S.mode!=='story' || S.final || !(S.midScene&&S.midScene.length)) return false;
+  clearTimeout(S._t); S._t=setTimeout(()=>{ Object.assign(S,{phase:'scene', sceneMid:true, sceneOutro:false, sceneVs:false, sceneUnlock:false, sceneAt:0}); sfx('unlock'); render(); }, quickMotion()?0:900);
+  return true;
+}
+function midDone(){ S.sceneMid=false; S.midScene=null; S.phase='result'; ACTIONS.next(); }
 function storyEnd(){
   if(S.mode!=='story' || !S.final) return false;
   clearTimeout(S._t); S._t=setTimeout(()=>{ ACTIONS.finish(); render(); }, quickMotion()?0:700);
@@ -108,7 +115,7 @@ function storyWon_(){
   Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
 }
 // After the ending scene: the stars earned (and any unlocks), then the results screen
-function afterOutro(){ if(!S.sceneUnlock){ S.sceneUnlock=true; sfx('unlock'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
+function afterOutro(){ if(!S.sceneUnlock){ S.sceneUnlock=true; S.unlockAt=0; sfx('unlock'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
 // After both sides lock in: give each crow owner their report (and a chance to re-plan), then fight
 function nextScoutOrFight(){
   S.scouting=false;
@@ -186,12 +193,13 @@ const ACTIONS = {
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   scenenext(){ if(S.sceneVs) return;
-    if(S.sceneUnlock) return afterOutro();
-    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('page'); return; }
+    if(S.sceneUnlock){ if((S.unlockAt||0)+1<(S.newUnlocks||[]).length){ S.unlockAt=(S.unlockAt||0)+1; sfx('unlock'); return; } return afterOutro(); }   // unlocks one at a time
+    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx(((sceneLines()[S.sceneAt]||[])[2]||{}).awaken?'cutin':'page'); return; }
+    if(S.sceneMid) return midDone();
    
     if(S.sceneOutro) return afterOutro();
     S.sceneVs=true; sfx('vs'); },
-  sceneskip(){ if(S.sceneOutro) return afterOutro();
+  sceneskip(){ if(S.sceneMid) return midDone(); if(S.sceneUnlock){ S.unlockAt=(S.newUnlocks||[]).length; return afterOutro(); } if(S.sceneOutro) return afterOutro();
     if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
@@ -248,6 +256,13 @@ function findArt(){
       const im=new Image(); im.onload=()=>{ found[id]=im.src; finish(); }; im.onerror=tryNext; im.src=`img/${id}.${ext}`; };
     tryNext();
   });
+}
+// Scene pictures (img/scenes/<name>.jpg/png/webp) for story lines that ask for one; lines without a file keep the portraits
+function findScenePics(){
+  scenePics().forEach(name=>{ const exts=['jpg','png','webp','jpeg'];
+    const tryNext=()=>{ const ext=exts.shift(); if(!ext) return;
+      const im=new Image(); im.onload=()=>{ SCENE_ART[name]=im.src; if(S.phase==='scene') render(); }; im.onerror=tryNext; im.src=`img/scenes/${name}.${ext}`; };
+    tryNext(); });
 }
 /* ---------- online play: Firebase connection and create / join ---------- */
 ONLINE.hooks.roundPlayed = () => playRound();
@@ -422,7 +437,7 @@ try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persis
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
 render();
-findArt();
+findArt(); findScenePics();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)
 // Updates: a phone that keeps the game open in the background never reloads it, so check for a new version whenever
 // the game comes back to the screen; when one arrives, reload right away on the home screen, or on the next return home.

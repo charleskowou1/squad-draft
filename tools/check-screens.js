@@ -50,7 +50,7 @@ function check(games){
     while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,S.level); resolve(); if(S.phase==='result') S.round++; } S.dailyMet=dailyMet(S.daily); vOver();
   }catch(e){ errors++; if(!first) first='daily: '+e.stack; }
   // story mode: every stage's map and scene, the preset battle (with repeat), a draft replay (with undo) and results
-  let storyErrors=0;
+  let storyErrors=0, mids=0;
   for(let i=0;i<STAGES.length;i++){
     try{
       S={phase:'story',mode:'story',level:'hard',names:['A','B']}; vStory(); vSetup();
@@ -59,11 +59,14 @@ function check(games){
       if(S.phase!=='plan') throw new Error('preset stage did not start the battle');
       S.planFor=0; vPlan(); cpuPlan(0); S.lastPlans[0]=JSON.parse(JSON.stringify(S.plans[0])); cpuPlan(1,stageLevel()); resolve();
       if(S.phase==='result'){ S.round++; S.phase='plan'; repeatPlans(0); vPlan(); }
-      while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,stageLevel()); resolve(); vResult(); if(S.phase==='result') S.round++; }
+      while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,stageLevel()); resolve(); vResult();
+        if(S.midScene && S.midScene.length){ const ph=S.phase; S.phase='scene'; S.sceneMid=true; for(S.sceneAt=0;S.sceneAt<S.midScene.length;S.sceneAt++) vScene(); S.sceneMid=false; S.midScene=null; S.phase=ph; mids++; }   // a Mark awakening's cutscene
+        if(S.phase==='result') S.round++; }
+      if((STAGES[i].awaken||[]).length && !S.teams[0].some(u=>u.awoke) && S.round>1) throw new Error('nobody awakened their Mark');
       vOver(); mvpPanel();
       // the ending scene, every line, then the unlock reveal
       Object.assign(S,{phase:'scene', sceneOutro:true, sceneVs:false, sceneUnlock:false, newUnlocks:STAGE_UNLOCKS[STAGES[i].id]});
-      for(S.sceneAt=0;S.sceneAt<STAGES[i].outro.length;S.sceneAt++) vScene(); S.sceneAt=0; S.sceneUnlock=true; vScene(); S.sceneOutro=false; S.sceneUnlock=false;
+      for(S.sceneAt=0;S.sceneAt<STAGES[i].outro.length;S.sceneAt++) vScene(); S.sceneAt=0; S.sceneUnlock=true; for(S.unlockAt=0;S.unlockAt<Math.max(1,S.newUnlocks.length);S.unlockAt++) vScene(); S.sceneOutro=false; S.sceneUnlock=false;
       startStage(i,true); vScene(); beginStage(); vDraft();
       const cheap=S.pool.filter(id=>canPick(0,id)).sort((x,y)=>BYID[x].cost-BYID[y].cost)[0]; doPick(cheap); vDraft(); if(!undoable()) throw new Error('no undo after a pick'); undoPick();
       if(S.picks[0].length) throw new Error('undo did not remove the pick');
@@ -72,7 +75,7 @@ function check(games){
       vOver();
     }catch(e){ storyErrors++; if(!first) first='story stage '+i+': '+e.stack; errors++; }
   }
-  return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors.';
+  return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors ('+mids+' Mark awakening scenes).';
 }
 `);
 console.log(ctx.check(300));

@@ -15,12 +15,15 @@ const ARCS = {
   district:{title:'Entertainment District', g:'遊'}, swordsmith:{title:'Swordsmith Village', g:'刀'},
   castle:{title:'Infinity Castle', g:'城'}, dawn:{title:'Until Dawn', g:'暁'},
 };
-// scene lines: [speaker card id, or '' for the narrator, text]
+// scene lines: [speaker card id, or '' for the narrator, text, options]; options: {img:'name'} shows the picture
+//   img/scenes/<name>.jpg (or .png/.webp) for that line if the file exists; {awaken:true} plays the Mark awakening flash.
+// awaken: [{id, at, round, lines}] — that fighter of yours becomes their Mark card at the end of a round once hurt to
+//   `at` of their health or after round `round`, and `lines` play as a short cutscene before the next round.
 const STAGES = [
   {id:'training', arc:'prologue', title:'The Boulder', place:'Mount Sagiri', foe:'Sabito', mine:['tanjiro'], enemy:['sabito'], level:'easy',
     stars:{standing:1, hp2:45, rounds:5},
     beats:[{when:'low', id:'tanjiro', at:.4, text:'Breathe. Feel the gap in his guard.'}, {when:'low', id:'sabito', at:.35, text:'That’s it. Again!'}],
-    outro:[['sabito','You cut it. You really cut the boulder.'],['tanjiro','Sabito? …He’s gone.'],['','Tanjiro is ready for Final Selection.']],
+    outro:[['sabito','You cut it. You really cut the boulder.',{img:'boulder'}],['tanjiro','Sabito? …He’s gone.'],['','Tanjiro is ready for Final Selection.']],
     boosts:[{side:1, hp:1.4, label:'Sabito: +40% HP'}],
     blurb:'A boy in a fox mask tests Tanjiro before he can cut the boulder.',
     scene:[['','Mount Sagiri. Half a year of training, and the boulder still stands.'],
@@ -82,7 +85,7 @@ const STAGES = [
     boosts:[{side:1, hp:1.5, pow:3, label:'Akaza: +50% HP, +3 PWR'}],
     beats:[{when:'low', id:'rengoku', at:.3, text:'Set your heart ablaze! I will not fall here!'}, {when:'ko', id:'rengoku', who:'tanjiro', text:'Rengoku!'}, {when:'round', round:6, id:'akaza', text:'The sky is getting lighter… I don’t have long.'}],
     phases:[{id:'akaza', at:.5, pow:2, ready:true, label:'+2 PWR, special ready', line:'Destructive Death: Annihilation Type!'}],
-    outro:[['akaza','The sun! I have to go—'],['rengoku','Tanjiro… set your heart ablaze. Go on, with your head held high.'],['','Kyojuro Rengoku protected everyone. Not one passenger died.']],
+    outro:[['akaza','The sun! I have to go—',{img:'akaza-sunrise'}],['rengoku','Tanjiro… set your heart ablaze. Go on, with your head held high.',{img:'rengoku-heart'}],['','Kyojuro Rengoku protected everyone. Not one passenger died.']],
     twist:{survive:10},
     blurb:'Upper Moon Three arrives before dawn. Hold him until the sun rises.',
     scene:[['akaza','What a fighting spirit. Become a demon, Kyojuro, and fight me forever!'],
@@ -90,9 +93,12 @@ const STAGES = [
       ['','The sky to the east is still dark. Dawn is ten rounds away.']]},
   {id:'district', arc:'district', title:'Two as One', place:'Yoshiwara', foe:'Gyutaro & Daki', mine:['tengen','tanjiro','zenitsu','inosuke','nezuko'], enemy:['gyutaro','daki','hand'], level:'hard',
     stars:{standing:3, rounds:4},
-    boosts:[{side:1, pow:1, label:'Gyutaro & Daki: +1 PWR'}],
+    boosts:[{side:1, hp:1.3, pow:1, label:'Gyutaro & Daki: +30% HP, +1 PWR'}],
     beats:[{when:'ko', id:'daki', who:'gyutaro', text:'Sister! Get back up!'}, {when:'low', id:'tengen', at:.35, text:'Flashy to the very end!'}],
     phases:[{id:'gyutaro', at:.4, pow:2, spd:1, label:'+2 PWR, +1 SPD', line:'You hurt my sister. Now I’ll rip you apart.'}],
+    awaken:[{id:'tanjiro', at:.5, round:3, lines:[['','Gyutaro’s blood sickles close in. Tanjiro’s heart pounds like a war drum.'],
+      ['tanjiro','I can’t lose here. Not with everyone counting on me!'],
+      ['tanjiro_mark','My forehead is burning… and my body feels light. Hinokami Kagura!',{awaken:true}]]}],
     outro:[['daki','Brother! It’s not fair!'],['gyutaro','Wherever you’re going, I’m going with you.'],['tengen','Flashy. Now let me sit down for a second.']],
     blurb:'Two demons sharing one life. Cut both heads at the same time.',
     scene:[['daki',"How dare you look at me! Brother, they're bullying me!"],
@@ -106,7 +112,10 @@ const STAGES = [
     scene:[['','Deep in the woods, a puppet with six arms waits for a challenger.'],
       ['tanjiro',"It moves like a real swordsman… Hotaru, my sword's still chipped!"],
       ['hotaru',"You CHIPPED it?! Fine. I'll reforge it. Then I'll kill you."]]},
-  {id:'gyokko', arc:'swordsmith', title:'Pots and Mist', place:'The hidden village', foe:'Gyokko', mine:['muichiro_mark'], enemy:['gyokko'], level:'normal',
+  {id:'gyokko', arc:'swordsmith', title:'Pots and Mist', place:'The hidden village', foe:'Gyokko', mine:['muichiro'], enemy:['gyokko'], level:'normal',
+    awaken:[{id:'muichiro', round:1, lines:[['','Trapped in the water prison, Muichiro is running out of air.'],
+      ['muichiro','Father… Brother… I remember now. I was never useless.'],
+      ['muichiro_mark','Cloud-shaped marks spread across his face. The water prison bursts apart.',{awaken:true}]]}],
     stars:{standing:1, hp2:45, rounds:7},
     beats:[{when:'low', id:'gyokko', at:.5, text:'My true form! Behold my perfect body!'}],
     outro:[['gyokko','Impossible! My masterpiece!'],['muichiro','I remember now. My brother. Why I fight.']],
@@ -115,16 +124,19 @@ const STAGES = [
     scene:[['gyokko','Admire my art! Every pot is a masterpiece!'],
       ['muichiro',"I don't care about pots. I'll forget you soon anyway."],
       ['gyokko','Forget ME?! I will drown you in my water prison!']]},
-  {id:'swordsmith', arc:'swordsmith', title:'Splitting Emotions', place:'The hidden village', foe:'Hantengu', mine:['tanjiro_mark','genya','nezuko','mitsuri_mark'], enemy:['hantengu','gyokko'], level:'hard',
+  {id:'swordsmith', arc:'swordsmith', title:'Splitting Emotions', place:'The hidden village', foe:'Hantengu', mine:['tanjiro_mark','genya','nezuko','mitsuri'], enemy:['hantengu','gyokko'], level:'hard',
+    awaken:[{id:'mitsuri', at:.75, round:1, lines:[['','The demons tear through the village. Mitsuri plants herself in front of everyone.'],
+      ['mitsuri','Everyone believed in me… I won’t let them down!'],
+      ['mitsuri_mark','A heart-shaped mark blooms on her neck. Love Breathing, full power!',{awaken:true}]]}],
     stars:{standing:2, rounds:12},
     beats:[{when:'ko', id:'hantengu', who:'tanjiro', text:'He split again?!'}, {when:'low', id:'nezuko', at:.4, text:'Mmph!!'}],
     outro:[['','Zohakuten falls, and the real Hantengu runs for the trees.'],['nezuko','Mmph!'],['tanjiro','Nezuko… you’re standing in the sun!']],
-    boosts:[{side:1, hp:2.5, pow:1, label:'Upper Moons: +150% HP, +1 PWR'}],
+    boosts:[{side:1, hp:2.3, pow:1, label:'Upper Moons: +130% HP, +1 PWR'}],
     blurb:'Two Upper Moons at once. Cut Hantengu down and four more appear. Then they merge.',
     scene:[['hantengu',"Don't hurt me! I'm so weak! So very weak!"],
       ['genya',"Cut his head off and he splits? Then I'll eat them all!"],
       ['mitsuri',"I won't let anyone else get hurt. Leave the big one to me!"],
-      ['','Two Upper Moons attack the village at once. Tanjiro and Mitsuri feel a strange heat: the Marks awaken.']]},
+      ['','Two Upper Moons attack the village at once. The Mark on Tanjiro’s forehead is already burning.']]},
   {id:'nakime', arc:'castle', title:'The Shifting Floors', place:'Infinity Castle', foe:'Nakime', mine:['tanjiro','giyu','murata'], enemy:['nakime','hand','swamp','kyogai'], level:'normal',
     stars:{standing:2, rounds:5},
     beats:[{when:'round', round:2, id:'nakime', text:'*strum*'}, {when:'low', id:'murata', at:.5, text:'Why is it always me?!'}],
@@ -166,7 +178,11 @@ const STAGES = [
       ['zenitsu',"Grandpa cut his own belly because of you. I made a form of my own. For him."]]},
   {id:'akaza', arc:'castle', title:'Destructive Death', place:'Infinity Castle', foe:'Akaza', mine:['tanjiro','giyu'], enemy:['akaza'], level:'hard',
     stars:{standing:1, hp2:15, rounds:10},
+    boosts:[{side:1, hp:1.2, pow:1, label:'Akaza: +20% HP, +1 PWR'}],
     beats:[{when:'low', id:'akaza', at:.5, text:'Your spirit… it’s just like Kyojuro’s.'}, {when:'low', id:'giyu', at:.4, text:'Tanjiro, keep going. I’ll hold.'}],
+    awaken:[{id:'giyu', at:.5, round:4, lines:[['','Akaza’s fists shatter the floor. Giyu takes a blow meant for Tanjiro.'],
+      ['giyu','I was never worthy of being a Hashira… but I won’t let him die.'],
+      ['giyu_mark','A wave-shaped mark rises on his cheek. Water Breathing, Eleventh Form: Dead Calm.',{awaken:true}]]}],
     outro:[['akaza','Koyuki… I remember now.'],['','Akaza ends himself, choosing his memories over strength.'],['tanjiro','Rengoku… we did it.']],
     blurb:"Tanjiro and Giyu against the demon who killed Rengoku.",
     scene:[['akaza','You again. The weakling from the train.'],
@@ -183,11 +199,15 @@ const STAGES = [
       ['yoriichi_old',"Brother. How sad. I'm here to cut you down."]]},
   {id:'kokushibo', arc:'castle', title:'Upper Moon One', place:'Infinity Castle, deep', foe:'Kokushibo', mine:['muichiro','genya'], enemy:['kokushibo'], level:'hard',
     stars:{standing:2, rounds:7},
-    boosts:[{side:1, hp:1.25, pow:2, label:'Kokushibo: +25% HP, +2 PWR'}],
+    boosts:[{side:1, hp:1.65, pow:5, label:'Kokushibo: +65% HP, +5 PWR'}],
     beats:[{when:'round', round:3, id:'sanemi', text:'Hands off my brother!'}, {when:'round', round:4, id:'gyomei', text:'Namu Amida Butsu. It ends here.'}],
     phases:[{id:'kokushibo', at:.5, pow:2, spd:1, ready:true, label:'+2 PWR, +1 SPD, special ready', line:'My blade grows. Moon Breathing, Sixteenth Form.'}],
     outro:[['kokushibo','What is this… monster I’ve become?'],['','Kokushibo crumbles. The Hashira who fought him gave everything.'],['sanemi','Genya… hang on.']],
     twist:{reinforce:[{id:'sanemi', round:3},{id:'gyomei', round:4}]},
+    awaken:[{id:'muichiro', round:1, lines:[['muichiro_mark','My Mark is back. You won’t lay a finger on Genya.',{awaken:true}]]},
+      {id:'sanemi', round:5, lines:[['','Kokushibo’s moon blades fill the hall. The Hashira are pushed to the edge.'],
+        ['sanemi_mark','So this is the Mark. Good. Now I can keep up with you, monster!',{awaken:true}]]},
+      {id:'gyomei', round:5, lines:[['gyomei_mark','Namu Amida Butsu. The Mark has come. I will carry it to the end.',{awaken:true}]]}],
     blurb:'The strongest demon after Muzan, once a slayer himself.',
     scene:[['kokushibo',"Mist… You are my descendant. Become a demon, like I did."],
       ['muichiro','Never.'],
@@ -269,12 +289,15 @@ const storyCard = c => !c.spawn && !c.legend && (!c.demon || STORY_ALLIES.includ
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
   const st=STAGES[i];
-  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, showTheirs:false, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
+  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
   S.names=[S.names[0], st.foe];
 }
 // The lines of the scene being shown: the opening, or the ending after a win
-const sceneLines = () => S.sceneOutro ? STAGES[S.stage].outro : STAGES[S.stage].scene;
+const sceneLines = () => S.sceneMid ? S.midScene||[] : S.sceneOutro ? STAGES[S.stage].outro : STAGES[S.stage].scene;
+// Every scene picture any stage asks for (app.js looks for the files at startup)
+const scenePics = () => [...new Set(STAGES.flatMap(st=>[...(st.scene||[]), ...(st.outro||[]), ...(st.awaken||[]).flatMap(a=>a.lines||[])])
+  .map(l=>l[2]&&l[2].img).filter(Boolean))];
 // Which side of the scene a speaker stands on: your squad on the left, the enemy on the right
 const sceneSide = (st, id) => st.enemy.some(e=>BYID[e].fam===BYID[id].fam) && !st.mine.includes(id) ? 'r' : 'l';
 // After the scene: fight with the preset squad, or draft your own
@@ -301,7 +324,7 @@ const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.incl
 const UNLOCK_EXTRAS = {district:['nezuko_awakened','tengen_retired'], kokushibo:['sanemi_mark','gyomei_mark']};
 // stage id → the card ids winning it unlocks (each card is unlocked by the first battle it appears in)
 const STAGE_UNLOCKS = (()=>{ const seen=new Set(), out={};
-  STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(UNLOCK_EXTRAS[st.id]||[])];
+  STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(st.awaken||[]).map(a=>a.to||a.id+'_mark'), ...(UNLOCK_EXTRAS[st.id]||[])];
     out[st.id]=[...new Set(ids)].filter(id=>BYID[id] && lockable(BYID[id]) && !seen.has(id)); out[st.id].forEach(id=>seen.add(id)); });
   return out; })();
 // Lockable cards that no battle unlocks start unlocked

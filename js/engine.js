@@ -252,8 +252,8 @@ function startBattle(){
   S.n=S.picks.length;
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
-  if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; }   // story twists never leak into other games
-  S.said={}; S.failed=false;
+  if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; S.awaken=null; }   // story twists never leak into other games
+  S.said={}; S.failed=false; S.awoke={}; S.midScene=null;
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
@@ -669,7 +669,7 @@ function resolve(){
   else if(sidesUp().length<=1){ S.winner = up.length ? up[0] : -1; S.phase='over'; }   // 2v2: any player of the winning side
   else if(tw.survive && S.round>=tw.survive){ S.winner=0; S.survived=true; S.phase='over'; L(`The sun rises. ${S.names[0]}'s team held out!`,'h',fx('burn',null,null)); }
   else if(S.round>=40){ S.winner=-1; S.phase='over'; }   // nobody wins after 40 rounds
-  else { S.phase='result'; reinforcements(); }
+  else { S.phase='result'; reinforcements(); if(S.mode==='story') awakenings(); }   // Marks awaken after the round (cutscene before the next)
 }
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
@@ -682,7 +682,7 @@ const sunUp = () => S.mode!=='story' && S.round>=SUNRISE_ROUND;
 const say = (u, text) => L(text, 'say', {fx:'say', by:u.uid, on:null, move:null});
 function storyBeats(when){
   if(S.mode!=='story') return;
-  const tw=S.twist||{}, all=allUnits(), find=id=>all.find(u=>u.id===id);
+  const tw=S.twist||{}, all=allUnits(), find=id=>all.find(u=>u.id===id) || all.find(u=>u.fam===(BYID[id]||{}).fam && u.p===0);   // by family too: a fighter may have awakened their Mark
   (S.beats||[]).forEach((b,i)=>{ if(S.said[i]) return; const u=find(b.id), who=find(b.who||b.id)||u; if(!who) return;
     const hit = b.when==='round' ? when==='round' && S.round===b.round
       : b.when==='low' ? u && u.alive && u.hp<=u.max*(b.at||.3)
@@ -693,6 +693,20 @@ function storyBeats(when){
     u.pow+=ph.pow||0; u.spd+=ph.spd||0; u.def+=ph.def||0; if(ph.ready) u.cd=0;
     L(`${u.name} changes: ${ph.label}.`,'k',fx('buff',null,u)); });
   if(tw.protect && !S.failed){ const u=S.teams[0].find(x=>x.id===tw.protect); if(u && !u.alive){ S.failed=true; L(`${u.name} has fallen. You had to protect ${u.name}.`,'k',fx('ko',null,u)); } }
+}
+// Story: a fighter awakens their Demon Slayer Mark at the end of a round (when hurt to `at` of their health, or after
+// round `round`): they become the Mark card (its extra HP, PWR, SPD, DEF and faster special, which is ready now), and
+// the stage's short cutscene plays before the next round (S.midScene, shown by app.js).
+function awakenings(){
+  (S.awaken||[]).forEach((a,i)=>{ if(S.awoke[i]) return;
+    const u=S.teams[0].find(x=>x.id===a.id && x.alive); if(!u) return;
+    if(!(u.hp<=u.max*(a.at||0) || (a.round && S.round>=a.round))) return;
+    const b=BYID[a.id], m=BYID[a.to||a.id+'_mark']; S.awoke[i]=true;
+    const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def;
+    Object.assign(u,{id:m.id, sig:m.sig, sk:m.sk, mark:true, awoke:true, cd:0});
+    L(`${u.name} awakens the Demon Slayer Mark! Stronger, faster, and the special is ready.`,'h',{...fx('buff',null,u), act:'awaken'});
+    S.midScene=(S.midScene||[]).concat(a.lines||[]);
+  });
 }
 // Teams with anyone still standing
 const standing = () => players().filter(p=>alive(p).length);
