@@ -11,8 +11,8 @@ function winRates(n){ const st={};
     while(S.phase!=='over'){ cpuBothSides(); resolve(); if(S.phase==='result') S.round++; }
     t.forEach((team,p)=>team.forEach(id=>{ st[id]=st[id]||[0,0]; st[id][0]++; if(S.winner===p) st[id][1]++; })); }
   return st; }
-function data(){ return {ROSTER, BYID, STAGES, LEVELS, MICE_PWR}; }`);
-const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR } = g.data();
+function data(){ return {ROSTER, BYID, STAGES, LEVELS, MICE_PWR, ARCS, twistText}; }`);
+const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR, ARCS, twistText } = g.data();
 const T = []; const out = s => T.push(s); const hr = t => out('\n' + '='.repeat(78) + '\n' + t + '\n' + '='.repeat(78));
 const PRIO = { 3: 'acts first (priority 3)', 2: 'acts very early (priority 2)', 1: 'acts early (priority 1)' };
 
@@ -135,9 +135,13 @@ hr('8. MODES AND SETTINGS');
 out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but sloppy), Hard (goes for knockouts, spreads
   damage, saves specials, uses helpers well). Hard beats Normal ~59%, Normal beats Easy ~57%.
 - Settings: points (10/20/30), pool (Random/All), playback speed, sound.
-- Story mode: you draft only from the Demon Slayer Corps and allies (slayers + Nezuko, Tamayo, Yushiro + helpers;
-  no Yoriichi, no demons) against a visible enemy team. Stages:`);
-STAGES.forEach((s,i)=>out(`  ${i+1}. ${s.title} — enemy: ${s.enemy.map(id=>BYID[id].short).join(', ')} · you get ${s.budget} pts · computer ${LEVELS[s.level].label}`));
+- Story mode: 21 battles with preset (canon) squads, each opening with a short scene. Win a battle to unlock the
+  next; won battles can be replayed drafting your own squad (Corps and allies plus that battle's preset characters,
+  same points as the preset squad). Twists: survive N rounds, reinforcements joining on a set round, and two-part
+  fights where part 2 starts with the enemy already hurt. Boosts (shown on each card) tune the difficulty.
+  Battles:`);
+STAGES.forEach((s,i)=>out(`  ${i+1}. ${s.title} (${ARCS[s.arc].title}) — you: ${s.mine.map(id=>BYID[id].short).join(', ')} · enemy: ${s.enemy.map(id=>BYID[id].short).join(', ')}`
+  + [twistText(s), ...(s.boosts||[]).map(b=>b.label)].filter(Boolean).map(x=>' · '+x).join('')));
 
 hr('9. SIMULATED WIN RATES (20-point Random drafts, Hard computer both sides, ' + N + ' drafts)');
 out('Share of matches won by teams that drafted each character. Above ~55% = strong for its cost; below ~45% = weak.');

@@ -572,6 +572,49 @@ details ul b{color:var(--fg)}
 .sfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
 .sseals{display:flex;gap:3px}
 .smeta{font-size:.74rem;color:var(--muted);font-weight:700;white-space:nowrap}
+.stagecard.flash{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(214,165,77,.08),var(--surface) 40%)}
+.stagecard.flash .snum{background:var(--gold);color:#1a1714}
+.archead{display:flex;align-items:center;gap:8px;margin-top:10px;font-family:var(--display);font-weight:800;font-size:.95rem;color:var(--ink-2);letter-spacing:.02em}
+.archead:first-child{margin-top:0}
+.arcg{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--bg-2);color:var(--accent);font-size:.95rem}
+.stwist{align-self:flex-start;font-size:.72rem;font-weight:800;color:var(--gold);border:1px solid rgba(214,165,77,.5);background:rgba(214,165,77,.08);border-radius:999px;padding:2px 8px}
+.sseals{align-items:center;flex-wrap:wrap}
+.stags{display:flex;flex-wrap:wrap;gap:5px}
+.stwist.foe{color:#ff8a76;border-color:rgba(224,87,59,.5);background:rgba(224,87,59,.08)}
+.stwist.ally{color:var(--p1);border-color:rgba(82,179,136,.5);background:rgba(82,179,136,.08)}
+.svs{font-size:.7rem;font-weight:800;color:var(--muted);margin:0 4px}
+.sbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.goal{align-self:flex-start;font-size:.78rem;font-weight:800;color:var(--gold);border:1px solid rgba(214,165,77,.5);background:rgba(214,165,77,.08);border-radius:999px;padding:3px 10px;margin:-4px 0 8px}
+/* story scene: one line at a time over the arc's colours and kanji */
+.scene{position:relative;min-height:calc(100vh - 40px);min-height:calc(100dvh - 40px);display:flex;flex-direction:column;justify-content:flex-start;gap:16px;
+  padding:16px;border-radius:18px;overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none;
+  background:radial-gradient(120% 80% at 50% 0%,var(--sc1,#3a2a22),var(--bg-2) 70%)}
+.scenebg{position:absolute;right:-6%;top:12%;font-size:min(70vw,420px);line-height:1;font-weight:800;color:var(--sc2,#e0573b);opacity:.08;pointer-events:none}
+.scenetop{position:relative;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px}
+.scenetop>div{flex:1;display:flex;flex-direction:column;gap:2px}
+.scenetop .title{font-family:var(--display);font-weight:800;font-size:1.5rem}
+.sceneline{position:relative;margin-top:auto;display:flex;flex-direction:column;gap:12px;background:rgba(18,16,14,.78);border:1px solid var(--line-2);border-radius:16px;padding:16px;animation:scenein .35s ease-out}
+.sceneline.narr p{font-style:italic;color:var(--ink-2)}
+.sceneline p{margin:0;font-size:1.08rem;line-height:1.5}
+.speaker{display:flex;align-items:flex-end;gap:12px}
+.speaker .gl.lg{width:88px;height:106px;font-size:2.8rem;border-radius:12px}
+.speaker .sname{font-family:var(--display);font-weight:800;font-size:1.2rem;color:var(--gold)}
+.scenefoot{position:relative;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.8rem}
+.scenefoot .dots{display:flex;gap:6px}
+.scenefoot .dots i{width:7px;height:7px;border-radius:50%;background:var(--line-2)}
+.scenefoot .dots i.on{background:var(--gold)}
+@keyframes scenein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.sceneline{animation:none}}
+.arc-prologue{--sc1:#2c3a33;--sc2:#7fb39a}
+.arc-asakusa{--sc1:#3a2a36;--sc2:#c88bb5}
+.arc-flashback{--sc1:#3d321d;--sc2:#d6a54d}
+.arc-tsuzumi{--sc1:#3a2c22;--sc2:#c9915d}
+.arc-natagumo{--sc1:#262c3a;--sc2:#9aa6d8}
+.arc-mugen{--sc1:#3a2626;--sc2:#e0573b}
+.arc-district{--sc1:#3a2233;--sc2:#e07bb2}
+.arc-swordsmith{--sc1:#233534;--sc2:#6fc2b8}
+.arc-castle{--sc1:#2a2238;--sc2:#a88be0}
+.arc-dawn{--sc1:#3d2a1a;--sc2:#f0a24a}
 .dealt .undo{margin-left:auto}
 /* tap a picture in battle for the fighter's info card */
 .sealbtn{flex:none;padding:0;background:none;border-radius:6px;line-height:0;transition:transform .12s}

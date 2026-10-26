@@ -196,9 +196,17 @@ function synergies(p){
 function startBattle(){
   S.teams=[fighterIds(0).map(id=>mkUnit(id,0)), fighterIds(1).map(id=>mkUnit(id,1))];
   S.helpers=[S.picks[0].filter(isHelper), S.picks[1].filter(isHelper)]; S.helperPlan=[[],[]]; S.scoutQueue=[]; S.scouting=false;
+  if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; }   // story twists never leak into other games
+  S.survived=false;
   S.sib=[false,false]; S.twins=[false,false]; S.syn=[synergies(0),synergies(1)];
   S.round=1; S.plans=[{},{}]; S.lastPlans=[null,null]; S.log=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
   S.movesLocked=[false,false]; S.readyNext=[false,false]; S.roundId=0;   // online play
+  // story: stat boosts shown on the stage card ({side, hp: ×, pow/def/spd: +, label}), e.g. a boss with more HP
+  (S.boosts||[]).forEach(b=>S.teams[b.side].forEach(u=>{ if(b.only && !b.only.includes(u.id)) return;
+    if(b.hp){ u.max=u.hp=Math.round(u.max*b.hp); } u.pow+=b.pow||0; u.def+=b.def||0; u.spd+=b.spd||0; }));
+  // story: an enemy that starts the fight already hurt (part 2 of a two-part fight)
+  Object.entries(S.startState||{}).forEach(([id,st])=>S.teams[1].filter(u=>u.id===id).forEach(u=>{
+    if(st.hp) u.hp=Math.ceil(u.max*st.hp); if(st.devoured) u.devoured=st.devoured; if(st.poison) u.poison={...st.poison}; }));
   S.phase = S.mode==='2p' ? 'pass' : 'plan';
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
@@ -580,8 +588,15 @@ function resolve(){
   twinsRise(); aloneCheck();
   tallyRound();
   S.plans=[{},{}]; S.helperPlan=[[],[]];
-  const a0=alive(0).length, a1=alive(1).length;
+  const a0=alive(0).length, a1=alive(1).length, tw=S.twist||{};
   if(!a0||!a1){ S.winner = !a0&&!a1 ? -1 : a0 ? 0 : 1; S.phase='over'; }
+  else if(tw.survive && S.round>=tw.survive){ S.winner=0; S.survived=true; S.phase='over'; L(`The sun rises. ${S.names[0]}'s team held out!`,'h',fx('burn',null,null)); }
   else if(S.round>=40){ S.winner=-1; S.phase='over'; }
-  else S.phase='result';
+  else { S.phase='result'; reinforcements(); }
+}
+// story: allies who join your team at the start of a given round (they arrive at the end of the round before)
+function reinforcements(){
+  ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.round!==S.round+1) return;
+    const u=mkUnit(r.id,0); S.teams[0].push(u);
+    L(`${u.name} arrives to fight alongside ${S.names[0]}!`,'h',{spawn:[u.uid], ...fx('spawn',null,u)}); });
 }

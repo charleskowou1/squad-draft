@@ -113,7 +113,7 @@ function vSetup(){
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
     <p class="muted">Draft a squad on ${budget()} points. Pick secret moves each round. Last team standing wins.</p></div>
   ${artStrip()}
-  <div class="modes">${[['2p','二','2 Players','One phone'],['online','網','Online','Two phones'],['cpu','機','Vs Computer',`${LEVELS[S.level].label}`],['story','物','Story',`${loadStory().cleared.length} of ${STAGES.length} stages`]]
+  <div class="modes">${[['2p','二','2 Players','One phone'],['online','網','Online','Two phones'],['cpu','機','Vs Computer',`${LEVELS[S.level].label}`],['story','物','Story',`${loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length} of ${STAGES.length} battles`]]
     .map(([k,kj,t,sub])=>`<button class="mode${S.mode===k?' on':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}"><span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`).join('')}</div>
   <div class="panel">
     <div class="row">
@@ -128,7 +128,7 @@ function vSetup(){
       :`<button class="btn" data-a="ocreate">Create a game</button>
       <button class="btn ghost" data-a="ojoinopen">Join a game</button>`}
       ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:S.joinOpen?'<p class="hint">Type the 4-letter code shown on the other phone.</p>':'<p class="hint">One phone creates the game and gets a code; the other taps Join and types it. Points and pool come from the creator\'s Settings.</p>'}</div>`
-    :S.mode==='story'?`<p class="hint">Fight through the arcs with the Demon Slayer Corps, from Final Selection to dawn. ${loadStory().cleared.length} of ${STAGES.length} stages cleared.</p>
+    :S.mode==='story'?`<p class="hint">21 battles through the arcs, from Mount Sagiri to the last dawn, plus two Yoriichi flashbacks. ${loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length} of ${STAGES.length} won.</p>
     <button class="btn" data-a="storymap">${loadStory().cleared.length?'Continue the story':'Begin the story'}</button>`
     :'<button class="btn" data-a="start">Start the draft</button>'}
   </div>
@@ -145,7 +145,7 @@ function vSetup(){
     <li><b>Marks ✦:</b> cost more, hit harder and recharge their special a round faster.</li>
     <li><b>Each round</b> every fighter secretly picks Attack, Defend (half damage) or their Special. Fastest goes first. ↻ Repeat last round copies your previous moves.</li>
     <li><b>Back pocket:</b> you may draft one helper: Chachamaru, Kasugai Crow or Muscle Mice (1 pt). It doesn't fight or take a fighter slot. Use it once, on the round you choose, with the chip next to Lock in moves: Chachamaru heals your most hurt fighter by half their current health, the Crow shows you the enemy's moves so you can change yours, the Mice give your team +2 PWR for that round.</li>
-    <li><b>Story mode:</b> nine stages from Final Selection to Muzan. You see the enemy first, then build a squad from the Corps.</li>
+    <li><b>Story mode:</b> 21 battles with the canon squads, each opening with a short scene. Win one to replay it with your own draft.</li>
     <li><b>Health</b> is shown as a percent of each fighter's own max. It turns red at 25%.</li>
     <li><b>Damage</b> = PWR − target's DEF, but never less than half the attacker's power. Demons regenerate; poison ticks.</li>
     <li><b>Synergies:</b> Kamaboko Squad +2 SPD · Siblings counter · 2+ Hashira +1 PWR · 2+ Upper Moons +1 regen · Muzan's Blood +1 PWR · 2+ Marks +1 SPD · Tamayo + Yushiro: Yushiro +2 PWR · Yoriichi + Tanjiro: Tanjiro +2 PWR · Urokodaki: Tanjiro and Giyu +1 DEF · Kagaya: Hashira +1 DEF. Facing Yoriichi, Muzan loses 3 PWR and Kokushibo 1 DEF. Facing Tamayo, Muzan regenerates 2 less. Facing Kaigaku, Zenitsu gets +2 PWR.</li>
@@ -204,7 +204,7 @@ function vDraft(){
     ? `<button class="btn ghost small undo" data-a="undo">↶ Undo ${nm(un.p)}'s ${esc(BYID[un.id].short)}</button>` : '';
   const st=story&&STAGES[S.stage];
   return `<div class="draftlayout"><div class="dtop">
-    ${story?topbar(`Story · Stage ${S.stage+1} · ${esc(st.title)}`,'Build your squad'):topbar('Draft', `<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
+    ${story?topbar(`Story · Battle ${S.stage+1} · ${esc(st.title)}`,'Draft replay'):topbar('Draft', `<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
     ${orderStrip(p)}
     <div class="teams">${teamBox(0,p)}${teamBox(1,p)}</div>
@@ -432,7 +432,9 @@ function vPlan(){
   const aimers=e=>mine.filter(m=>{ const q=S.plans[p][m.uid]; return q && q.t===e.uid && needsTarget(m,q) && !isAllyMove(m,q); });
   // knocked-out fighters aren't shown on the move screen (either side)
   const enemyMoment=e=>!e.alive ? {hidden:true} : ({aimed:aimers(e), ...(picking?{tgtFor:ou.uid, picked:opl.t===e.uid}:{})});
+  const goal = S.mode==='story' && STAGES[S.stage] ? twistText(STAGES[S.stage]) : '';
   return `${topbar(`Round ${S.round}`, `<span style="color:${pc(p)}">${nm(p)}</span>, choose`)}
+    ${goal?`<div class="goal">${esc(goal)}${S.twist&&S.twist.survive?` · ${plural(Math.max(0,S.twist.survive-S.round+1),'round')} to go`:''}</div>`:''}
     ${strengthBar(p)}
     ${teamBlock(1-p,'Opponent',enemyMoment,true,picking?`Tap to target with ${esc(ou.name)}`:'')}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span>${S.lastPlans&&S.lastPlans[p]?'<button class="btn ghost small" data-a="repeat">↻ Repeat</button>':''}</div>
@@ -530,17 +532,34 @@ function mvpPanel(){
     <div class="mvpname">${esc(mvp.u.name)}</div><div class="muted">${line(mvp.s)}</div></div></div>
     <div class="awards">${award('Most damage',dm,dm.s.dmg?`${dm.s.dmg}`:'')}${award('Most knockouts',ko,ko.s.kos?`${ko.s.kos}`:'')}${award('Biggest hit',bh,bh.s.best?`${bh.s.best}`:'')}${award('Best healer',hl,hl.s.heal?`${hl.s.heal} HP`:'')}</div></section>`;
 }
-// Story map: the stages in order, with the enemy team, points and difficulty of each
+// Story map: the stages in order, grouped by arc. Each shows your preset squad vs the enemy, and its twist.
+// A cleared stage can be replayed with a draft (same points as the preset squad).
 function vStory(){
   const done=loadStory().cleared;
+  let arc='';
   return `${topbar('Story mode', 'The Demon Slayer Corps')}
-    <p class="muted">${done.length} of ${STAGES.length} stages cleared. Clear a stage to unlock the next.</p>
-    <div class="stages">${STAGES.map((st,i)=>{ const open=stageUnlocked(i), clear=stageCleared(i);
-      return `<button class="stagecard${clear?' clear':''}${open?'':' locked'}" data-a="stage" data-v="${i}" ${open?'':'disabled'}>
+    <p class="muted">${done.filter(id=>STAGES.some(s=>s.id===id)).length} of ${STAGES.length} battles won. Win one to unlock the next. Won battles can be replayed with your own draft.</p>
+    <div class="stages">${STAGES.map((st,i)=>{ const open=stageUnlocked(i), clear=stageCleared(i), tw=twistText(st);
+      const head = st.arc!==arc ? `<div class="archead">${(arc=st.arc, `<span class="arcg">${ARCS[st.arc].g}</span>${esc(ARCS[st.arc].title)}`)}</div>` : '';
+      return `${head}<div class="stagecard${clear?' clear':''}${open?'':' locked'}${st.arc==='flashback'?' flash':''}">
         <span class="snum">${clear?'✓':open?i+1:'🔒'}</span>
         <span class="sinfo"><span class="stitle">${esc(st.title)}</span><span class="splace">${esc(st.place)} · vs ${esc(st.foe)}</span>
           <span class="sblurb">${esc(st.blurb)}</span>
-          <span class="sfoot"><span class="sseals">${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span><span class="smeta">${st.budget} pts · ${LEVELS[st.level].label}</span></span></span></button>`; }).join('')}</div>`;
+          ${tw||st.boosts?`<span class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</span>`:''}
+          <span class="sfoot"><span class="sseals">${st.mine.map(id=>seal(BYID[id],'sm')).join('')}<span class="svs">vs</span>${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span></span>
+          ${open?`<span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span>`:''}</span></div>`; }).join('')}</div>`;
+}
+// The scene before a story battle: one line at a time over the arc's backdrop. Tap to go on, or skip.
+function vScene(){
+  const st=STAGES[S.stage], lines=st.scene, [who,text]=lines[S.sceneAt], c=who&&BYID[who];
+  return `<div class="scene arc-${st.arc}" data-a="scenenext">
+    <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>
+    <div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · Battle ${S.stage+1}</div><div class="title">${esc(st.title)}</div></div>
+      <button class="btn ghost small" data-a="sceneskip">Skip</button></div>
+    <div class="sceneline${c?'':' narr'}" aria-live="polite">${c?`<div class="speaker">${seal(c,'lg')}<span class="sname">${esc(c.short)}</span></div>`:''}
+      <p>${esc(text)}</p></div>
+    <div class="scenefoot"><span class="dots">${lines.map((_,i)=>`<i class="${i===S.sceneAt?'on':''}"></i>`).join('')}</span>
+      <span class="muted">${S.sceneAt+1<lines.length?'Tap to continue':'Tap to fight'}</span></div></div>`;
 }
 function vOver(){
   const w=S.winner;
@@ -548,13 +567,13 @@ function vOver(){
     ${w<0?'':`<div class="winseals" aria-hidden="true">${S.teams[w].map((u,i)=>`<span style="--i:${i}">${seal(u,'lg')}</span>`).join('')}</div>`}
     <div class="eyebrow">After ${plural(S.round,'round')}</div>
     <div class="big" style="color:${w<0?'var(--fg)':pc(w)}">${w<0?'Both squads fall':nm(w)+' wins'}</div>
-    <p class="muted">${S.mode==='story' ? (w===0 ? (S.stage+1<STAGES.length?`Stage ${S.stage+1} cleared. ${esc(STAGES[S.stage+1].title)} is unlocked.`:'The sun rises. The story is complete!') : 'Defeated. Rethink your squad and try again.')
+    <p class="muted">${S.mode==='story' ? (w===0 ? (S.survived?'You held out until dawn. ':'')+(S.stage+1<STAGES.length?`Battle ${S.stage+1} won. ${esc(STAGES[S.stage+1].title)} is unlocked.`:'The sun rises. The story is complete!') : S.storyDraft ? 'Defeated. Rethink your squad and try again.' : 'Defeated. Try a different plan.')
       : w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>
     ${mvpPanel()}
     <div class="overteams">${teamBlock(0)}${teamBlock(1)}</div>
     <details class="panel" id="finallog"><summary>Final round</summary>${logHTML()}</details>
     ${actionbar(S.mode==='story'
-      ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next stage</button>`:w===0?'':`<button class="btn" data-a="stage" data-v="${S.stage}">Try again</button>`}`
+      ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next battle</button>`:w===0?'':`<button class="btn" data-a="${S.storyDraft?'stagedraft':'stage'}" data-v="${S.stage}">Try again</button>`}`
       : isOnline() ? '<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch">Rematch</button>'
       : '<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>')}`;
 }

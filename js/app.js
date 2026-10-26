@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, lobby:vLobby, story:vStory, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {setup:vSetup, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
@@ -108,6 +108,9 @@ const ACTIONS = {
   sound(v){ S.soundOn=v==='on'; saveSoundOn(S.soundOn); if(S.soundOn) sfx('pick'); },
   storymap(){ const n0=document.getElementById('n0'); if(n0) S.names[0]=n0.value.trim()||S.names[0]; clearTimeout(S._t); S.budget=loadBudget(); S.phase='story'; window.scrollTo(0,0); },
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); window.scrollTo(0,0); },
+  stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); window.scrollTo(0,0); },
+  scenenext(){ if(S.sceneAt+1<STAGES[S.stage].scene.length){ S.sceneAt++; sfx('pick'); return; } ACTIONS.sceneskip(); },
+  sceneskip(){ beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
   helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
