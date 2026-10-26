@@ -283,11 +283,13 @@ function noteHTML(n, self){
     <div class="nt">${esc(n.title)}</div><div class="nx">${esc(n.text)}</div>
     ${who.length?`<div class="nwho">${self?'<span class="tlabel">With</span>':''}${who.map(id=>`<button class="nc" data-a="sel" data-v="${id}">${seal(BYID[id],'sm')}${esc(BYID[id].short)}</button>`).join('')}</div>`:''}</div>`;
 }
-// Hantengu's split forms, shown on his card: each form and what it becomes when it falls
+// Hantengu's split forms, shown on his card: each form, what it becomes when it falls, and the form they merge into
 function splitTree(c){
   const form=id=>{ const f=BYID[id]; return `<div class="sform">${seal(f,'sm')}<div><b>${esc(f.short)}</b> <span class="muted">${f.hp} HP · PWR ${f.pow} · SPD ${f.spd}</span><br><span class="sx">${esc(f.sig.name)}: ${esc(f.sig.desc)}</span>${f.splits?`<div class="sthen">falls → ${f.splits.map(k=>esc(BYID[k].short)).join(', ')}</div>`:''}</div></div>`; };
   const all=[]; const walk=id=>{ (BYID[id].splits||[]).forEach(k=>{ all.push(k); }); (BYID[id].splits||[]).forEach(walk); }; walk(c.id);
-  return `<div class="splits"><div class="tlabel">Splits into</div>${all.map(form).join('')}</div>`;
+  const merged=[...new Set(all.map(id=>BYID[id].merge).filter(Boolean))];
+  return `<div class="splits"><div class="tlabel">Splits into</div>${all.map(form).join('')}
+    ${merged.map(id=>`<div class="tlabel">When the last one falls, they merge into</div>${form(id)}`).join('')}</div>`;
 }
 // Fighter info card in battle: tap any picture (yours or the opponent's). Shows current stats, which include
 // team bonuses and anything gained in the match, plus the special's cooldown, passives and status effects.

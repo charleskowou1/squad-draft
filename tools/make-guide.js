@@ -97,7 +97,9 @@ Special rules on single cards:
 - Yoriichi Type Zero strikes three times per Attack at low PWR (great vs low DEF, poor vs tanks). It's a puppet:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
-  Awakened Nezuko, Zohakuten (Hantengu's other version; doesn't split), Retired Tengen, Final-Form Muzan.`);
+  Awakened Nezuko, Retired Tengen, Final-Form Muzan.
+- Hantengu: when he falls, all four emotions appear (Sekido, Karaku, Aizetsu, Urogi; small). When the last emotion
+  falls they merge into Zohakuten (24 HP, Wood Dragons hits every enemy through Defend). Beat all six bodies.`);
 
 hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);

@@ -49,25 +49,28 @@ add({id:'nakime',name:'Nakime',short:'Nakime',g:'琵',type:'Upper Moon 4 · Infi
   sig:{name:'Castle Shift',desc:"Moves first. Sends an enemy to another room: they can't act and can't be hit this round.",cd:3,kind:'single',prio:3}});
 add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:true,upper:true,cost:6,hp:32,pow:10,spd:8,def:4,regen:2,
   sig:{name:'Water Prison Pot',desc:'Traps one enemy: it takes PWR−2 (ignores DEF) and can\'t act next round.',cd:3,kind:'single'}});
-// Hantengu splits when knocked out: Hantengu → Sekido + Karaku, then Sekido → Aizetsu and Karaku → Urogi.
+// Hantengu splits when knocked out: Hantengu → all four emotions (Sekido, Karaku, Aizetsu, Urogi). When the last
+// emotion falls they merge into Zohakuten (merge: the form that appears once every form with that merge is down).
 // The split-off forms (spawn:true) are never dealt in the draft; they only appear in battle.
 add({id:'hantengu',name:'Hantengu',short:'Hantengu',g:'怯',type:'Upper Moon 4',demon:true,upper:true,cost:9,hp:20,pow:8,spd:9,def:4,regen:1,
-  splits:['sekido','karaku'],
-  passive:'Splitting Emotions: when Hantengu falls he splits into Sekido and Karaku. When Sekido falls, Aizetsu takes his place; when Karaku falls, Urogi does. Beat all five to win.',
+  splits:['sekido','karaku','aizetsu','urogi'],
+  passive:'Splitting Emotions: when Hantengu falls he splits into his four emotions: Sekido, Karaku, Aizetsu and Urogi. When the last of them falls, they merge into Zohakuten. Beat him too to win.',
   sig:{name:'Cowering Hide',desc:'Moves first. Hides: attacks miss him this round, and he heals 6.',cd:3,kind:'self',prio:3}});
-// Zohakuten: the other version of Hantengu (one or the other is dealt). One big body that doesn't split.
-add({id:'zohakuten',fam:'hantengu',sk:'zohakuten',name:'Zohakuten',short:'Zohakuten',g:'憎',type:'Upper Moon 4 · Hatred',demon:true,upper:true,cost:9,hp:50,pow:13,spd:9,def:6,regen:3,
-  passive:"Hantengu's Hatred: his emotions merged into one body. He doesn't split.",
+// Zohakuten: Hantengu's last form. The four emotions merge into him when the last one falls (never dealt).
+add({id:'zohakuten',spawn:true,name:'Zohakuten (Hatred)',short:'Zohakuten',g:'憎',type:'Hantengu merged · Hatred',demon:true,cost:0,hp:24,pow:10,spd:9,def:4,regen:2,
+  passive:"Hantengu's Hatred: the four emotions merged into one body.",
   sig:{name:'Wood Dragons',desc:'Every enemy takes PWR−4, even through Defend.',cd:3,kind:'all'}});
-add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu split · Anger',demon:true,cost:0,hp:14,pow:7,spd:8,def:3,regen:1,
-  splits:['aizetsu'],
+add({id:'sekido',spawn:true,name:'Sekido (Anger)',short:'Sekido',g:'怒',type:'Hantengu split · Anger',demon:true,cost:0,hp:8,pow:7,spd:8,def:3,regen:1,
+  merge:'zohakuten',
   sig:{name:'Lightning Staff',desc:'Every enemy takes 4, ignores DEF.',cd:3,kind:'all'}});
-add({id:'karaku',spawn:true,name:'Karaku (Joy)',short:'Karaku',g:'楽',type:'Hantengu split · Joy',demon:true,cost:0,hp:14,pow:7,spd:10,def:3,regen:1,
-  splits:['urogi'],
+add({id:'karaku',spawn:true,name:'Karaku (Joy)',short:'Karaku',g:'楽',type:'Hantengu split · Joy',demon:true,cost:0,hp:8,pow:7,spd:10,def:3,regen:1,
+  merge:'zohakuten',
   sig:{name:'Gale Fan',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
-add({id:'aizetsu',spawn:true,name:'Aizetsu (Sorrow)',short:'Aizetsu',g:'哀',type:'Hantengu split · Sorrow',demon:true,cost:0,hp:10,pow:7,spd:9,def:3,regen:1,
+add({id:'aizetsu',spawn:true,name:'Aizetsu (Sorrow)',short:'Aizetsu',g:'哀',type:'Hantengu split · Sorrow',demon:true,cost:0,hp:6,pow:7,spd:9,def:3,regen:1,
+  merge:'zohakuten',
   sig:{name:'Cross Spear',desc:'Strike for PWR+4.',cd:3,kind:'single'}});
-add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'Hantengu split · Pleasure',demon:true,cost:0,hp:10,pow:6,spd:11,def:2,regen:1,
+add({id:'urogi',spawn:true,name:'Urogi (Pleasure)',short:'Urogi',g:'喜',type:'Hantengu split · Pleasure',demon:true,cost:0,hp:6,pow:6,spd:11,def:2,regen:1,
+  merge:'zohakuten',
   sig:{name:'Sky Dive',desc:'Moves early. Swoops down for PWR+2.',cd:2,kind:'single',prio:1}});
 add({id:'kaigaku',name:'Kaigaku',short:'Kaigaku',g:'獪',type:'Upper Moon 6 · fallen Thunder',demon:true,upper:true,cost:5,hp:26,pow:9,spd:10,def:3,regen:1,
   passive:'Rival: an enemy Zenitsu gets +2 PWR against him.',

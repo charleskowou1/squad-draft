@@ -168,7 +168,7 @@ let UID=0;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:c.pow,spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
   sunproof:!!c.sunproof,noDefend:!!c.noDefend,basic:c.basic||null,
-  sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
+  sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
   const t=S.teams[p], e=S.teams[1-p], has=f=>t.some(u=>u.fam===f), out=[];
@@ -354,11 +354,19 @@ function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.
   if(S.twins && S.twins[t.p] && (t.fam==='gyutaro'||t.fam==='daki') && !t.rose){ t.rise=true; t.rose=true; }
   // Shinobu's Wisteria Body: the demon who knocks her out devours her and is poisoned. Not Akaza: he never eats women.
   if(t.fam==='shinobu' && a && a.alive && a.demon && a.fam!=='akaza'){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
-  if(t.splits) split(t); }
+  if(t.splits) split(t);
+  if(t.merge) merge(t); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
+// Hantengu's emotions: when the last form with this merge falls, they merge into that form (Zohakuten). Acts from next round.
+function merge(t){
+  if(S.teams[t.p].some(u=>u.alive && u.merge===t.merge)) return;
+  const m=mkUnit(t.merge,t.p); S.teams[t.p].push(m);
+  L(`The emotions merge into one body. ${m.name} appears!`,'x',{spawn:[m.uid], ...fx('spawn',null,t)});
+}
 function split(t){
   const kids=t.splits.map(id=>mkUnit(id,t.p)); S.teams[t.p].push(...kids);
-  L(`${t.name} splits! ${kids.map(k=>k.name).join(' and ')} ${kids.length>1?'appear':'appears'}.`,'x',{spawn:kids.map(k=>k.uid), ...fx('spawn',null,t)});
+  const names=kids.map(k=>k.name), list=names.length>1 ? names.slice(0,-1).join(', ')+' and '+names[names.length-1] : names[0];
+  L(`${t.name} splits! ${list} ${kids.length>1?'appear':'appears'}.`,'x',{spawn:kids.map(k=>k.uid), ...fx('spawn',null,t)});
 }
 function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;

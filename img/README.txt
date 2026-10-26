@@ -23,7 +23,6 @@ kokushibo          Kokushibo (Upper Moon 1)
 doma               Doma (Upper Moon 2)
 akaza              Akaza (Upper Moon 3)
 hantengu           Hantengu (Upper Moon 4)
-zohakuten          Zohakuten (Hantengu's Hatred)  - borrows hantengu's picture if missing
 nakime             Nakime (Upper Moon 4, the biwa player)
 gyokko             Gyokko (Upper Moon 5)
 gyutaro            Gyutaro (Upper Moon 6), now his own card
@@ -42,6 +41,7 @@ sekido             Sekido (Anger)
 karaku             Karaku (Joy)
 aizetsu            Aizetsu (Sorrow)
 urogi              Urogi (Pleasure)
+zohakuten          Zohakuten (Hatred: the four emotions merged)
 
 HASHIRA
 giyu               Giyu Tomioka
