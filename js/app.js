@@ -127,14 +127,15 @@ const ACTIONS = {
   ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
   ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
-  sel(v){ if(S.mode==='cpu' && turn()!==0) return; if(S.pool.includes(v)) S.sel=v; },
+  sel(v){ if(S.mode==='cpu' && turn()!==0) return;
+    if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
   unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
   settab(v){ S.setTab=v; },
   codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
-  daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); newPlanTurn(); },
+  daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); window.scrollTo(0,0); },
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },

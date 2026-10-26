@@ -215,7 +215,7 @@ function dailyCard(){
   return `<div class="daily${done?' done':''}"><span class="dk">日</span>
     <div class="dbody"><div class="eyebrow">Daily challenge${streak?` · 🔥 ${plural(streak,'day')}`:''}</div>
       <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
-      <div class="dsq">${row(ch.mine)}<span class="svs">vs</span>${row(ch.enemy)}</div></div>
+      <div class="dsq"><span class="dpts">You: ${ch.budget} pts</span><span class="svs">vs</span>${row(ch.enemy)}</div></div>
     <button class="btn small${done?' ghost':''}" data-a="daily">${done?'Done ✓ Replay':'Play'}</button></div>`;
 }
 function vSetup(){
@@ -279,7 +279,7 @@ function cardHTML(c,p){
 function teamBox(q,p){
   const left=budget()-spent(q);
   return `<div class="tbox${p===q&&!S.locked[q]?' active':''}" style="--tc:${pc(q)}">
-    <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${S.mode==='story'&&q===1?'Enemy':S.locked[q]?'Locked':left+' pts left'}</span></div>
+    <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${(S.mode==='story'||S.mode==='daily')&&q===1?'Enemy · set':S.locked[q]?'Locked':left+' pts left'}</span></div>
     <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${Math.min(100,spent(q)/budget()*100)}%"></i></div>
     <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></div>`;
 }
@@ -291,22 +291,25 @@ function vDraft(){
   const restLocked = others(p).every(q=>S.locked[q]);
   const again = S.lastPicker===p && !restLocked;
   const verb = restLocked && others(p).some(q=>S.picks[q].length) ? 'keeps picking' : again ? 'picks again' : cpuTurn ? 'is picking' : 'picks';
-  const lockbar = !cpuTurn && !S.banning && fighterIds(p).length ? `<div class="lockbar"><span>${story?'Ready to fight?':forCpu?`Done picking for ${nm(p)}?`:'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
-    <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${story?'Fight':forCpu?`Lock ${nm(p)}`:'Lock team'}</button></div>` : '';
+  const daily=S.mode==='daily', fixed=story||daily;   // one side drafts, the other team is already set
+  const lockbar = !cpuTurn && !S.banning && fighterIds(p).length ? `<div class="lockbar"><span>${fixed?'Ready to fight?':forCpu?`Done picking for ${nm(p)}?`:'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
+    <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${fixed?'Fight':forCpu?`Lock ${nm(p)}`:'Lock team'}</button></div>` : '';
   // Undo the latest pick (2 players: either player's; vs computer: only your own)
   const un=!S.banning && undoable(), undo = un && (S.mode==='local' || isPractice() || un.p===myP())
     ? `<button class="btn ghost small undo" data-a="undo">↶ Undo ${nm(un.p)}'s ${esc(BYID[un.id].short)}</button>` : '';
   const st=story&&STAGES[S.stage];
   return `<div class="draftlayout"><div class="dtop">
-    ${story?topbar(`Story · Battle ${S.stage+1} · ${esc(st.title)}`,'Draft replay'):topbar(S.banning?`Ban round · ${S.bans.length+1} of ${nPlayers()}`:forCpu?'Practice · you pick for the computer':'Draft',
+    ${daily?topbar('Daily challenge', esc(DAILY_GOALS[S.daily.goal.type](S.daily.goal))):story?topbar(`Story · Battle ${S.stage+1} · ${esc(st.title)}`,'Draft replay'):topbar(S.banning?`Ban round · ${S.bans.length+1} of ${nPlayers()}`:forCpu?'Practice · you pick for the computer':'Draft',
       S.banning ? (forCpu?`Ban for <span style="color:${pc(p)}">${nm(p)}</span>`:`<span style="color:${pc(p)}">${nm(p)}</span> ${cpuTurn?'is banning…':'bans a character'}`)
       : forCpu?`Pick for <span style="color:${pc(p)}">${nm(p)}</span>`:`<span style="color:${pc(p)}">${nm(p)}</span> ${verb}${cpuTurn?'…':''}`)}
     ${S.banning?`<p class="hint">Tap a card and ban it: nobody can pick that character this match.${S.bans.length?` Banned so far: ${S.bans.map(b=>esc(BYID[b.id].short)).join(', ')}.`:''}</p>`:''}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
+    ${daily?`<p class="hint">Their team is set. Draft a squad to beat it with ${budget()} points, from the characters you've unlocked. Same challenge for everyone today.</p>`:''}
     ${S.banning?'':orderStrip(p)}
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
     ${lockbar}
-    <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:S.poolType==='all'?`All ${n} characters`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!story&&S.poolType!=='all'&&(!isOnline()||iAmHost())?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div></div>
+    <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:daily?`Your unlocked characters · ${n}`:S.poolType==='all'?`All ${n} characters`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!fixed&&S.poolType!=='all'&&(!isOnline()||iAmHost())?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div>
+    ${fixed?`<section class="theirs"><div class="tlabel">Their team · tap a card to study it</div><div class="grid">${S.picks[1].map(id=>cardHTML(BYID[id],p)).join('')}</div></section>`:''}</div>
     ${notesPanel()}
     <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
     ${S.banning?'':pocketDraft(p)}</div>`;

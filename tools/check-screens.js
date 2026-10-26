@@ -41,7 +41,9 @@ function check(games){
   try{ S={phase:'codex',mode:'cpu',names:['A']}; CODEX_GROUPS.forEach(([f])=>{ S.codexF=f; vCodex(); }); ROSTER.filter(c=>!c.spawn).forEach(c=>{ S.codexSel=c.id; vSheet(); }); }
   catch(e){ errors++; if(!first) first='codex: '+e.stack; }
   // daily challenge: the menu card, the battle and the result
-  try{ S={phase:'setup',mode:'cpu',names:['A']}; vSetup(); dailyChallenge(); vSetup(); startDaily(); vPlan();
+  try{ S={phase:'setup',mode:'cpu',names:['A']}; vSetup(); dailyChallenge(); vSetup(); startDaily(); vDraft();
+    if(S.locked[0] || !S.locked[1] || S.picks[1].length<2) throw new Error('daily draft not set up');
+    let k=0; while(S.phase==='draft'&&k++<40){ cpuDraftStep('hard'); vDraft(); } vPlan();
     while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,S.level); resolve(); if(S.phase==='result') S.round++; } S.dailyMet=dailyMet(S.daily); vOver();
   }catch(e){ errors++; if(!first) first='daily: '+e.stack; }
   // story mode: every stage's map and scene, the preset battle (with repeat), a draft replay (with undo) and results
