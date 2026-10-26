@@ -13,15 +13,26 @@ const VOL_KEY = 'squad-draft-volume';
 function loadVolumes(){ try{ const v=JSON.parse(localStorage.getItem(VOL_KEY)); if(v) return v; }catch(e){} return {music:0, sfx:1}; }
 function saveVolumes(v){ try{ localStorage.setItem(VOL_KEY, JSON.stringify(v)) }catch(e){} }
 let AC = null, NOISE = null, SFX_OUT = null, MUSIC_OUT = null;
+// Called on every tap (not just the first): phones only let audio start or resume inside a tap, and they pause it
+// whenever the screen locks, you switch apps, or a call or notification comes in (iPhones call that 'interrupted').
 function unlockSound(){
-  if(AC || typeof AudioContext==='undefined' && typeof webkitAudioContext==='undefined') return;
-  AC = new (window.AudioContext || window.webkitAudioContext)();
-  NOISE = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
-  const d=NOISE.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-  SFX_OUT = AC.createGain(); SFX_OUT.connect(AC.destination);
-  MUSIC_OUT = AC.createGain(); MUSIC_OUT.connect(AC.destination);
-  applyVolumes();
-  if(MUSIC.want) startMusic(MUSIC.want);
+  if(typeof AudioContext==='undefined' && typeof webkitAudioContext==='undefined') return;
+  if(!AC){
+    // iPhone: play through the media channel so the ringer's silent switch doesn't mute the game (Safari 17+)
+    try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    NOISE = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+    const d=NOISE.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    SFX_OUT = AC.createGain(); SFX_OUT.connect(AC.destination);
+    MUSIC_OUT = AC.createGain(); MUSIC_OUT.connect(AC.destination);
+    applyVolumes();
+  }
+  if(AC.state!=='running'){
+    try{ AC.resume(); }catch(e){}
+    // older iPhones only really wake up once something plays during the tap: a silent one-sample sound does it
+    try{ const b=AC.createBuffer(1,1,22050), src=AC.createBufferSource(); src.buffer=b; src.connect(AC.destination); src.start(0); }catch(e){}
+  }
+  if(MUSIC.want && !MUSIC.playing) startMusic(MUSIC.want);
 }
 function applyVolumes(){
   if(!AC) return; const v=S.vol||loadVolumes();
@@ -136,7 +147,7 @@ const ATTACK_SFX = {
   spear:  v=>{ hiss('highpass',2000,5000,.1,.12*v,.2); tone('sine',160,70,.12,.25*v,.3); },
 };
 const sfxOn = () => AC && (S.vol||loadVolumes()).sfx>0;
-function sfx(name){ if(!sfxOn()) return; try{ if(AC.state==='suspended') AC.resume(); SFX[name] && SFX[name](); }catch(e){} }
+function sfx(name){ if(!sfxOn()) return; try{ if(AC.state!=='running') AC.resume(); SFX[name] && SFX[name](); }catch(e){} }
 function styleSfx(style, v){ if(!sfxOn()) return; try{ (STYLE_SFX[style]||STYLE_SFX.slash)(v); }catch(e){} }
 // The sound for one playback line: the base sound plus the attacker's breathing style
 function sfxForLine(line){
@@ -225,7 +236,7 @@ function startMusic(name){
   if(!name || !THEMES[name]){ MUSIC.bus=null; return; }
   MUSIC.theme=THEMES[name]; MUSIC.mel=makeMelody(name); MUSIC.step=0; MUSIC.next=AC.currentTime+.15;
   MUSIC.bus=AC.createGain(); MUSIC.bus.gain.setValueAtTime(0,AC.currentTime); MUSIC.bus.gain.setTargetAtTime(1,AC.currentTime,.6); MUSIC.bus.connect(MUSIC_OUT);
-  MUSIC.timer=setInterval(()=>{ if(!MUSIC.bus) return; if(AC.state==='suspended') return;
+  MUSIC.timer=setInterval(()=>{ if(!MUSIC.bus) return; if(AC.state!=='running'){ MUSIC.next=AC.currentTime+.1; return; }
     const q=60/MUSIC.theme.bpm/4; while(MUSIC.next < AC.currentTime+.2){ try{ musicStep(MUSIC.next); }catch(e){} MUSIC.next+=q; } }, 40);
 }
 // Which theme a screen plays (called on every redraw; does nothing if it's already playing)

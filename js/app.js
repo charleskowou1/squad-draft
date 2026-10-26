@@ -195,6 +195,10 @@ const ACTIONS = {
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
     S.phase='over'; window.scrollTo(0,0); },
 };
+// Wake audio on any touch or key, not only button taps (phones only allow it inside a tap; see unlockSound)
+['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, unlockSound, {passive:true}));
+// coming back to the game after switching apps or locking the phone: try to wake audio straight away too
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && AC && AC.state!=='running') try{ AC.resume(); }catch(e){} });
 document.addEventListener('click',e=>{
   unlockSound();   // phones only allow sound after a tap
   const b=e.target.closest('[data-a]'); if(!b||b.disabled) return;
