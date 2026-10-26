@@ -18,9 +18,11 @@ function render(){
   if(view!=='over') scored=false;
   // keep fold-out sections (How to play, records…) open across redraws
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
-  document.body.classList.toggle('localmode', S.mode==='local');   // wide landscape layout (tablets) for Local games
+  document.body.classList.toggle('localmode', S.mode==='local');
+  music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
+  if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.pnode.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
   if(S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
   // online host: send each guest phone its own copy of the shared state (only when it changed)
@@ -64,7 +66,9 @@ function startDraft(){
   const c=useModeCfg(), field=i=>{ const el=document.getElementById('n'+i); return el&&el.value.trim(); };
   if(S.mode==='local'){ S.names=Array.from({length:c.players},(_,i)=>field(i)||`Player ${i+1}`); saveNames(S.names.concat(localNames().slice(S.names.length))); }
   else { S.names=[field(0)||S.names[0]||'Player 1', ...CPU_NAMES.slice(0,c.players-1)]; if(S.duo) S.names[2]='Rengoku AI'; }   // 2v2: your ally is a slayer
-  S.n=c.players; toSpin();
+  S.n=c.players;
+  if(isPractice()) return newDraft(0);   // Practice: you pick for everyone, so there's no wheel
+  toSpin();
 }
 // The next player (after p) who still has fighters, or -1
 const nextChooser = p => { for(let q=p+1;q<nPlayers();q++) if(alive(q).length) return q; return -1; };
@@ -76,11 +80,12 @@ function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 const typingDone = () => S.sceneInstant || Date.now()-(S.sceneShownAt||0) > (sceneLines()[S.sceneAt][1].length*28+250);
 // A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
 function storyWon_(){
-  const id=STAGES[S.stage].id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
-  Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
+  const st=STAGES[S.stage], id=st.id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
+  S.starsGot=starsEarned(st); S.starsBest=stageStars(id); saveStars(id,S.starsGot);
+  Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win'); typeTicks(st.outro[0][1].length);
 }
-// After the ending scene: reveal new unlocks (if any), then the results screen
-function afterOutro(){ if(!S.sceneUnlock && S.newUnlocks && S.newUnlocks.length){ S.sceneUnlock=true; sfx('ding'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
+// After the ending scene: the stars earned (and any unlocks), then the results screen
+function afterOutro(){ stopTypeTicks(); if(!S.sceneUnlock){ S.sceneUnlock=true; sfx('unlock'); return; } S.sceneOutro=false; S.sceneUnlock=false; S.phase='over'; window.scrollTo(0,0); }
 // After both sides lock in: give each crow owner their report (and a chance to re-plan), then fight
 function nextScoutOrFight(){
   S.scouting=false;
@@ -111,9 +116,9 @@ const ACTIONS = {
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
   home(){ clearTimeout(S._t); if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; }
-    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,soundOn:S.soundOn,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
-  rematch(){ if(isOnline()) return onlineRematch(); toSpin(); },
+  rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
   spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
   toDraft(){ if(isOnline() && !iAmHost()) return; newDraft(S.spin.r); },
   redeal(){ if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
@@ -138,17 +143,20 @@ const ACTIONS = {
   undo(){ if(isOnline()) return onlineUndo(); undoPick(); },
   repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
   speed(v){ S.speed=v; try{ localStorage.setItem('squad-draft-speed',v) }catch(e){} },
-  sound(v){ S.soundOn=v==='on'; saveSoundOn(S.soundOn); if(S.soundOn) sfx('pick'); },
-  storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; window.scrollTo(0,0); },
-  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
+  volmusic(v){ S.vol={...S.vol, music:+v}; saveVolumes(S.vol); applyVolumes(); },
+  volsfx(v){ S.vol={...S.vol, sfx:+v}; saveVolumes(S.vol); applyVolumes(); sfx('pick'); },
+  storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; S.storySel=nextStage(); S.storyScroll=true; },
+  storysel(v){ S.storySel = S.storySel===+v ? -1 : +v; },
+  stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; typeTicks(sceneLines()[0][1].length); window.scrollTo(0,0); },
   stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   scenenext(){ if(S.sceneVs) return;
     if(S.sceneUnlock) return afterOutro();
-    if(!typingDone()){ S.sceneInstant=true; return; }
-    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('pick'); return; }
+    if(!typingDone()){ S.sceneInstant=true; stopTypeTicks(); return; }
+    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx('page'); typeTicks(sceneLines()[S.sceneAt][1].length); return; }
+    stopTypeTicks();
     if(S.sceneOutro) return afterOutro();
-    S.sceneVs=true; sfx('gong'); },
-  sceneskip(){ if(S.sceneOutro){ if(!S.sceneUnlock && S.newUnlocks && S.newUnlocks.length){ S.sceneUnlock=true; return; } return afterOutro(); }
+    S.sceneVs=true; sfx('vs'); },
+  sceneskip(){ stopTypeTicks(); if(S.sceneOutro) return afterOutro();
     if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
@@ -262,7 +270,7 @@ async function onlineJoin(){
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not join.'; render(); }
 }
-S.soundOn=loadSoundOn(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
+S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
 useModeCfg(S.mode); S.names=localNames();
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);

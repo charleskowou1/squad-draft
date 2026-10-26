@@ -4,7 +4,7 @@
 // guest receives anyone else's moves while choosing (except when that guest's Kasugai Crow is scouting).
 // Usage: node tools/check-online.js [matches]
 const { loadGame } = require('./load-game');
-const FILES = ['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js'];
+const FILES = ['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js', 'sound.js'];
 const EXTRA = `function S_(){ return S; } function OL(){ return ONLINE; } function api(){ return {isHelper, fighterIds, alive, players, canBan}; }`;
 
 function match(seed, opts = {}) {

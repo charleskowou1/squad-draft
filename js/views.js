@@ -149,11 +149,9 @@ function modeSettings(){
   if(S.mode==='cpu' || S.mode==='practice')
     return `${S.mode==='practice'?'<p class="hint">Curate the match: you draft for every team, the computers’ too, then fight the computers. Practice games don’t count toward your records.</p>':''}
       <label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
-      <div class="setline"><span class="tlabel">Opponents</span>${seg('cfgplayers',n,[[2,'1'],[3,'2'],[4,'3']])}</div>
-      ${n===4?`<div class="setline"><span class="tlabel">With 3 computers</span>${seg('cfgduo',c.duo?'on':'off',[['off','Free-for-all'],['on','2v2: you + an ally']])}</div>`:''}
       <div class="setline"><span class="tlabel">Difficulty</span>${seg('cfglevel',c.level,Object.entries(LEVELS).map(([k,l])=>[k,l.label]))}</div>
       <p class="hint">${{easy:'Picks moves almost at random. Good for learning the cards.',normal:'Plays sensibly but makes mistakes.',hard:'Goes for knockouts, spreads damage and saves its specials.'}[c.level]}</p>
-      ${pts}${pool}${n>2?note:''}<button class="btn" data-a="start">Start: spin for first pick</button>`;
+      ${pts}${pool}<button class="btn" data-a="start">${S.mode==='practice'?'Start drafting':'Start: spin for first pick'}</button>`;
   if(S.mode==='online')
     return `<label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
       <div class="onlinebox">
@@ -232,7 +230,7 @@ function vSetup(){
     return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <div class="panel modepanel"><div class="eyebrow">${esc(MODE_CARDS.find(m=>m[0]===S.mode)[2])}</div>${modeSettings()}</div>
   <details class="panel" id="howto"><summary>How to play</summary><ul>
-    <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against 1–3 computers, Practice lets you draft every team (the computers’ too) to set up the match you want, and Story Mode is 21 battles with the canon squads.</li>
+    <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against the computer, Practice lets you draft every team (the computers’ too) to set up the match you want, and Story Mode is 21 battles with the canon squads.</li>
     <li><b>Max fighters per team</b> (1–6, per mode) limits squad size, e.g. 1 for one-on-one duels.</li>
     <li><b>Free-for-all</b> (3 or 4 players): every team fights every other team and the last one standing wins. A special that hits “every enemy” hits the whole team you aim at. Cards over ${FFA_MAX_COST} pts aren't dealt.</li>
     <li><b>Draft:</b> a wheel decides who picks first, then snake order (A, B, B, A… or A, B, C, C, B, A…) on your points, up to 6 fighters. Tap <b>Lock team</b> when you're done; the others keep drafting until they lock or run out of points.</li>
@@ -441,7 +439,8 @@ function vSettings(){
     ${S.setTab==='stats'?statsTab():`<div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
-    <div class="setgroup"><div class="tlabel">Sound effects</div>${seg('sound',S.soundOn?'on':'off',[['on','On'],['off','Off']])}</div>
+    <div class="setgroup"><div class="tlabel">Music</div>${seg('volmusic',(S.vol||loadVolumes()).music,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
+    <div class="setgroup"><div class="tlabel">Sound effects</div>${seg('volsfx',(S.vol||loadVolumes()).sfx,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
     <div class="setgroup"><div class="tlabel">Vibration on knockouts</div>${seg('vibe',S.vibeOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Android phones only (iPhones don't allow it).</div></div>
     <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>`}
@@ -637,6 +636,7 @@ function vResult(){
     ${strengthBar(me, done?undefined:u=>cur.hp[u.uid], done?undefined:u=>prev.hp[u.uid])}
     <div class="reswide${done?' done':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
     ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
+      :k&&cur.fx==='say'&&findU(cur.by)?`<div class="now saybeat" aria-live="polite" style="--tc:${pc(findU(cur.by).p)}">${seal(findU(cur.by),'stg')}<div><span class="sayn">${esc(findU(cur.by).name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>`
       :k&&cur.fx==='special'&&findU(cur.by)?`<div class="now cut" aria-live="polite">${cutin(findU(cur.by))}<span class="sr">${fmtLog(cur.t)}</span></div>`
       :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
@@ -657,22 +657,27 @@ function mvpPanel(){
     <div class="mvpname">${esc(mvp.u.name)}</div><div class="muted">${line(mvp.s)}</div></div></div>
     <div class="awards">${award('Most damage',dm,dm.s.dmg?`${dm.s.dmg}`:'')}${award('Most knockouts',ko,ko.s.kos?`${ko.s.kos}`:'')}${award('Biggest hit',bh,bh.s.best?`${bh.s.best}`:'')}${award('Best healer',hl,hl.s.heal?`${hl.s.heal} HP`:'')}</div></section>`;
 }
-// Story map: the stages in order, grouped by arc. Each shows your preset squad vs the enemy, and its twist.
-// A cleared stage can be replayed with a draft (same points as the preset squad).
+// Story map: a winding path through the arcs. Each battle is a node with its stars; tap one to open its details
+// (squads, twist, star goals, Play / Draft replay). It opens on the next battle to play.
+const starRow = (n, of=3) => `<span class="stars" aria-label="${n} of ${of} stars">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}">★</i>`).join('')}</span>`;
 function vStory(){
-  const done=loadStory().cleared;
-  let arc='';
-  return `${topbar('Story mode', 'The Demon Slayer Corps')}
-    <p class="muted">${done.filter(id=>STAGES.some(s=>s.id===id)).length} of ${STAGES.length} battles won. Win one to unlock the next. Won battles can be replayed with your own draft.</p>
-    <div class="stages">${STAGES.map((st,i)=>{ const open=stageUnlocked(i), clear=stageCleared(i), tw=twistText(st);
-      const head = st.arc!==arc ? `<div class="archead">${(arc=st.arc, `<span class="arcg">${ARCS[st.arc].g}</span>${esc(ARCS[st.arc].title)}`)}</div>` : '';
-      return `${head}<div class="stagecard${clear?' clear':''}${open?'':' locked'}${st.arc==='flashback'?' flash':''}">
-        <span class="snum">${clear?'✓':open?i+1:'🔒'}</span>
-        <span class="sinfo"><span class="stitle">${esc(st.title)}</span><span class="splace">${esc(st.place)} · vs ${esc(st.foe)}</span>
-          <span class="sblurb">${esc(st.blurb)}</span>
-          ${tw||st.boosts?`<span class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</span>`:''}
-          <span class="sfoot"><span class="sseals">${st.mine.map(id=>seal(BYID[id],'sm')).join('')}<span class="svs">vs</span>${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span></span>
-          ${open?`<span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span>`:''}</span></div>`; }).join('')}</div>`;
+  const won=storyWon(); let arc='';
+  return `${topbar('Story mode', 'The Slayer’s journey')}
+    <div class="storytotals"><span><b>${won}</b> of ${STAGES.length} battles won</span><span class="st3">${starRow(1,1)} <b>${totalStars()}</b> of ${STAGES.length*3}</span></div>
+    <div class="path">${STAGES.map((st,i)=>{ const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, side=i%2?'r':'l', n=stageStars(st.id);
+      const head = st.arc!==arc ? `<div class="parc arc-${st.arc}">${(arc=st.arc, `<span class="arcg">${ARCS[st.arc].g}</span>${esc(ARCS[st.arc].title)}`)}</div>` : '';
+      return `${head}<div class="pnode ${side}${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}">
+        <button class="pdot" data-a="storysel" data-v="${i}" ${open?'':'disabled'} aria-expanded="${sel}">${clear?'✓':open?i+1:'🔒'}</button>
+        <button class="plabel" data-a="storysel" data-v="${i}" ${open?'':'disabled'}><b>${esc(st.title)}</b><small>vs ${esc(st.foe)}</small>${clear?starRow(n):''}</button>
+        ${sel&&open?stageDetail(st,i,clear):''}</div>`; }).join('')}</div>`;
+}
+function stageDetail(st,i,clear){
+  const tw=twistText(st), goals=starGoals(st), n=stageStars(st.id);
+  return `<div class="pcard"><span class="splace">${esc(st.place)}</span><span class="sblurb">${esc(st.blurb)}</span>
+    ${tw||st.boosts?`<span class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</span>`:''}
+    <span class="sseals">${st.mine.map(id=>seal(BYID[id],'sm')).join('')}<span class="svs">vs</span>${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span>
+    <div class="goals">${goals.map((g,k)=>`<span class="${k<n?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
+    <span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span></div>`;
 }
 // Particles drifting over each arc's scene (embers, snow, petals…)
 const ARC_FX = {prologue:'snow', asakusa:'petal', flashback:'ember', tsuzumi:'dust', natagumo:'thread', mugen:'ember', district:'petal', swordsmith:'leaf', castle:'dust', dawn:'ember'};
@@ -685,9 +690,12 @@ function vScene(){
       <button class="btn ghost small" data-a="sceneskip">Skip</button></div>`;
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
     return `<div class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
-      <div class="unlocktitle"><span class="eyebrow">Battle won</span><b>You have unlocked</b></div>
-      <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b><small>${esc(BYID[id].type)}</small></span>`).join('')}</div>
-      <p class="muted ucap">Now playable in Local, Online, Quickplay and Practice.</p>
+      <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starRow(S.starsGot||1)}
+        <div class="goals">${starGoals(st).map((g,k)=>`<span class="${k<(S.starsGot||1)?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
+        ${(S.starsGot||0)>(S.starsBest||0)&&S.starsBest?'<span class="muted">New best!</span>':''}
+        ${S.newUnlocks&&S.newUnlocks.length?'<b>You have unlocked</b>':''}</div>
+      <div class="ulist">${(S.newUnlocks||[]).map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b><small>${esc(BYID[id].type)}</small></span>`).join('')}</div>
+      ${S.newUnlocks&&S.newUnlocks.length?'<p class="muted ucap">Now playable in Local, Online, Quickplay and Practice.</p>':''}
       <button class="btn big" data-a="scenenext">Continue</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
   if(S.sceneVs){
@@ -696,6 +704,7 @@ function vScene(){
     return `<div class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="vsrow l">${mine}</div><div class="vsmid"><span>VS</span></div><div class="vsrow r">${row(st.enemy)}</div>
       ${tw||st.boosts?`<div class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</div>`:''}
+      <div class="goals vsgoals">${starGoals(st).map((g,k)=>`<span>${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
       <button class="btn big" data-a="sceneskip">Fight</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
   const shown=sceneLines(), [who,text]=shown[S.sceneAt], c=who&&BYID[who], side=c?sceneSide(st,who):'n';

@@ -2,7 +2,7 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'views.js', 'sound.js'], `
 function check(games){
   let errors=0, first='';
   for(let g=0;g<games;g++){
@@ -49,6 +49,7 @@ function check(games){
   for(let i=0;i<STAGES.length;i++){
     try{
       S={phase:'story',mode:'story',level:'hard',names:['A','B']}; vStory(); vSetup();
+      S.storySel=i; vStory(); S.starsGot=2; S.starsBest=1;
       startStage(i); for(S.sceneAt=0;S.sceneAt<STAGES[i].scene.length;S.sceneAt++) vScene(); S.sceneAt=0; S.sceneVs=true; vScene(); beginStage();
       if(S.phase!=='plan') throw new Error('preset stage did not start the battle');
       S.planFor=0; vPlan(); cpuPlan(0); S.lastPlans[0]=JSON.parse(JSON.stringify(S.plans[0])); cpuPlan(1,stageLevel()); resolve();

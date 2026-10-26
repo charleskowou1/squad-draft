@@ -57,7 +57,8 @@ function loadModeCfg(mode){
 }
 function saveModeCfg(mode, c){ try{ localStorage.setItem('squad-draft-mode-'+mode, JSON.stringify(c)) }catch(e){} }
 // Copy a mode's settings into the game state (points, pool, players, level)
-function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
+function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); if(mode==='cpu'||mode==='practice') c.players=2;   // Quickplay and Practice: you vs one computer
+  S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
 const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
 // Saved data reset: when DATA_VERSION changes, every 'squad-draft…' key on this phone is cleared once (story, stats,
@@ -67,7 +68,8 @@ const DATA_VERSION = '3';
 try{ if(localStorage.getItem('squad-draft-data')!==DATA_VERSION){
   Object.keys(localStorage).filter(k=>k.startsWith('squad-draft')).forEach(k=>localStorage.removeItem(k));
   localStorage.setItem('squad-draft-data', DATA_VERSION); } }catch(e){}
-let S = {phase:'setup', mode:'local', n:2, level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), soundOn: true, names: loadNames() || ['CK','Mia']};
+let S = {phase:'setup', mode:'story', n:2,   // Story is selected when the game opens (CK)
+  level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), names: loadNames() || ['CK','Mia']};
 // Players in the match: 2, 3 (triple threat) or 4 (1 v 1 v 1 v 1). Every team fights every other team; last one standing wins.
 const MAX_PLAYERS = 4;
 const nPlayers = () => S.n || 2;
@@ -249,7 +251,8 @@ function startBattle(){
   S.n=S.picks.length;
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false;
-  if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; }   // story twists never leak into other games
+  if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; }   // story twists never leak into other games
+  S.said={}; S.failed=false;
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
@@ -628,7 +631,7 @@ function resolve(){
     t.late=true; S.curMove='attack'; L(`${x.u.name} strums her biwa. ${t.name} will act last this round.`,'x',fx('stun',x.u,t)); S.curMove=null; });
   const prio = x => x.pl.type==='special' ? (x.u.sig.prio||0) : 0;
   acts.sort((a,b)=> (a.u.late?1:0)-(b.u.late?1:0) || prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
-  aloneCheck();
+  aloneCheck(); storyBeats('round');
   for(const x of acts){
     const u=x.u; if(!u.alive) continue;
     S.curMove=x.pl.type;
@@ -639,8 +642,8 @@ function resolve(){
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
     if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!foes(u.p).length) break; hit(u,target(u,x.pl.t),u.pow); }
     if(x.pl.type==='special') special(u,x.pl);
-    aloneCheck();
-    if(sidesUp().length<=1) break;
+    aloneCheck(); storyBeats();
+    if(sidesUp().length<=1 || S.failed) break;
   }
   S.curMove=null;
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
@@ -655,13 +658,14 @@ function resolve(){
     u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false;
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
-  twinsRise(); aloneCheck();
+  twinsRise(); aloneCheck(); storyBeats();
   tallyRound();
   S.plans=players().map(()=>({})); S.helperPlan=players().map(()=>[]);
   // teams knocked out this round, in order (free-for-all places: last out = 2nd…). Several at once share a place.
   const out=players().filter(p=>!alive(p).length && !S.outOrder.some(o=>o.includes(p))); if(out.length) S.outOrder.push(out);
   const up=standing(), tw=S.twist||{};
-  if(sidesUp().length<=1){ S.winner = up.length ? up[0] : -1; S.phase='over'; }   // 2v2: any player of the winning side
+  if(S.failed){ S.winner=1; S.phase='over'; }   // story: the ally you had to protect fell
+  else if(sidesUp().length<=1){ S.winner = up.length ? up[0] : -1; S.phase='over'; }   // 2v2: any player of the winning side
   else if(tw.survive && S.round>=tw.survive){ S.winner=0; S.survived=true; S.phase='over'; L(`The sun rises. ${S.names[0]}'s team held out!`,'h',fx('burn',null,null)); }
   else if(S.round>=40){ S.winner=-1; S.phase='over'; }   // nobody wins after 40 rounds
   else { S.phase='result'; reinforcements(); }
@@ -670,6 +674,25 @@ function resolve(){
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
 const SUNRISE_ROUND = 12, SUN_BURN = .1;
 const sunUp = () => S.mode!=='story' && S.round>=SUNRISE_ROUND;
+/* ---------- story beats: protect, boss phases and mid-battle lines (all set by the stage; nothing hidden) ----------
+   twist.protect: id      you lose if that fighter on your team falls
+   S.phases: [{id, at, pow, spd, def, ready, label, line}]   an enemy powers up once when its health drops to `at`
+   S.beats:  [{when:'low'|'ko'|'round', id, at, round, who, text}]   a character speaks (once each) */
+const say = (u, text) => L(text, 'say', {fx:'say', by:u.uid, on:null, move:null});
+function storyBeats(when){
+  if(S.mode!=='story') return;
+  const tw=S.twist||{}, all=allUnits(), find=id=>all.find(u=>u.id===id);
+  (S.beats||[]).forEach((b,i)=>{ if(S.said[i]) return; const u=find(b.id), who=find(b.who||b.id)||u; if(!who) return;
+    const hit = b.when==='round' ? when==='round' && S.round===b.round
+      : b.when==='low' ? u && u.alive && u.hp<=u.max*(b.at||.3)
+      : b.when==='ko' ? u && !u.alive : false;
+    if(hit){ S.said[i]=true; say(who, b.text); } });
+  (S.phases||[]).forEach(ph=>{ const u=S.teams[1].find(x=>x.id===ph.id); if(!u || !u.alive || u.phased || u.hp>u.max*ph.at) return;
+    u.phased=true; if(ph.line) say(u, ph.line);
+    u.pow+=ph.pow||0; u.spd+=ph.spd||0; u.def+=ph.def||0; if(ph.ready) u.cd=0;
+    L(`${u.name} changes: ${ph.label}.`,'k',fx('buff',null,u)); });
+  if(tw.protect && !S.failed){ const u=S.teams[0].find(x=>x.id===tw.protect); if(u && !u.alive){ S.failed=true; L(`${u.name} has fallen. You had to protect ${u.name}.`,'k',fx('ko',null,u)); } }
+}
 // Teams with anyone still standing
 const standing = () => players().filter(p=>alive(p).length);
 // Sides with anyone standing (in 2v2 a side is two players)

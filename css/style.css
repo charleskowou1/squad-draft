@@ -952,3 +952,50 @@ details ul b{color:var(--fg)}
 .wrap:has(.actionbar){padding-bottom:190px}
 .btn.team:disabled{opacity:1;background:transparent;color:var(--muted);border:1.5px dashed color-mix(in srgb,var(--bc) 60%,transparent);box-shadow:none}
 .tile .bar.low i,.fighter .bar.low i{background:var(--low)}
+
+/* the close × always sits above a card's picture banner, easy to see */
+.modal .x{z-index:6;background:rgba(10,9,8,.72);color:var(--fg);border:1px solid var(--line-2);box-shadow:0 2px 10px rgba(0,0,0,.5);font-size:1.4rem}
+.modal .x:hover{background:var(--surface-2)}
+
+/* story: a line spoken mid-battle */
+.now.saybeat{flex-direction:row;align-items:center;gap:14px;text-align:left;border-color:var(--tc);background:linear-gradient(90deg,color-mix(in srgb,var(--tc) 14%,transparent),transparent 70%)}
+.now.saybeat .gl.stg{flex:none;animation:enter .4s both}
+.now.saybeat .sayn{display:block;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--tc)}
+.now.saybeat .sayq{display:block;font-family:var(--display);font-size:1.15rem;line-height:1.3;color:var(--fg);animation:enter .4s .1s both}
+.log .say{font-style:italic;color:var(--ink-2)}
+
+/* story: stars */
+.stars{display:inline-flex;gap:1px;font-size:.9rem;line-height:1}
+.stars i{font-style:normal;color:var(--line-2)}
+.stars i.on{color:var(--gold);text-shadow:0 0 8px rgba(214,165,77,.5)}
+.unlocktitle .stars{font-size:2.2rem;gap:6px}
+.unlocktitle .stars i.on{animation:kpop .5s both}
+.unlocktitle .stars i:nth-child(2){animation-delay:.2s}.unlocktitle .stars i:nth-child(3){animation-delay:.4s}
+.goals{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted)}
+.goals span.got{color:var(--gold)}
+.vsgoals{position:relative;z-index:3;align-self:center;align-items:flex-start;background:rgba(10,9,8,.6);border:1px solid var(--line-2);border-radius:12px;padding:8px 12px}
+.storytotals{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;color:var(--muted);margin:-4px 0 6px}
+.storytotals b{color:var(--fg)}
+/* story: the drawn map, a winding path */
+.path{position:relative;display:flex;flex-direction:column;gap:6px;padding:6px 0 30px}
+.path::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:repeating-linear-gradient(var(--line-2) 0 10px,transparent 10px 18px);border-radius:2px}
+.parc{position:relative;z-index:1;align-self:center;display:flex;align-items:center;gap:8px;margin:14px 0 6px;padding:6px 14px 6px 6px;border-radius:999px;
+  background:var(--grain),linear-gradient(90deg,var(--sc1,var(--surface)),var(--surface));border:1px solid var(--line-2);font-family:var(--display);font-weight:800;font-size:.92rem}
+.parc .arcg{background:var(--sc2,var(--accent));color:#16130f}
+.pnode{position:relative;z-index:1;display:grid;grid-template-columns:1fr 52px 1fr;align-items:center;gap:10px}
+.pnode .pdot{grid-column:2;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.15rem;
+  background:var(--accent);color:#fff8ee;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--accent),0 6px 16px rgba(0,0,0,.45)}
+.pnode.clear .pdot{background:var(--p1);color:#10241a;box-shadow:0 0 0 2px var(--p1),0 6px 16px rgba(0,0,0,.45)}
+.pnode.flash .pdot{background:var(--gold);color:#1a1714;box-shadow:0 0 0 2px var(--gold),0 6px 16px rgba(0,0,0,.45)}
+.pnode.locked .pdot{background:var(--bg-2);color:var(--muted);box-shadow:0 0 0 2px var(--line-2);font-size:.9rem}
+.pnode.sel .pdot{animation:pulse 1.6s ease-in-out infinite}
+.pnode .plabel{grid-row:1;display:flex;flex-direction:column;gap:2px;background:transparent;padding:4px 2px;color:inherit;text-align:left;min-width:0}
+.pnode.l .plabel{grid-column:3}
+.pnode.r .plabel{grid-column:1;text-align:right;align-items:flex-end}
+.pnode .plabel b{font-family:var(--display);font-size:1rem;line-height:1.15}
+.pnode .plabel small{color:var(--muted);font-size:.74rem}
+.pnode.locked .plabel{opacity:.45}
+.pcard{grid-column:1/-1;display:flex;flex-direction:column;gap:7px;margin-top:4px;padding:12px;border-radius:14px;border:1px solid var(--line-2);border-left:4px solid var(--accent);
+  background:var(--grain),var(--surface);animation:enter .3s both;text-align:left}
+.pnode.clear .pcard{border-left-color:var(--p1)}
+.pnode.flash .pcard{border-left-color:var(--gold)}
