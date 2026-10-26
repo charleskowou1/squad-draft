@@ -114,6 +114,8 @@ const MODE_CARDS = [
   ['practice','練','Practice','Draft every team yourself'],
   ['story','物','Story Mode','The Slayer’s journey'],
 ];
+// Faint character art behind each mode card (only pictures that exist are used)
+const MODE_ART = {local:['zenitsu','inosuke'], online:['tanjiro','nezuko'], cpu:['muzan'], practice:['typezero'], story:['tanjiro']};
 // Names for local play: up to four, remembered on this phone
 const localNames = () => { const s=loadNames()||[]; return ['CK','Mia','Player 3','Player 4'].map((d,i)=>s[i]||d); };
 const seg = (act, cur, opts) => `<div class="seg">${opts.map(([v,l])=>`<button data-a="${act}" data-v="${v}" class="${String(cur)===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
@@ -218,7 +220,8 @@ function vSetup(){
     <p class="muted">Draft a squad. Pick secret moves each round. Last team standing wins.</p></div>
   ${artStrip()}
   ${dailyCard()}
-  <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>`<button class="mode${S.mode===k?' on':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}"><span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`).join('')}</div>
+  <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
+    return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="mode" data-v="${k}" aria-pressed="${S.mode===k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <div class="panel modepanel"><div class="eyebrow">${esc(MODE_CARDS.find(m=>m[0]===S.mode)[2])}</div>${modeSettings()}</div>
   <details class="panel" id="howto"><summary>How to play</summary><ul>
     <li><b>Modes:</b> Local Multiplayer passes one phone around (2–4 players), Online uses a phone each (2–4), Quickplay is you against 1–3 computers, Practice lets you draft every team (the computers’ too) to set up the match you want, and Story Mode is 21 battles with the canon squads.</li>

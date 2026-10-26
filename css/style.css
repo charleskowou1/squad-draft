@@ -899,3 +899,31 @@ details ul b{color:var(--fg)}
 .unlockcard .ucard small{font-size:.66rem;color:var(--muted);max-width:110px;text-align:center}
 .unlockcard .ucard .gl.lg{width:96px;height:118px}
 .ucap{position:relative;z-index:3;text-align:center}
+
+/* ---------- texture: faint paper grain and brush-stroke underlines ---------- */
+:root{
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .85  0 0 0 .055 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --brush:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 14' preserveAspectRatio='none'%3E%3Cpath d='M2 9 C30 4 60 3 95 5 S160 9 198 4 L197 8 C160 12 120 11 90 10 S30 12 3 12 Z' fill='black'/%3E%3C/svg%3E");
+}
+.panel{background:var(--grain),linear-gradient(180deg,var(--surface-2),var(--surface))}
+.mode,.stagecard,.daily,.tbox,.fighter,.tile,.note,.crow{background-image:var(--grain)}
+.modal .in{background-image:var(--grain)}
+.scene{background-image:var(--grain),radial-gradient(120% 80% at 50% 0%,var(--sc1,#3a2a22),var(--bg-2) 70%)}
+.hero h1,.top .title,.modal h2{position:relative;display:inline-block}
+.hero h1::after,.top .title::after,.modal h2::after{content:'';position:absolute;left:-2px;bottom:-6px;height:7px;width:min(70%,180px);
+  background:var(--accent);opacity:.85;-webkit-mask:var(--brush) no-repeat center/100% 100%;mask:var(--brush) no-repeat center/100% 100%;pointer-events:none}
+.top .title::after{height:5px;bottom:-4px;width:min(55%,140px);opacity:.7}
+.modal h2::after{height:5px;bottom:-5px;opacity:.75}
+/* ---------- mode cards: faint character art fading in from the right ---------- */
+.mode{position:relative;overflow:hidden;isolation:isolate}
+.mode .mart{position:absolute;inset:0 0 0 auto;width:62%;display:flex;justify-content:flex-end;z-index:-1;opacity:.32;transition:opacity .25s;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 60%);mask:linear-gradient(90deg,transparent,#000 60%)}
+.mode .mart img{height:100%;width:100%;object-fit:cover;object-position:50% 18%;filter:saturate(.85)}
+.mode .mart.n2 img{width:50%}
+.mode.on .mart{opacity:.55}
+.mode .mk,.mode b,.mode small{text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.modes .mode:last-child .mart{width:45%}
+/* elements with their own gradient keep it, with the grain on top */
+.daily{background:var(--grain),linear-gradient(120deg,rgba(214,165,77,.16),var(--surface) 60%)}
+.daily.done,.daily.loading{background:var(--grain),var(--surface)}
+.stagecard.flash{background:var(--grain),linear-gradient(90deg,rgba(214,165,77,.08),var(--surface) 40%)}
