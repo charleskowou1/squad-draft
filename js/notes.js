@@ -84,6 +84,8 @@ function poolNotes(){
   const pupils=['tanjiro','giyu','sabito'].filter(has);
   if(has('urokodaki')&&pupils.length) add('team', ['urokodaki',...pupils], 'Mentor', 'Urokodaki plus Tanjiro, Giyu or Sabito on one team: his pupils get +1 DEF.', withAnchor('urokodaki',pupils));
   if(has('kagaya')&&hashira.length) add('team', ['kagaya',...hashira], 'Corps Master', 'Kagaya plus any Hashira on one team: every Hashira on that team gets +1 DEF.', withAnchor('kagaya',hashira));
+  const markable=hashira.filter(f=>!BYID[inPool[f]].mark && BYID[f+'_mark']);   // Hashira with a Mark card still to awaken (not Rengoku, Tengen or Shinobu)
+  if(has('kagaya')&&markable.length) add('team', ['kagaya',...markable], 'Final Resolve', "Kagaya's special knocks himself out and every Hashira on his team who has a Mark awakens it. If an enemy knocks him out first, nobody awakens.", withAnchor('kagaya',markable));
 
   // opposing teams
   if(has('kaigaku')&&has('zenitsu')) add('vs', ['zenitsu','kaigaku'], 'Rivals', 'Facing Kaigaku, Zenitsu gets +2 PWR.', facing(['zenitsu'],['kaigaku']));

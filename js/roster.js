@@ -44,7 +44,7 @@ add({id:'daki',name:'Daki',short:'Daki',g:'帯',type:'Upper Moon 6',demon:true,u
   sig:{name:'Obi Sashes',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
 // Nakime never attacks: her basic move (in place of Attack) is Biwa Strum. See resolve() in engine.js.
 add({id:'nakime',name:'Nakime',short:'Nakime',g:'琵',type:'Upper Moon 4 · Infinity Castle',demon:true,upper:true,cost:4,hp:32,pow:0,spd:9,def:4,regen:2,
-  basic:{name:'Biwa Strum',tag:'enemy acts last',desc:'Instead of attacking: pick an enemy. They act last this round. Always goes first.'},
+  basic:{name:'Biwa Strum',tag:'enemy acts last',k:'琵',flee:'Nakime is alone. She flees into the castle.',desc:'Instead of attacking: pick an enemy. They act last this round. Always goes first.'},
   passive:"Biwa, not blade: she never attacks. Her basic move, Biwa Strum, makes an enemy act last this round. If she's the last one standing on her team, she flees and counts as knocked out.",
   sig:{name:'Castle Shift',desc:"Moves first. Sends an enemy to another room: they can't act and can't be hit this round.",cd:3,kind:'single',prio:3}});
 add({id:'gyokko',name:'Gyokko',short:'Gyokko',g:'壺',type:'Upper Moon 5',demon:true,upper:true,cost:6,hp:32,pow:10,spd:8,def:4,regen:2,
@@ -165,9 +165,12 @@ add({id:'typezero',name:'Yoriichi Type Zero',short:'Type Zero',g:'傀',type:'Tra
 add({id:'urokodaki',name:'Sakonji Urokodaki',short:'Urokodaki',g:'師',type:'Former Water Hashira',cost:4,hp:26,pow:7,spd:7,def:4,
   passive:'Mentor: Tanjiro, Giyu and Sabito on his team get +1 DEF.',
   sig:{name:'Water Wheel',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
+// Kagaya never attacks: his basic move (in place of Attack) heals the team. His special sacrifices him so the Hashira
+// awaken their Marks (awakenMark() in engine.js). Killed by an enemy first, nobody awakens.
 add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:14,pow:2,spd:5,def:1,
-  passive:'Master of the Corps: every Hashira on his team gets +1 DEF.',
-  sig:{name:'Words of Resolve',desc:'Every ally, himself included, heals 4.',cd:3,kind:'self'}});
+  basic:{name:'Words of Resolve',tag:'team heals 2',k:'癒',kind:'self',desc:'Instead of attacking: every ally, himself included, heals 2.',flee:'Kagaya is alone. With no one left to lead, he falls.'},
+  passive:"Master of the Corps: every Hashira on his team gets +1 DEF. He never attacks. If he's the last one standing on his team, he falls.",
+  sig:{name:'Final Resolve',desc:"Kagaya gives his life (he's knocked out). Every Hashira on his team who has a Mark awakens it for the rest of the match. If an enemy knocks him out first, nobody awakens.",cd:3,kind:'self'}});
 add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and file',cost:2,hp:10,pow:4,spd:6,def:2,
   passive:'Somehow Survives: the first hit that would knock him out leaves him at 1 HP instead.',
   sig:{name:'Water Surface Slash',desc:'Strike for PWR+2.',cd:2,kind:'single'}});
@@ -198,7 +201,7 @@ const SPECIAL_TAGS = {
   tengen_retired:'shield an ally', shinobu:'poison one enemy',
   tanjiro:'big hit, ignores DEF', nezuko:'hit all enemies', zenitsu:'first, double hit', inosuke:'2 random hits',
   kanao:'early strong hit', genya:'heal + PWR up', tamayo:'heal an ally', yushiro:'hide an ally',
-  sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'heal whole team', murata:'strong hit',
+  sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'Hashira awaken Marks', murata:'strong hit',
   chachamaru:'most hurt heals ½', crow:'see enemy moves', mice:`team +${MICE_PWR} PWR, 1 round`,
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });

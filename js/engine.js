@@ -256,7 +256,7 @@ function startBattle(){
   S.said={}; S.failed=false; S.awoke={}; S.midScene=null;
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
-  S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
+  S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
   S.movesLocked=players().map(()=>false); S.readyNext=players().map(()=>false); S.roundId=0;   // online play
   // story: stat boosts shown on the stage card ({side, hp: ×, pow/def/spd: +, label}), e.g. a boss with more HP
   (S.boosts||[]).forEach(b=>S.teams[b.side].forEach(u=>{ if(b.only && !b.only.includes(u.id)) return;
@@ -277,7 +277,7 @@ const friends = p => players().filter(q=>sameSide(p,q)).flatMap(q=>alive(q));
 const isAllyMove = (u,pl) => pl.type==='special' && u.sig.kind==='ally';
 // Free-for-all (3–4 players): a special that hits "every enemy" hits every fighter on the team you aim at, so you pick a target
 const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2;
-const needsTarget = (u,pl) => pl.type==='attack' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
+const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
 const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p) : foes(u.p);
 function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; return !needsTarget(u,pl) || !!pl.t; }
 const planReady = p => alive(p).every(unitReady);
@@ -345,7 +345,7 @@ function cpuPlanEasy(p){
     if(u.stun) return;
     const low=enemy.slice().sort((a,b)=>a.hp-b.hp)[0];
     let type='attack';
-    if(u.cd===0 && Math.random()<.7) type='special';
+    if(u.cd===0 && Math.random()<.7 && !(u.sk==='kagaya' && !markReady(u).length)) type='special';
     else if(u.hp<u.max*.3 && Math.random()<.35 && !u.noDefend) type='defend';
     let t=low.uid;
     if(u.sig.kind==='ally'){ const hurt=alive(p).slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; t=hurt.uid; if(type==='special' && u.sk==='tamayo' && hurt.hp>hurt.max*.75) type='attack'; if(type==='attack') t=low.uid; }
@@ -370,7 +370,7 @@ function cpuPlan(p, level='hard'){
   const noise=LEVELS[level].noise;
   const foesNow=foes(p), mine=alive(p), planned={};
   const left = t => t.hp - (planned[t.uid]||0);
-  const threat = t => t.pow*t.strikes + (t.cd===0?4:0);
+  const threat = t => t.pow*t.strikes + (t.cd===0?4:0) + (t.sk==='kagaya' && t.cd===0 ? 8*markReady(t).length : 0);   // Kagaya about to awaken Marks
   // free-for-all: gang up on the team that's ahead (most health × power left), like real players would
   const power = q => alive(q).reduce((a,x)=>a+x.hp*x.pow,0), top=Math.max(1,...enemiesOf(p).map(power));
   const lead = t => nPlayers()>2 ? FFA_FOCUS*power(t.p)/top : 0;
@@ -381,8 +381,9 @@ function cpuPlan(p, level='hard'){
     if(u.stun) return;
     const at=best(u.pow), atD=estHit(at,u.pow)*u.strikes;
     let plan={type:'attack', t:at.uid, v:score(at,atD), hits:[[at,atD]]};
-    // Nakime's Biwa Strum: slow down the most dangerous enemy
-    if(u.basic){ const t=foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }
+    // Nakime's Biwa Strum: slow down the most dangerous enemy. Kagaya's Words of Resolve: heal the team.
+    if(u.basic && u.basic.kind==='self') plan={type:'attack', v: mine.reduce((a,m)=>a+Math.min(2,m.max-m.hp)/m.max*100,0)};
+    else if(u.basic){ const t=foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }
     if(u.cd===0){
       const e=SIG_EST[u.sk]; let sp=null;
       if(e){ const x=e(u);
@@ -400,7 +401,7 @@ function cpuPlan(p, level='hard'){
           case 'sabito': { const t=mine.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes)[0]; sp={type:'special', t:t.uid, v: S.round<=4 ? 35 : 15}; break; }
           case 'tengen_retired': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.5 ? 30 : 0}; break;
           case 'hantengu': sp={type:'special', v: u.hp<u.max*.7 ? 35 : 10}; break;
-          case 'kagaya': sp={type:'special', v: mine.reduce((a,m)=>a+Math.min(4,m.max-m.hp)/m.max*100,0)}; break;
+          case 'kagaya': { const n=markReady(u).length; sp={type:'special', v: n ? 30+25*n : -999}; break; }
           case 'enmu': sp={type:'special', v: foesNow.filter(f=>f.cd<=1).length*14}; break;
           case 'shinobu': { const t=foesNow.slice().sort((a,b)=>(b.demon-a.demon)||(b.hp-a.hp))[0]; sp={type:'special', t:t.uid, v: t.poison ? 0 : t.demon ? 45 : 25}; break; }
           case 'nakime': { const t=foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; sp={type:'special', t:t.uid, v:15+threat(t)}; break; }
@@ -520,8 +521,9 @@ function special(u,pl){
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
     case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
-    case 'kagaya': { const healed=alive(u.p).map(m=>{ const h=Math.min(4,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
-      L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
+    case 'kagaya': { const ha=markReady(u); u.hp=0; u.alive=false;
+      L(`Kagaya gives his life for the Corps.`,'k',{ko:u.uid, ...fx('ko',null,u)});
+      ha.forEach(m=>awakenMark(m,false)); if(!ha.length) L(`No Hashira is left to carry his will.`,'x',fx('ko',null,u)); break; }
     case 'muzan': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-7,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(2*n,u.max-u.hp); u.hp+=h; L(`Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
   }
   u.cd = s.cd + 1;
@@ -534,10 +536,10 @@ function twinsRise(){
     pair.filter(u=>u.rise).forEach(u=>{ u.rise=false; const o=pair.find(x=>x!==u);
       if(o && o.alive){ u.alive=true; u.hp=Math.ceil(u.max*.3); u.poison=null; L(`${u.name} rises again while ${o.name} still stands ${gained(u,u.hp)}. Two as One!`,'x',fx('revive',null,u)); } }); });
 }
-// Nakime never fights: if she's the last one standing on her team, she flees (counts as knocked out)
+// Nakime and Kagaya never fight: if only they are left standing on a team, they're out (count as knocked out)
 function aloneCheck(){
   players().forEach(p=>{ const a=alive(p); if(!a.length || !a.every(u=>u.basic)) return;
-    a.forEach(u=>{ u.alive=false; u.hp=0; L(`${u.name} is alone. She flees into the castle.`,'k',{ko:u.uid, ...fx('ko',null,u)}); }); });
+    a.forEach(u=>{ u.alive=false; u.hp=0; L(u.basic.flee,'k',{ko:u.uid, ...fx('ko',null,u)}); }); });
 }
 // Free-for-all: the team an "every enemy" special lands on (the aimed fighter's team; if it's gone, a random team still standing)
 function aimedTeam(u,pl){ const t=findU(pl.t), q=t && !sameSide(t.p,u.p) && alive(t.p).length ? t.p : rnd(enemiesOf(u.p).filter(q=>alive(q).length)); return q===undefined ? [] : alive(q); }
@@ -627,8 +629,9 @@ function resolve(){
   const acts=[];
   players().forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
   acts.forEach(x=>{ if(x.pl.type==='defend') x.u.defending=true; });
+  const moves=players().map(p=>({p, helpers:(S.helperPlan&&S.helperPlan[p]||[]).map(id=>BYID[id].short), picks:acts.filter(x=>x.u.p===p).map(x=>moveText(x.u,x.pl))}));
   // Nakime's Biwa Strum always goes first: the enemy she picks acts last this round
-  acts.forEach(x=>{ if(x.pl.type!=='attack' || !x.u.basic) return; const t=findU(x.pl.t); if(!t || !t.alive || t.p===x.u.p) return;
+  acts.forEach(x=>{ if(x.pl.type!=='attack' || !x.u.basic || x.u.basic.kind==='self') return; const t=findU(x.pl.t); if(!t || !t.alive || t.p===x.u.p) return;
     t.late=true; S.curMove='attack'; L(`${x.u.name} strums her biwa. ${t.name} will act last this round.`,'x',fx('stun',x.u,t)); S.curMove=null; });
   const prio = x => x.pl.type==='special' ? (x.u.sig.prio||0) : 0;
   acts.sort((a,b)=> (a.u.late?1:0)-(b.u.late?1:0) || prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
@@ -638,6 +641,9 @@ function resolve(){
     S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
     if(u.away){ L(`${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
+    if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
+      const healed=alive(u.p).map(m=>{ const h=Math.min(2,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
+      L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); continue; }
     if(x.pl.type==='attack' && u.basic) continue;   // Nakime's strum already happened
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
@@ -670,6 +676,32 @@ function resolve(){
   else if(tw.survive && S.round>=tw.survive){ S.winner=0; S.survived=true; S.phase='over'; L(`The sun rises. ${S.names[0]}'s team held out!`,'h',fx('burn',null,null)); }
   else if(S.round>=40){ S.winner=-1; S.phase='over'; }   // nobody wins after 40 rounds
   else { S.phase='result'; reinforcements(); if(S.mode==='story') awakenings(); }   // Marks awaken after the round (cutscene before the next)
+  recordRound(moves);
+}
+/* ---------- full battle log (win screen, Copy) ----------
+   Each round keeps what every fighter chose and the round's lines as plain text, so a player can look back at a whole
+   match and see where it turned. Kept after the round resolves only, so online it never shows moves still being chosen. */
+function moveText(u,pl){
+  const t=pl.t && findU(pl.t), on=t && needsTarget(u,pl) ? ' → '+t.name : '';
+  const what = pl.type==='stunned' ? "can't move" : pl.type==='defend' ? 'Defend'
+    : pl.type==='special' ? u.sig.name : u.basic ? u.basic.name : 'Attack';
+  return `${u.name}: ${what}${on}`;
+}
+function recordRound(moves){
+  const name=uid=>{ const u=findU(uid); return u?u.name:''; };
+  (S.matchLog=S.matchLog||[]).push({r:S.round, moves,
+    lines:S.log.filter(l=>l.c!=='r').map(l=>({t: l.c==='say' ? `${name(l.by)}: “${l.t}”` : l.t, c:l.c}))});
+}
+const plainLog = t => t.replace(/\[([+-])(\d+%)\]/g, (m,s,n)=>(s==='-'?'−':'+')+n);
+function battleLogText(){
+  const ml=S.matchLog||[], w=S.winner, team=p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.name).join(', ');
+  const out=[`Squad Draft battle log · ${new Date().toLocaleDateString()}`,
+    ...players().map(p=>`${S.names[p]}: ${team(p)}${(S.picks[p]||[]).filter(isHelper).length?' + '+S.picks[p].filter(isHelper).map(id=>BYID[id].short).join(', '):''}`),
+    `Result: ${w<0?'nobody wins':S.names[w]+' wins'} after ${S.round} round${S.round===1?'':'s'}`, ''];
+  ml.forEach(r=>{ out.push(`— Round ${r.r} —`);
+    r.moves.forEach(m=>out.push(`${S.names[m.p]} chose: ${m.picks.join(' · ')||'nothing'}${m.helpers.length?' · used '+m.helpers.join(', '):''}`));
+    r.lines.forEach(l=>out.push('  '+plainLog(l.t))); out.push(''); });
+  return out.join('\n');
 }
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
@@ -697,14 +729,21 @@ function storyBeats(when){
 // Story: a fighter awakens their Demon Slayer Mark at the end of a round (when hurt to `at` of their health, or after
 // round `round`): they become the Mark card (its extra HP, PWR, SPD, DEF and faster special, which is ready now), and
 // the stage's short cutscene plays before the next round (S.midScene, shown by app.js).
+// A fighter becomes their Mark card mid-battle: the Mark card's extra HP, PWR, SPD and DEF on top of what they have now,
+// and its faster special. Story Marks (ready) also get the special ready now; Kagaya's Final Resolve keeps the current wait.
+function awakenMark(u, ready, to){
+  const b=BYID[u.id], m=BYID[to||u.id+'_mark'];
+  const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def;
+  Object.assign(u,{id:m.id, sig:m.sig, sk:m.sk, mark:true, awoke:true}, ready?{cd:0}:{cd:Math.min(u.cd,m.sig.cd+1)});
+  L(`${u.name} awakens the Demon Slayer Mark! Stronger and faster${ready?', and the special is ready':''}.`,'h',{...fx('buff',null,u), act:'awaken'});
+}
+// Kagaya's Final Resolve: the Hashira on his team still standing who have a Mark card and haven't awakened it
+const markReady = k => alive(k.p).filter(m=>m!==k && BYID[m.id].hashira && !m.mark && BYID[m.id+'_mark']);
 function awakenings(){
   (S.awaken||[]).forEach((a,i)=>{ if(S.awoke[i]) return;
     const u=S.teams[0].find(x=>x.id===a.id && x.alive); if(!u) return;
     if(!(u.hp<=u.max*(a.at||0) || (a.round && S.round>=a.round))) return;
-    const b=BYID[a.id], m=BYID[a.to||a.id+'_mark']; S.awoke[i]=true;
-    const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def;
-    Object.assign(u,{id:m.id, sig:m.sig, sk:m.sk, mark:true, awoke:true, cd:0});
-    L(`${u.name} awakens the Demon Slayer Mark! Stronger, faster, and the special is ready.`,'h',{...fx('buff',null,u), act:'awaken'});
+    S.awoke[i]=true; awakenMark(u,true,a.to);
     S.midScene=(S.midScene||[]).concat(a.lines||[]);
   });
 }

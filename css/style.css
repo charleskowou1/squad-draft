@@ -1219,3 +1219,12 @@ details ul b{color:var(--fg)}
 .udots{display:flex;gap:6px;justify-content:center;position:relative;z-index:3}
 .udots i{width:8px;height:8px;border-radius:50%;background:var(--line-2)}.udots i.on{background:var(--gold)}.udots i.done{background:var(--muted)}
 @media (prefers-reduced-motion: reduce){.scenepic,.scenepic img,.scene.awakening::before,.stagecast .lead.awaken,.stagecast .lead.awaken .gl.lg,.markstamp,.markburst,.ucard.big{animation:none!important}}
+
+/* Win screen: full battle log */
+.matchlog .mlhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.matchlog .copylog{display:inline-flex;align-items:center;gap:6px}
+.matchlog summary{cursor:pointer;color:var(--ink-2);padding:4px 0}
+.mlround{margin-top:12px}
+.mlr{font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+.mlmoves{font-size:.82rem;color:var(--ink-2);border-left:3px solid var(--tc);padding:2px 8px;margin-bottom:4px}
+.mlmoves b{color:var(--tc);margin-right:4px}

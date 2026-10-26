@@ -22,7 +22,7 @@ const tip = (id, text) => !inPrologue() || tipsSeen().includes(id) ? '' : `<div 
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
-    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(S.mode==='story'?'<button class="btn ghost small" data-a="storymap">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
+    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
 }
 const actionbar = inner => `<div class="actionbar"><div class="in">${inner}</div></div>`;
 const statCells = c => `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
@@ -586,7 +586,7 @@ function fighter(u, open){
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
   return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
     ${statusChips(u,false)}
-    <div class="moves">${u.basic?mv('attack','琵',esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.strikes>1?'×'+u.strikes:'')}${mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
+    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.strikes>1?'×'+u.strikes:'')}${mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
     ${opts.length?`<div class="targets"><span class="tlabel">${isAllyMove(u,pl)?'Ally':'Target'}</span>${opts.map(tgt).join('')}</div>`:''}
   </div></div>`;
 }
@@ -695,6 +695,18 @@ function groupSummary(lines){
 }
 // Knockouts and hits of 30%+ shake the stage
 const bigHit = line => line.fx==='ko' || (/\[-(\d+)%\]/.exec(line.t)||[])[1] >= 30;
+// Win screen: every round of the match (what each player chose, then what happened), with a Copy button for the text
+function matchLogPanel(){
+  const ml=S.matchLog||[]; if(!ml.length) return `<details class="panel" id="finallog"><summary>Final round</summary>${logHTML()}</details>`;
+  const copyIcon='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
+  return `<section class="panel matchlog"><div class="mlhead"><span class="tlabel">Battle log</span>
+      <button class="btn ghost small copylog" data-a="copylog" aria-label="Copy the full battle log">${copyIcon}${S.logCopied?'Copied ✓':'Copy'}</button></div>
+    <details id="finallog"><summary>All ${plural(ml.length,'round')}</summary>
+    ${ml.map(r=>`<div class="mlround"><div class="mlr">Round ${r.r}</div>
+      ${r.moves.map(m=>`<div class="mlmoves" style="--tc:${pc(m.p)}"><b>${nm(m.p)}</b> ${m.picks.map(x=>esc(x)).join(' · ')}${m.helpers.length?` · used ${esc(m.helpers.join(', '))}`:''}</div>`).join('')}
+      <div class="log">${r.lines.map(l=>`<div class="${l.c}">${fmtLog(l.t)}</div>`).join('')}</div></div>`).join('')}
+    </details></section>`;
+}
 const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<div class="${l.c}">${fmtLog(l.t)}</div>`).join('')}</div>`;
 // The round plays back one log line at a time (S.play.k = the line being shown); tiles show HP at that moment
 function vResult(){
@@ -841,7 +853,7 @@ function vOver(){
       <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</div></section>` : ''}
     ${mvpPanel()}
     <div class="overteams${nPlayers()>2?' many':''}">${players().map(q=>teamBlock(q)).join('')}</div>
-    <details class="panel" id="finallog"><summary>Final round</summary>${logHTML()}</details>
+    ${matchLogPanel()}
     ${actionbar(S.mode==='daily' ? `<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="daily">${S.dailyMet?'Play again':'Try again'}</button>` : S.mode==='story'
       ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next battle</button>`:w===0?'':`<button class="btn" data-a="${S.storyDraft?'stagedraft':'stage'}" data-v="${S.stage}">Try again</button>`}`
       : isOnline() ? '<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch">Rematch</button>'

@@ -173,6 +173,9 @@ const ACTIONS = {
   restoreok(){ cloudApply(); },
   unrestore(){ S.restoreFound=null; },
   copycode(){ const c=showCode(loadCloud().code); try{ navigator.clipboard.writeText(c); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); }catch(e){} },
+  copylog(){ const t=battleLogText(), done=()=>{ S.logCopied=true; render(); setTimeout(()=>{ S.logCopied=false; render(); },1600); };
+    const old=()=>{ const a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select(); try{ document.execCommand('copy'); done(); }catch(e){} a.remove(); };
+    try{ navigator.clipboard.writeText(t).then(done, old); }catch(e){ old(); } },
   tipok(v){ try{ const t=JSON.parse(localStorage.getItem(TIPS_KEY))||[]; t.push(v); localStorage.setItem(TIPS_KEY,JSON.stringify([...new Set(t)])); }catch(e){} },
   codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },

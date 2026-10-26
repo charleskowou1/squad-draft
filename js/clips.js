@@ -18,12 +18,22 @@ const CLIPS = {
   tanjiro:      {special: 'https://media.tenor.com/u2dl8xjsDO0AAAPo/tanjiro-demon-slayer.mp4'},   // Hinokami Kagura
   tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4'},       // Hinokami Kagura (Mark)
   tanjiro_demon:{},                                                                           // not Hinokami: no clip yet
-  akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4'}, // Destructive Death: Compass Needle
+  akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4',  // Destructive Death: Compass Needle
+                 regen:   'https://media.tenor.com/cEpW6MV9Z_YAAAPo/akaza-gif-headless.mp4'},  // head growing back
   inosuke:      {special: 'https://media.tenor.com/J08tCPlL6dIAAAPo/inosuke-demon-slayer.mp4'},   // Fang Frenzy
   nezuko:       {special: 'https://media.tenor.com/MuLdehLf5WcAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Exploding Blood
   kokushibo:    {special: 'https://media.tenor.com/HL0GFe-7zPkAAAPo/kokushibo-aura.mp4'},     // Moon Breathing (aura)
   yoriichi:     {special: 'https://media.tenor.com/yncZvQ9iX6MAAAPo/yoriichi-tsugikuni.mp4'}, // Sun Breathing (aura)
   muichiro:     {special: 'https://media.tenor.com/ynS0sUD6YbEAAAPo/tokito.mp4'},             // Obscuring Clouds
+  gyomei:       {special: 'https://media.tenor.com/-XFLrcBj-lUAAAPo/gyomei-gyomei-himejima.mp4'},   // Volcanic Rock
+  sanemi:       {special: 'https://media.tenor.com/wuIHjYf2VEUAAAPo/sanemi-wind-breathing.mp4'},   // Wind Breathing
+  tengen:       {special: 'https://media.tenor.com/Exi_TpZVtQsAAAPo/tengen-uzui-tengen.mp4'},      // Sound Breathing
+  tengen_retired:{special: 'https://media.tenor.com/E8_EMliP95EAAAPo/tengen-uzui.mp4'},            // Bodyguard (Hashira Training)
+  mitsuri:      {special: 'https://media.tenor.com/Pr283FIcFIsAAAPo/mitsuri-love-breathing.mp4'},  // Swaying Love, Wildclaw
+  obanai:       {special: 'https://media.tenor.com/3jBPI8_vMfcAAAPo/obanai-obanai-iguro.mp4'},     // Serpent Breathing
+  genya:        {special: 'https://media.tenor.com/YXctE3HEatcAAAPo/demon-slayer.mp4'},            // Genya's special
+  sabito:       {special: 'https://media.tenor.com/S98rvMkpd9kAAAPo/sabito.mp4'},                  // Spirit Training
+  kagaya:       {special: 'https://media.tenor.com/cZnt_1BjaggAAAPo/ubuyashiki-kimetsu-no-yaiba.mp4'},   // Final Resolve
 };
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.

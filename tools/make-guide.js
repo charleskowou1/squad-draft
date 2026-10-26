@@ -91,6 +91,8 @@ out(`Same team:
 - Sun Lineage: Yoriichi (either) + Tanjiro → Tanjiro +2 PWR.
 - Mentor: Urokodaki + Tanjiro / Giyu / Sabito → those pupils +1 DEF.
 - Corps Master: Kagaya + any Hashira → every Hashira +1 DEF.
+- Final Resolve: Kagaya's special knocks himself out; every Hashira on his team with a Mark card (Giyu, Gyomei, Sanemi,
+  Muichiro, Mitsuri, Obanai) awakens it. Killed by an enemy first = nothing. Rengoku, Tengen and Shinobu get nothing.
 - Two as One: Gyutaro + Daki → Gyutaro +2 PWR, and if one falls while the other still stands, they get back up at the
   end of the round with 30% (once each). Knock both out in the same round to stop it. (Strong: ~58% when paired.)
 - Temari & Arrows: Susamaru + Yahaba → Susamaru's hits slip past Defend.
@@ -108,6 +110,10 @@ Special rules on single cards:
 - Nakime never attacks. Her basic move (in place of Attack) is Biwa Strum: an enemy she picks acts last this round
   (always happens first). Castle Shift sends an enemy away for the round: they can't act and can't be hit. If she's
   the last one standing on her team she flees, which counts as a knockout, so never leave her alone.
+- Kagaya never attacks either. His basic move is Words of Resolve (every ally heals 2, in normal speed order). His
+  special Final Resolve knocks himself out and awakens the Mark of every Hashira on his team who has one (stats rise,
+  special keeps its current wait). He's slow (SPD 5, 14 HP, 1 DEF) and the special has no priority, so enemies can
+  kill him first. Alone on his team he falls, like Nakime.
 - Yahaba's Vector Arrows (moves first): every hit the chosen enemy throws this round misses.
 - Awakened Nezuko can't Defend (berserk).
 - Yoriichi Type Zero strikes three times per Attack at low PWR (great vs low DEF, poor vs tanks). It's a puppet:
