@@ -52,7 +52,7 @@ function playRound(){
   S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
     if(S.info || S.settings){ S._t=setTimeout(step,300); return; }   // paused while an info card or Settings is open
-    if(S.play.k>=S.play.steps.length-1){ S.play.done=true; render(); return; }
+    if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd()) return; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
     if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else sfxForLine(line);
@@ -62,6 +62,13 @@ function playRound(){
   sfx('gong'); clearTimeout(S._t); S._t=setTimeout(step, quickMotion() ? 250 : 1500*pace());   // the "Round N · Fight!" intro
 }
 // Start a Local or Quickplay match with the mode's settings: names from the boxes (computers get demon names)
+// Story: when the last round has played out, go straight on (the ending scene after a win, the defeat screen after
+// a loss) instead of stopping on a "See who won" button. Returns true if it moved on.
+function storyEnd(){
+  if(S.mode!=='story' || !S.final) return false;
+  clearTimeout(S._t); S._t=setTimeout(()=>{ ACTIONS.finish(); render(); }, quickMotion()?0:700);
+  return true;
+}
 function startDraft(){
   const c=useModeCfg(), field=i=>{ const el=document.getElementById('n'+i); return el&&el.value.trim(); };
   if(S.mode==='local'){ S.names=Array.from({length:c.players},(_,i)=>field(i)||`Player ${i+1}`); saveNames(S.names.concat(localNames().slice(S.names.length))); }
@@ -182,7 +189,7 @@ const ACTIONS = {
     S.scoutQueue=players().filter(p=>alive(p).length && S.helperPlan[p].includes('crow'));   // each crow owner gets a private report
     nextScoutOrFight();
   },
-  skip(){ clearTimeout(S._t); S.play.done=true; },
+  skip(){ clearTimeout(S._t); S.play.done=true; storyEnd(); },
   next(){ if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
   finish(){ if(isOnline()){ S.localOver=true; return window.scrollTo(0,0); } S.play=null;
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
