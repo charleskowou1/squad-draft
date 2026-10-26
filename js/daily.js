@@ -3,7 +3,8 @@
    draft your own squad, only from characters you've unlocked (so the story opens up more answers). A goal makes it
    more than "just win". The enemy team, your points and the goal are the same on every phone: they're built from the
    date with a seeded random generator, and even the test battles used to set the difficulty run on that generator.
-   Difficulty: a strong computer drafting only from the starting characters meets the goal in 35–75% of tries.
+   Difficulty: your points come from 8 to 26; the enemy team is then chosen so a strong computer drafting only from the
+   starting characters meets the goal in 35–75% of tries.
    Daily games don't count toward Stats. Progress and the streak are kept in localStorage (DAILY_KEY). No DOM. */
 const DAILY_KEY = 'squad-draft-daily';
 const DAILY_GOALS = {
@@ -15,11 +16,11 @@ const todayKey = (d=new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).
 // Small seeded random generator (mulberry32) from a string
 function seededRng(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=h<<13|h>>>19; }
   return ()=>{ h|=0; h=h+0x6D2B79F5|0; let t=Math.imul(h^h>>>15,1|h); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-// The enemy: a random team within 20 points, up to 4 fighters, one version per character
-function dailyEnemy(rng, cards){
-  const pool=cards.slice().sort(()=>rng()-.5), team=[], fams=new Set(); let left=20;
+// The enemy: a random team within `pts` points, up to 4 fighters, one version per character
+function dailyEnemy(rng, cards, pts){
+  const pool=cards.filter(c=>c.cost<=pts).sort(()=>rng()-.5), team=[], fams=new Set(); let left=pts;
   for(const c of pool){ if(team.length>=4) break; if(c.cost<=left && !fams.has(c.fam)){ team.push(c.id); fams.add(c.fam); left-=c.cost; } }
-  return team.length>=2 ? team : null;
+  return team.length>=1 ? team : null;
 }
 // Did the battle just finished meet the goal?
 function dailyMet(ch){
@@ -32,7 +33,7 @@ function dailyMet(ch){
 // Set up the challenge's draft (enemy locked in, you pick within the points from `open` cards)
 function dailyDraft(ch, open){
   Object.assign(S,{mode:'daily', n:2, duo:false, maxTeam:MAXTEAM, bansOn:false, banning:false, bans:[], daily:ch, budget:ch.budget, level:ch.level,
-    phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[[], ch.enemy.slice()], locked:[false,true]});
+    phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[[], ch.enemy.slice()], locked:[false,true], showTheirs:false});
   const enemyFams=new Set(ch.enemy.map(id=>BYID[id].fam));
   S.pool=ROSTER.filter(c=>!c.spawn && c.cost<=ch.budget && open(c) && !enemyFams.has(c.fam)).map(c=>c.id)
     .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
@@ -48,30 +49,30 @@ function dailyTrial(ch){
   while(S.phase!=='over'){ cpuPlan(0,'hard'); cpuPlan(1,ch.level); cpuHelpers(0); cpuHelpers(1); resolve(); if(S.phase==='result') S.round++; }
   const out={won:S.winner===0, rounds:S.round, met:dailyMet(ch)}; S=keep; return out;
 }
-// Today's challenge: tries seeded candidates (enemy team, goal, points) until one lands in the target range
-// (goal met in 35–75% of 24 test battles), else keeps the closest. Cached per day.
+// Today's challenge: your points are picked from a wide range (8 to 26, so some days push you toward characters you'd
+// never usually play), then seeded enemy teams and goals are tried until one is fair for those points (goal met in
+// 35–75% of 24 test battles), else the closest. Cached per day.
+const DAILY_POINTS = [8,10,12,14,16,18,20,22,24,26];
 let DAILY_CACHE=null;
 function dailyChallenge(day=todayKey()){
   if(DAILY_CACHE && DAILY_CACHE.day===day) return DAILY_CACHE;
   const rng=seededRng('squad-draft '+day), real=Math.random; Math.random=rng;   // the test battles use the seed too
   try{
     const anyone=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=14), starters=ROSTER.filter(c=>!c.spawn && !c.helper && starterCard(c) && c.cost<=6);
+    const budget=DAILY_POINTS[Math.floor(rng()*DAILY_POINTS.length)];
     let best=null;
-    for(let tries=0;tries<30;tries++){
-      const enemy=dailyEnemy(rng, anyone); if(!enemy) continue;
+    for(let tries=0;tries<40;tries++){
+      // the enemy's points sit around yours (a little under to a fair bit over), and the test battles decide if it's fair
+      const ep=Math.max(4, budget + [-2,0,0,2,2,4,6][Math.floor(rng()*7)]);
+      const enemy=dailyEnemy(rng, anyone.filter(c=>c.cost<=Math.max(4,budget)), ep); if(!enemy) continue;
       const type=['win','rounds','keep'][Math.floor(rng()*3)], level=rng()<.5?'normal':'hard';
-      const ch={day, enemy, level, goal:{type}, budget:20};
-      if(type==='keep'){ const ok=starters.filter(c=>!enemy.some(e=>BYID[e].fam===c.fam)); ch.goal.id=ok[Math.floor(rng()*ok.length)].id; }
-      // find the points that make it fair: start at 20 and step up or down
-      for(const budget of [20,18,22,16,24,14,26]){
-        ch.budget=budget;
-        if(type==='rounds'){ const w=[]; for(let i=0;i<10;i++){ const t=dailyTrial(ch); if(t.won) w.push(t.rounds); } if(w.length<3) continue; w.sort((a,b)=>a-b); ch.goal.n=w[Math.floor(w.length*.55)]; }
-        let met=0; for(let i=0;i<24;i++) if(dailyTrial(ch).met) met++;
-        ch.rate=met/24; const miss=Math.abs(ch.rate-.55);
-        if(!best || miss<best.miss) best={ch:JSON.parse(JSON.stringify(ch)), miss};
-        if(ch.rate>=.35 && ch.rate<=.75) break;
-      }
-      if(best.miss<=.2) break;
+      const ch={day, enemy, level, goal:{type}, budget};
+      if(type==='keep'){ const ok=starters.filter(c=>c.cost<=budget && !enemy.some(e=>BYID[e].fam===c.fam)); if(!ok.length) continue; ch.goal.id=ok[Math.floor(rng()*ok.length)].id; }
+      if(type==='rounds'){ const w=[]; for(let i=0;i<10;i++){ const t=dailyTrial(ch); if(t.won) w.push(t.rounds); } if(w.length<3) continue; w.sort((a,b)=>a-b); ch.goal.n=w[Math.floor(w.length*.55)]; }
+      let met=0; for(let i=0;i<24;i++) if(dailyTrial(ch).met) met++;
+      ch.rate=met/24; const miss=Math.abs(ch.rate-.55);
+      if(!best || miss<best.miss) best={ch:JSON.parse(JSON.stringify(ch)), miss};
+      if(ch.rate>=.35 && ch.rate<=.75) break;
     }
     DAILY_CACHE=best.ch; return best.ch;
   } finally { Math.random=real; }

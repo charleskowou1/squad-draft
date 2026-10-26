@@ -130,6 +130,7 @@ const ACTIONS = {
   unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
   settab(v){ S.setTab=v; },
+  theirs(){ S.showTheirs=!S.showTheirs; },
   codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },

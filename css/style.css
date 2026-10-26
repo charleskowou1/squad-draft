@@ -1049,3 +1049,29 @@ details ul b{color:var(--fg)}
 .unlpreview span{display:flex;align-items:center;gap:5px;font-size:.78rem}
 .unlpreview .gl{box-shadow:0 0 0 1.5px var(--gold)}
 .smarks{flex-wrap:wrap}
+
+/* home: credit line and tagline */
+.hero .credit{font-size:.74rem;font-weight:700;letter-spacing:.04em;color:var(--gold);opacity:.9;margin-top:6px}
+.hero .tagline{font-size:1.02rem;color:var(--ink-2);margin-top:2px}
+/* daily / story drafts: the set enemy team's box opens their cards */
+.tbox.studybox{color:inherit;font:inherit;text-align:left;cursor:pointer;border-style:dashed}
+.tbox.studybox .tn span:last-child{color:var(--p2);font-weight:800}
+/* story map polish: arc art, progress, the current chapter, a timeline through the battles */
+.chap{isolation:isolate}
+.chapart{position:absolute;right:0;top:0;height:120px;width:55%;display:flex;justify-content:flex-end;z-index:-1;opacity:.28;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 70%),linear-gradient(#000 40%,transparent);-webkit-mask-composite:source-in;mask:linear-gradient(90deg,transparent,#000 70%) intersect,linear-gradient(#000 40%,transparent)}
+.chapart img{height:100%;width:100%;object-fit:cover;object-position:50% 20%}
+.chaphead{padding:14px 14px 8px}
+.chaphead b{font-size:1.25rem;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.chapprog{margin-left:auto;font-size:.68rem;font-weight:800;letter-spacing:.04em;padding:3px 9px;border-radius:999px;background:rgba(10,9,8,.55);color:var(--muted);border:1px solid var(--line-2)}
+.chap.current{border-color:var(--sc2,var(--accent));box-shadow:0 0 0 1px var(--sc2,var(--accent)),0 10px 30px rgba(0,0,0,.35)}
+.chap.current .chapprog{color:#16130f;background:var(--sc2,var(--accent));border-color:transparent}
+.chap.done .chapprog{color:var(--p1);border-color:rgba(82,179,136,.5)}
+.chaprows{position:relative}
+.chaprows::before{content:'';position:absolute;left:31px;top:14px;bottom:18px;width:2px;background:linear-gradient(var(--line-2),transparent);z-index:0}
+.srow{position:relative;z-index:1}
+.srow .snum{box-shadow:0 0 0 4px rgba(26,23,20,.9)}
+.srow .sinfo b{font-size:1.02rem}
+.srow .gl.xs{width:28px;height:28px}
+.srow.locked .srowbtn{opacity:.82}
+.srow:not(.locked) .srowbtn:hover{background:rgba(255,255,255,.03);border-radius:12px}

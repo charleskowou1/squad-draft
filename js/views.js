@@ -216,7 +216,7 @@ function dailyCard(){
   return `<div class="daily${done?' done':''}"><span class="dk">日</span>
     <div class="dbody"><div class="eyebrow">Daily challenge${streak?` · 🔥 ${plural(streak,'day')}`:''}</div>
       <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
-      <div class="dsq"><span class="dpts">You: ${ch.budget} pts</span><span class="svs">vs</span>${row(ch.enemy)}</div></div>
+      <div class="dsq"><span class="svs">vs</span>${row(ch.enemy)}</div></div>
     <button class="btn small${done?' ghost':''}" data-a="daily">${done?'Done ✓ Replay':'Play'}</button></div>`;
 }
 function vSetup(){
@@ -224,7 +224,8 @@ function vSetup(){
   <div class="setbar"><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
-    <p class="muted">Draft a squad. Pick secret moves each round. Last team standing wins.</p></div>
+    <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
+    <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${artStrip()}
   ${dailyCard()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
@@ -278,11 +279,11 @@ function cardHTML(c,p){
     ${owner>=0?`<span class="tag" style="background:${pc(owner)}">${nm(owner)}</span>`:ban?`<span class="tag banned">Banned · ${nm(ban.p)}</span>`:''}</button>`;
 }
 function teamBox(q,p){
-  const left=budget()-spent(q);
-  return `<div class="tbox${p===q&&!S.locked[q]?' active':''}" style="--tc:${pc(q)}">
-    <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${(S.mode==='story'||S.mode==='daily')&&q===1?'Enemy · set':S.locked[q]?'Locked':left+' pts left'}</span></div>
+  const left=budget()-spent(q), study=(S.mode==='story'||S.mode==='daily') && q===1;   // the set enemy team: tap to study it
+  return `<${study?`button data-a="theirs" aria-expanded="${!!S.showTheirs}"`:'div'} class="tbox${p===q&&!S.locked[q]?' active':''}${study?' studybox':''}" style="--tc:${pc(q)}">
+    <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${study?(S.showTheirs?'Hide ▴':'Tap to study ▾'):S.locked[q]?'Locked':left+' pts left'}</span></div>
     <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${Math.min(100,spent(q)/budget()*100)}%"></i></div>
-    <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></div>`;
+    <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></${study?'button':'div'}>`;
 }
 function vDraft(){
   // cpuTurn = the other side is picking (the computer, or the other phone online): this phone waits
@@ -310,7 +311,7 @@ function vDraft(){
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
     ${lockbar}
     <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:daily?`Your unlocked characters · ${n}`:S.poolType==='all'?`All ${n} characters`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!fixed&&S.poolType!=='all'&&(!isOnline()||iAmHost())?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div>
-    ${fixed?`<section class="theirs"><div class="tlabel">Their team · tap a card to study it</div><div class="grid">${S.picks[1].map(id=>cardHTML(BYID[id],p)).join('')}</div></section>`:''}</div>
+    ${fixed&&S.showTheirs?`<section class="theirs"><div class="tlabel">Their team · tap a card to study it</div><div class="grid">${S.picks[1].map(id=>cardHTML(BYID[id],p)).join('')}</div></section>`:''}</div>
     ${notesPanel()}
     <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
     ${S.banning?'':pocketDraft(p)}</div>`;
@@ -661,14 +662,22 @@ function mvpPanel(){
     <div class="mvpname">${esc(mvp.u.name)}</div><div class="muted">${line(mvp.s)}</div></div></div>
     <div class="awards">${award('Most damage',dm,dm.s.dmg?`${dm.s.dmg}`:'')}${award('Most knockouts',ko,ko.s.kos?`${ko.s.kos}`:'')}${award('Biggest hit',bh,bh.s.best?`${bh.s.best}`:'')}${award('Best healer',hl,hl.s.heal?`${hl.s.heal} HP`:'')}</div></section>`;
 }
+// A character from each arc, faded into its chapter card on the story map
+const ARC_ART = {prologue:['sabito'], asakusa:['tamayo'], tsuzumi:['kyogai'], natagumo:['rui'], mugen:['rengoku'], district:['tengen'],
+  swordsmith:['mitsuri'], castle:['nakime'], flashback:['yoriichi'], dawn:['muzan_final']};
 // Story map: a winding path through the arcs. Each battle is a node with its stars; tap one to open its details
 // (squads, twist, star goals, Play / Draft replay). It opens on the next battle to play.
 const starRow = (n, of=3) => `<span class="stars" aria-label="${n} of ${of} stars">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}">★</i>`).join('')}</span>`;
 function vStory(){
-  const won=storyWon(), stars=totalStars(); let arc='', html='';
+  const won=storyWon(), stars=totalStars(), next=nextStage(); let arc='', html='';
   STAGES.forEach((st,i)=>{
     if(st.arc!==arc){ if(arc) html+='</div></section>'; arc=st.arc;
-      html+=`<section class="chap arc-${st.arc}"><div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}</b></div><div class="chaprows">`; }
+      const mine=STAGES.map((x,k)=>[x,k]).filter(([x])=>x.arc===st.arc), wonHere=mine.filter(([x,k])=>stageCleared(k)).length;
+      const current=mine.some(([x,k])=>k===next), art=(ARC_ART[st.arc]||[]).filter(id=>ART[id]);
+      html+=`<section class="chap arc-${st.arc}${current?' current':''}${wonHere===mine.length?' done':''}">
+        ${art.length?`<span class="chapart" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}
+        <div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}</b>
+          <span class="chapprog">${wonHere===mine.length?'✓ Complete':current?'Now playing':`${wonHere} of ${mine.length} won`}</span></div><div class="chaprows">`; }
     const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, unl=STAGE_UNLOCKS[st.id]||[];
     html+=`<div class="srow${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}">
       <button class="srowbtn" data-a="storysel" data-v="${i}" ${open?'':'disabled'} aria-expanded="${sel}">
