@@ -652,17 +652,21 @@ function stage(line){
 function cutin(u, clip){
   const style=styleOf(u,'special'), right=u.p!==leftSide();
   return `<div class="cutin sty sty-${style}${right?' right':''}${clip?' hasclip':''}" style="--tc:${pc(u.p)}" aria-hidden="true">
-    ${clip?clipVideo(clip):'<span class="lines"></span>'}
+    ${clip?clipVideo(clip)+'<span class="cbars"></span><span class="lines"></span><span class="cflash"></span>':'<span class="lines"></span>'}
     <div class="band"><span class="cimg">${ART[u.id]?`<img src="${ART[u.id]}" alt="">`:`<span class="ck">${u.g}</span>`}</span>
       <div class="ctext"><span class="cwho" style="color:${pc(u.p)}">${esc(u.name)}</span><span class="cmove">${esc(u.sig.name)}</span>${u.sig.quote?`<span class="cquote">“${esc(u.sig.quote)}”</span>`:''}</div></div>
     <span class="ckanji">${STYLE_KANJI[style]||'技'}</span></div>`;
 }
 // A move clip: muted, plays once inline (app.js keeps the same element across redraws of the beat, using data-k)
-const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}" muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
+const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[findU(c.uid).id]?` poster="${ART[findU(c.uid).id]}"`:''} muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
+const CLIP_KANJI = {regen:'再', heal:'癒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
 // A beat with a move clip that isn't a special (regen, heal, guard, knockout…): the clip with who and what over it
 function clipBeat(c, line){
   const u=findU(c.uid);
-  return `<div class="clipbox" style="--tc:${pc(u.p)}">${clipVideo(c)}<span class="cliptag"><b style="color:${pc(u.p)}">${esc(u.name)}</b>${CLIP_ACTS[c.act]?` · ${CLIP_ACTS[c.act]}`:''}</span></div><span>${fmtLog(line.t)}</span>`;
+  const style=styleOf(u,c.act==='attack'?'attack':'special');
+  return `<div class="clipbox act-${c.act}${u.p!==leftSide()?' right':''}" style="--tc:${pc(u.p)}">${clipVideo(c)}<span class="cbars"></span><span class="cflash"></span>
+    <span class="cstamp sty sty-${style}">${CLIP_KANJI[c.act]||STYLE_KANJI[style]||'技'}</span>
+    <span class="cliptag"><b style="color:${pc(u.p)}">${esc(u.name)}</b>${CLIP_ACTS[c.act]?`<i>${CLIP_ACTS[c.act]}</i>`:''}</span></div><span>${fmtLog(line.t)}</span>`;
 }
 // One beat for a special that hits several enemies: the attacker strikes once, every target recoils together with
 // its own damage number, and any it knocks out topple over

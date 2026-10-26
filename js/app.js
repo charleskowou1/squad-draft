@@ -54,7 +54,7 @@ const groupTime = lines => quickMotion() ? 400 : (2400 + 450*lines.filter(l=>GRO
 // Move clips (js/clips.js): beats with a clip stay up at least this long; clips download when a battle starts
 const CLIP_MIN = 3600, CLIP_PENDING = new Set();
 function warmClips(){
-  if(S.clipsOn===false || !S.teams || !navigator.onLine) return;
+  if(S.clipsOn===false || !(S.teams||S.picks) || !navigator.onLine) return;
   matchClips().forEach(url=>{ if(CLIP_BLOB[url] || CLIP_PENDING.has(url)) return; CLIP_PENDING.add(url);
     fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b); }).catch(()=>{}).finally(()=>CLIP_PENDING.delete(url)); });
 }

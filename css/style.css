@@ -1142,19 +1142,54 @@ details ul b{color:var(--fg)}
 .awaytag{font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:0 6px;vertical-align:middle}
 .netnote{padding:10px 12px;border-radius:12px;border:1px dashed var(--p2);background:rgba(139,156,240,.08);font-size:.86rem;color:var(--ink-2)}
 
-/* move clips (js/clips.js): the special's clip fills the cut-in with the band along the bottom; other moments get a clip box */
+/* move clips (js/clips.js): the special's clip fills the cut-in with the move along the bottom; other moments get a clip box.
+   Both wipe in on a diagonal with an impact flash, speed lines that fade, a slow push-in and cinematic bars. */
 .now.cut.clip{min-height:0}
-.cutin.hasclip{height:auto;aspect-ratio:16/9;max-height:300px;align-items:flex-end;background:#000}
-.cutin .cvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-.cutin.hasclip .cimg,.cutin.hasclip .ckanji{display:none}
 .now.cut.clip .cutin{width:100%}
-.cutin.hasclip .band,.cutin.hasclip.right .band{width:100%;margin:0;padding:16px 14px 8px;gap:0;clip-path:none;border-top:0;
-  background:linear-gradient(transparent,rgba(10,9,8,.88) 45%)}
+.cutin.hasclip{height:auto;aspect-ratio:16/9;max-height:300px;align-items:flex-end;background:#000;animation:clipwipe .5s cubic-bezier(.2,.9,.2,1) backwards}
+.cutin.hasclip.right{animation-name:clipwiper}
+@keyframes clipwipe{from{clip-path:polygon(0 0,0 0,-20% 100%,-20% 100%)}to{clip-path:polygon(0 0,120% 0,100% 100%,-20% 100%)}}
+@keyframes clipwiper{from{clip-path:polygon(120% 0,120% 0,100% 100%,100% 100%)}to{clip-path:polygon(0 0,120% 0,100% 100%,-20% 100%)}}
+.cvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;animation:clipzoom 4s cubic-bezier(.2,.6,.3,1) both}
+@keyframes clipzoom{from{transform:scale(1.14)}to{transform:scale(1)}}
+.cutin.hasclip::after,.clipbox::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;box-shadow:inset 0 0 60px 10px rgba(0,0,0,.65)}
+.cbars{position:absolute;inset:0;z-index:1;pointer-events:none}
+.cbars::before,.cbars::after{content:'';position:absolute;left:0;right:0;height:7%;background:#000;animation:barin .45s .1s cubic-bezier(.2,.9,.2,1) both}
+.cbars::before{top:0}.cbars::after{bottom:0;transform-origin:bottom}
+@keyframes barin{from{transform:scaleY(0)}}
+.cutin.hasclip .lines{z-index:1;mix-blend-mode:screen;animation:zoomlines .5s linear infinite,fadeaway 1.1s .2s both}
+@keyframes fadeaway{to{opacity:0}}
+.cflash{position:absolute;inset:0;z-index:3;background:#fff;pointer-events:none;animation:cflash .5s .12s ease-out both}
+@keyframes cflash{0%{opacity:0}15%{opacity:.85}100%{opacity:0}}
+.cutin.hasclip .cimg{display:none}
+.cutin.hasclip .band,.cutin.hasclip.right .band{width:100%;margin:0;padding:22px 16px 14px;gap:0;clip-path:none;border-top:0;z-index:2;
+  background:linear-gradient(transparent,rgba(10,9,8,.9) 55%);animation:bandup .5s .35s cubic-bezier(.2,.9,.2,1) both}
+@keyframes bandup{from{transform:translateY(40%);opacity:0}}
+.cutin.hasclip .ctext{border-left:3px solid var(--tc);padding-left:10px;align-items:flex-start;text-align:left}
+.cutin.hasclip.right .ctext{border-left:0;border-right:3px solid var(--tc);padding:0 10px 0 0;align-items:flex-end;text-align:right}
 .cutin.hasclip .cwho{font-size:.7rem}
-.cutin.hasclip .cmove{font-size:1.15rem}
-.cutin.hasclip .cquote{font-size:.78rem}
-.now.clipbeat{padding:10px;gap:8px}
-.clipbox{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;box-shadow:0 0 0 2px var(--tc),0 10px 26px rgba(0,0,0,.5);animation:imgpop .45s cubic-bezier(.2,1.2,.3,1) both}
-.clipbox video{width:100%;height:100%;object-fit:cover;display:block}
-.clipbox .cliptag{position:absolute;left:0;right:0;bottom:0;padding:18px 12px 8px;text-align:left;font-size:.86rem;color:var(--fg);background:linear-gradient(transparent,rgba(10,9,8,.85))}
-@media (prefers-reduced-motion: reduce){.clipbox{animation:none}}
+.cutin.hasclip .cmove{font-size:1.2rem;animation:enter .4s .45s both}
+.cutin.hasclip .cquote{font-size:.78rem;animation:enter .4s .65s both}
+.cutin.hasclip .ckanji,.clipbox .cstamp{position:absolute;z-index:2;top:10%;right:12px;left:auto;bottom:auto;width:44px;height:44px;display:grid;place-items:center;
+  font-size:26px;line-height:1;font-weight:800;color:#fff;opacity:1;border-radius:8px;background:color-mix(in srgb,var(--sc,var(--low)) 82%,#000);
+  box-shadow:0 0 0 2px rgba(255,255,255,.85),0 6px 16px rgba(0,0,0,.5);transform:rotate(-8deg);animation:stamp .5s .55s cubic-bezier(.2,1.5,.3,1) both}
+.cutin.hasclip.right .ckanji,.clipbox.right .cstamp{right:auto;left:12px;transform:rotate(8deg)}
+@keyframes stamp{from{transform:scale(2.4) rotate(-20deg);opacity:0}}
+.now.clipbeat{padding:10px;gap:10px}
+.clipbox{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;
+  --glow:var(--tc);box-shadow:0 0 0 2px var(--glow),0 0 26px color-mix(in srgb,var(--glow) 45%,transparent),0 10px 26px rgba(0,0,0,.5);animation:clipwipe .5s cubic-bezier(.2,.9,.2,1) backwards}
+.clipbox.right{animation-name:clipwiper}
+.clipbox.act-regen,.clipbox.act-heal,.clipbox.act-revive{--glow:#5fd38d;animation:clipwipe .5s cubic-bezier(.2,.9,.2,1) backwards,healglow 1.6s .4s ease-in-out infinite}
+.clipbox.right.act-regen,.clipbox.right.act-heal,.clipbox.right.act-revive{animation-name:clipwiper,healglow}
+.clipbox.act-ko,.clipbox.act-fall{--glow:var(--low)}
+.clipbox.act-defend{--glow:#8fb4ff}
+@keyframes healglow{50%{box-shadow:0 0 0 2px var(--glow),0 0 44px color-mix(in srgb,var(--glow) 70%,transparent),0 10px 26px rgba(0,0,0,.5)}}
+.clipbox.act-regen .cstamp,.clipbox.act-heal .cstamp,.clipbox.act-revive .cstamp{background:#2f8f5b}
+.clipbox.act-defend .cstamp{background:#3f5f9f}
+.clipbox video{position:absolute;inset:0}
+.clipbox .cliptag{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:22px 14px 10px;display:flex;align-items:baseline;gap:8px;text-align:left;font-size:.9rem;
+  color:var(--fg);background:linear-gradient(transparent,rgba(10,9,8,.88) 55%);animation:bandup .5s .35s cubic-bezier(.2,.9,.2,1) both}
+.clipbox.right .cliptag{flex-direction:row-reverse;text-align:right}
+.clipbox .cliptag i{font-style:normal;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;
+  background:color-mix(in srgb,var(--glow) 30%,rgba(0,0,0,.4));color:var(--fg)}
+@media (prefers-reduced-motion: reduce){.cutin.hasclip,.clipbox,.cvid,.cbars::before,.cbars::after,.cflash,.clipbox *{animation:none!important}.cflash{display:none}}
