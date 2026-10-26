@@ -23,7 +23,7 @@ const STAGES = [
   {id:'training', arc:'prologue', title:'The Boulder', place:'Mount Sagiri', foe:'Sabito', mine:['tanjiro'], enemy:['sabito'], level:'easy',
     stars:{standing:1, hp2:45, rounds:5},
     beats:[{when:'low', id:'tanjiro', at:.4, text:'Breathe. Feel the gap in his guard.'}, {when:'low', id:'sabito', at:.35, text:'That’s it. Again!'}],
-    outro:[['sabito','You cut it. You really cut the boulder.',{img:'boulder'}],['tanjiro','Sabito? …He’s gone.'],['','Tanjiro is ready for Final Selection.']],
+    outro:[['sabito','You cut it. You really cut the boulder.',{img:'sabito-smile'}],['tanjiro','Sabito? …He’s gone.'],['','Tanjiro is ready for Final Selection.']],
     boosts:[{side:1, hp:1.4, label:'Sabito: +40% HP'}],
     blurb:'A boy in a fox mask tests Tanjiro before he can cut the boulder.',
     scene:[['','Mount Sagiri. Half a year of training, and the boulder still stands.'],
