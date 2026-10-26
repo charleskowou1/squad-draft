@@ -284,6 +284,8 @@ async function onlineJoin(){
 }
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off' }catch(e){}
 useModeCfg(S.mode); S.names=localNames();
+// ask the browser to keep this game's saved data even when the phone is low on space (Android/Chrome grant it; harmless elsewhere)
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
 render();

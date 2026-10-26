@@ -1082,3 +1082,13 @@ details ul b{color:var(--fg)}
 .modehero .mk{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-family:var(--display);font-size:3.6rem;font-weight:800;color:var(--accent);text-shadow:0 4px 16px rgba(0,0,0,.6)}
 .modehero img{width:36%}
 .modehero .mk{z-index:2}
+
+/* home: story progress pie and continue button */
+.storyhome{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;border:1px solid var(--line-2);background:var(--grain),linear-gradient(120deg,rgba(224,87,59,.12),var(--surface) 60%)}
+.storyhome .sprog{width:62px;height:62px}
+.storyhome .sprog b{font-size:1.3rem}
+.storyhome .sprog span{font-size:.58rem}
+.shbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.shbody b{font-family:var(--display);font-size:1.02rem}
+.shbody .muted{font-size:.78rem}
+.sprog{background:radial-gradient(circle,var(--bg-2) 58%,transparent 59%),conic-gradient(var(--gold) calc(var(--won,0)*1%),var(--line) 0)}

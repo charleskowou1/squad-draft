@@ -227,6 +227,14 @@ function vModeSet(){
     ${art.length?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</div>`:''}
     <div class="panel modepanel">${modeSettings()}</div>`;
 }
+// Story on the home screen: a progress pie and one button to carry on where you left off
+function storyHome(){
+  const won=storyWon(), next=nextStage(), st=STAGES[next], all=won>=STAGES.length;
+  return `<div class="storyhome"><div class="sprog" style="--won:${won/STAGES.length*100}"><b>${won}</b><span>of ${STAGES.length}</span></div>
+    <div class="shbody"><div class="eyebrow">Story mode</div><b>${all?'Story complete':won?`Next: ${esc(st.title)}`:'The Slayer’s journey'}</b>
+      <span class="muted">${all?`${totalStars()} of ${STAGES.length*3} stars`:won?`Battle ${next+1} · ${esc(ARCS[st.arc].title)}`:'21 battles, from Mount Sagiri to the last dawn'}</span></div>
+    <button class="btn small" data-a="storymap">${all?'Star chase':won?'Continue':'Begin'}</button></div>`;
+}
 function vSetup(){
   return `
   <div class="setbar"><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
@@ -236,6 +244,7 @@ function vSetup(){
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${artStrip()}
   ${dailyCard()}
+  ${storyHome()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
     return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <details class="panel" id="howto"><summary>How to play</summary><ul>
@@ -706,7 +715,7 @@ function stageDetail(st,i,clear){
     <span class="sseals">${st.mine.map(id=>seal(BYID[id],'sm')).join('')}<span class="svs">vs</span>${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span>
     ${unl.length&&!clear?`<span class="unlpreview"><small>Win to unlock</small>${unl.map(id=>`<span>${seal(BYID[id],'sm')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</span>`:''}
     ${clear?`<div class="goals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${k<n?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>`:''}
-    <span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span></div>`;
+    <span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':i===nextStage()?'Continue':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span></div>`;
 }
 // Particles drifting over each arc's scene (embers, snow, petals…)
 const ARC_FX = {prologue:'snow', asakusa:'petal', flashback:'ember', tsuzumi:'dust', natagumo:'thread', mugen:'ember', district:'petal', swordsmith:'leaf', castle:'dust', dawn:'ember'};
