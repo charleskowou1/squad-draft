@@ -75,13 +75,29 @@ out(`Same team:
 - Sun Lineage: Yoriichi (either) + Tanjiro → Tanjiro +2 PWR.
 - Mentor: Urokodaki + Tanjiro / Giyu / Sabito & Makomo → those pupils +1 DEF.
 - Corps Master: Kagaya + any Hashira → every Hashira +1 DEF.
+- Two as One: Gyutaro + Daki → Gyutaro +2 PWR, and if one falls while the other still stands, they get back up at the
+  end of the round with 30% (once each). Knock both out in the same round to stop it. (Very strong: ~71% when paired.)
+- Temari & Arrows: Susamaru + Yahaba → Susamaru's hits slip past Defend.
+- Kocho Sisters: Kanae + Shinobu → Shinobu's poison lasts 4 rounds instead of 3.
+- Kanae's student: Kanae + Kanao → Kanao +1 PWR.
+- Training partner: Yoriichi Type Zero + Muichiro → Muichiro +1 PWR.
 Opposing teams:
 - Muzan fears the Sun: Muzan facing Yoriichi → Muzan −3 PWR, −2 SPD.
 - Kokushibo shaken: Kokushibo facing Yoriichi → −1 DEF.
 - Tamayo's medicine: Muzan facing Tamayo → Muzan regen −2.
 - Rivals: Zenitsu facing Kaigaku → Zenitsu +2 PWR.
 - Wisteria Body: a demon that knocks out Shinobu loses 5 HP every round after (not Akaza: he never eats women).
-- Sun Breathing: Yoriichi's special stops every demon it hits from regenerating for good.`);
+- Sun Breathing: Yoriichi's special stops every demon it hits from regenerating for good (not Demon King Tanjiro: sun-proof).
+Special rules on single cards:
+- Nakime never attacks. Her basic move (in place of Attack) is Biwa Strum: an enemy she picks acts last this round
+  (always happens first). Castle Shift sends an enemy away for the round: they can't act and can't be hit. If she's
+  the last one standing on her team she flees, which counts as a knockout, so never leave her alone.
+- Yahaba's Vector Arrows (moves first): every hit the chosen enemy throws this round misses.
+- Awakened Nezuko can't Defend (berserk).
+- Yoriichi Type Zero strikes three times per Attack at low PWR (great vs low DEF, poor vs tanks). It's a puppet:
+  it doesn't count as Yoriichi, so Muzan isn't scared of it.
+- Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
+  Awakened Nezuko, Zohakuten (Hantengu's other version; doesn't split), Retired Tengen, Final-Form Muzan.`);
 
 hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);
@@ -109,6 +125,7 @@ round you want; it acts first that round and is then gone.
 - Kasugai Crow: after both sides lock in, you see the enemy's planned moves (and helper) and may change yours.
   Vs computer, the computer's crow switches any of its fighters you're about to knock out to Defend.
 - Muscle Mice (Tengen's mice): every fighter on your team gets +${MICE_PWR} PWR for that round only.
+- Hotaru Haganezuka (swordsmith): your fighter with the longest wait for their special gets it ready for next round.
 Helper strength in simulated realistic matches (side with the helper vs without; 50% = no effect):
 Chachamaru ~62%, Muscle Mice ~55%, Kasugai Crow ~54% (a thinking human gets more from the Crow).`);
 
@@ -142,7 +159,7 @@ out(`- Points efficiency matters more than raw power: what fits exactly into the
 
 hr('11. WORKED EXAMPLES');
 out(`EXAMPLE DRAFT (20 points, Random pool). Dealt: Doma 11, Giyu 8, Rengoku 7, Tanjiro 5, Nezuko 4, Zenitsu 4,
-Inosuke 4, Kanao 4, Murata 2, Hand Demon 2, plus the three helpers.
+Inosuke 4, Kanao 4, Murata 2, Hand Demon 2, plus the four helpers.
   Pick 1  A: Doma (11)            A has 9 left
   Pick 2  B: Tanjiro (5)          B has 15 left
   Pick 3  B: Nezuko (4)           B has 11 left   → Siblings (Tanjiro + Nezuko) on B

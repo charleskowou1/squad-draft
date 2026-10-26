@@ -393,7 +393,7 @@ function moveSummary(u){
   if(u.stun) return 'Stunned · skips this round';
   const pl=S.plans[u.p][u.uid];
   if(!pl||!pl.type) return 'Choose a move';
-  const name = pl.type==='attack'?'Attack':pl.type==='defend'?'Defend':esc(u.sig.name);
+  const name = pl.type==='attack'?(u.basic?esc(u.basic.name):'Attack'):pl.type==='defend'?'Defend':esc(u.sig.name);
   if(!needsTarget(u,pl)) return name;
   const t=pl.t&&findU(pl.t);
   return t ? `${name} → ${esc(t.name)}` : `${name} · pick a target`;
@@ -410,7 +410,7 @@ function fighter(u, open){
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
   return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
     ${statusChips(u,false)}
-    <div class="moves">${mv('attack','攻','Attack',u.strikes>1?'×'+u.strikes:'')}${mv('defend','守','Defend','')}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
+    <div class="moves">${u.basic?mv('attack','琵',esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.strikes>1?'×'+u.strikes:'')}${mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
     ${opts.length?`<div class="targets"><span class="tlabel">${isAllyMove(u,pl)?'Ally':'Target'}</span>${opts.map(tgt).join('')}</div>`:''}
   </div></div>`;
 }

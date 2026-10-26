@@ -67,6 +67,11 @@ function poolNotes(){
   if(has('tanjiro')&&has('nezuko')) add('team', ['tanjiro','nezuko'], 'Siblings', 'On one team: when either is hit, the other strikes back at the attacker for 3 damage.', together(['tanjiro','nezuko']));
   if(has('yoriichi')&&has('tanjiro')) add('team', ['yoriichi','tanjiro'], 'Sun Lineage', 'Yoriichi and Tanjiro on one team: Tanjiro gets +2 PWR.', together(['yoriichi','tanjiro']));
   if(has('tamayo')&&has('yushiro')) add('team', ['tamayo','yushiro'], 'Devoted', 'Tamayo and Yushiro on one team: Yushiro gets +2 PWR.', together(['tamayo','yushiro']));
+  if(has('gyutaro')&&has('daki')) add('team', ['gyutaro','daki'], 'Two as One', 'Gyutaro and Daki on one team: Gyutaro gets +2 PWR, and if one falls while the other still stands, they get back up at the end of the round with 30% (once each). Knock both out in the same round to stop it.', together(['gyutaro','daki']));
+  if(has('susamaru')&&has('yahaba')) add('team', ['susamaru','yahaba'], 'Temari & Arrows', "Susamaru and Yahaba on one team: Yahaba's arrows guide Susamaru's hits past Defend.", together(['susamaru','yahaba']));
+  if(has('kanae')&&has('shinobu')) add('team', ['kanae','shinobu'], 'Kocho Sisters', "Kanae and Shinobu on one team: Shinobu's poison lasts 4 rounds instead of 3.", together(['kanae','shinobu']));
+  if(has('kanae')&&has('kanao')) add('team', ['kanae','kanao'], "Kanae's student", 'Kanae and Kanao on one team: Kanao gets +1 PWR.', together(['kanae','kanao']));
+  if(has('typezero')&&has('muichiro')) add('team', ['typezero','muichiro'], 'Training partner', 'Yoriichi Type Zero and Muichiro on one team: Muichiro gets +1 PWR.', together(['typezero','muichiro']));
   const hashira=famsWhere(c=>c.hashira);
   if(hashira.length>=2) add('team', hashira, 'Hashira', 'Two or more Hashira on one team: each Hashira gets +1 PWR.', twoOf(hashira));
   const upper=famsWhere(c=>c.upper);
@@ -88,7 +93,7 @@ function poolNotes(){
   const demons=famsWhere(c=>c.demon);
   const eaters=demons.filter(f=>f!=='akaza');   // demons who would devour Shinobu (Akaza never eats women)
   if(has('shinobu')&&eaters.length) add('vs', ['shinobu',...eaters], 'Wisteria Body', 'If a demon lands the blow that knocks Shinobu out, it devours her and loses 5 HP every round for the rest of the match. Akaza is the exception: he never eats women.', facing(['shinobu'],eaters));
-  const regen=demons.filter(f=>BYID[inPool[f]].regen);
+  const regen=demons.filter(f=>BYID[inPool[f]].regen && !BYID[inPool[f]].sunproof);   // Demon King Tanjiro is sun-proof
   if(S.pool.includes('yoriichi') && regen.length) add('vs', ['yoriichi',...regen], 'Sun Breathing', "Yoriichi's special hits every enemy, and demons it hits stop regenerating for the rest of the match.", facing(['yoriichi'],regen));
   const poison=['shinobu','gyutaro'].filter(has);
   if(has('tamayo')&&poison.length) add('vs', ['tamayo',...poison], 'Antidote', "Tamayo's heal also cures poison, so she can undo Shinobu's and Gyutaro's poison on her team.", facing(['tamayo'],poison));

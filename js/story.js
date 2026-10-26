@@ -11,7 +11,7 @@ const STAGES = [
     blurb:'A demon who wants a family, and threads that cut steel.'},
   {id:'mugen', title:'Mugen Train', place:'The night train', foe:'Enmu & Akaza', enemy:['enmu','akaza'], budget:14, level:'normal',
     blurb:'Wake from the dream, then face Upper Moon 3 at dawn.'},
-  {id:'district', title:'Entertainment District', place:'Yoshiwara', foe:'Gyutaro & Daki', enemy:['gyutaro','kaigaku','swamp'], budget:15, level:'hard',
+  {id:'district', title:'Entertainment District', place:'Yoshiwara', foe:'Gyutaro & Daki', enemy:['gyutaro','daki','swamp'], budget:15, level:'hard',
     blurb:'Two demons sharing one life, and a fallen thunder slayer.'},
   {id:'swordsmith', title:'Swordsmith Village', place:'The hidden village', foe:'Hantengu & Gyokko', enemy:['hantengu','gyokko'], budget:17, level:'hard',
     blurb:'Cut one down and two more appear. Watch the vases.'},

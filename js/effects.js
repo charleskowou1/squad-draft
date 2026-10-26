@@ -16,6 +16,8 @@ const FIGHT_STYLE = {
   muzan:'blood', muzan_final:'blood', kokushibo:'moon', doma:'ice', akaza:'compass', gyutaro:'blood', gyokko:'water',
   hantengu:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
   hand:'claw', swamp:'claw',
+  daki:'thread', nakime:'sound', zohakuten:{attack:'thunder', special:'beast'}, susamaru:'compass', yahaba:'wind', kanae:'flower',
+  tanjiro_demon:'blood', nezuko_awakened:'blood', typezero:'slash',
 };
 const styleOf = (u, move) => { const s=FIGHT_STYLE[u.sk]||'slash'; return typeof s==='string' ? s : (s[move]||s.attack); };
 

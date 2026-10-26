@@ -23,14 +23,19 @@ kokushibo          Kokushibo (Upper Moon 1)
 doma               Doma (Upper Moon 2)
 akaza              Akaza (Upper Moon 3)
 hantengu           Hantengu (Upper Moon 4)
+zohakuten          Zohakuten (Hantengu's Hatred)  - borrows hantengu's picture if missing
+nakime             Nakime (Upper Moon 4, the biwa player)
 gyokko             Gyokko (Upper Moon 5)
-gyutaro            Gyutaro & Daki (Upper Moon 6), one picture for both
+gyutaro            Gyutaro (Upper Moon 6), now his own card
+daki               Daki (Upper Moon 6), now her own card
 kaigaku            Kaigaku (Upper Moon 6)
 enmu               Enmu (Lower Moon 1)
 rui                Rui (Lower Moon 5)
 kyogai             Kyogai (the drum demon)
 hand               Hand Demon (Final Selection)
 swamp              Swamp Demon
+susamaru           Susamaru (the temari demon)
+yahaba             Yahaba (the arrow demon)
 
 HANTENGU'S SPLIT FORMS (appear in battle when he splits)
 sekido             Sekido (Anger)
@@ -49,10 +54,13 @@ rengoku            Kyojuro Rengoku                  <-- last name
 tengen             Tengen Uzui
 tengen_retired     Tengen Uzui (Retired)  - eye patch, one hand; borrows tengen's picture if missing
 shinobu            Shinobu Kocho
+kanae              Kanae Kocho (former Flower Hashira, Shinobu's sister)
 
 EVERYONE ELSE
 tanjiro            Tanjiro Kamado
+tanjiro_demon      Tanjiro Kamado (Demon King)  - borrows tanjiro's picture if missing
 nezuko             Nezuko Kamado
+nezuko_awakened    Nezuko Kamado (Awakened, demon form)  - borrows nezuko's picture if missing
 zenitsu            Zenitsu Agatsuma
 inosuke            Inosuke Hashibira
 kanao              Kanao Tsuyuri
@@ -63,11 +71,13 @@ urokodaki          Sakonji Urokodaki                <-- last name
 sabito             Sabito & Makomo (one picture for both)
 kagaya             Kagaya Ubuyashiki
 murata             Murata
+typezero           Yoriichi Type Zero (the six-armed training puppet)
 
 BACK-POCKET HELPERS
 chachamaru         Chachamaru (Tamayo's cat)
 crow               Kasugai Crow
 mice               Muscle Mice (Tengen's mice)
+hotaru             Hotaru Haganezuka (Tanjiro's swordsmith, in his hyottoko mask)
 
 MARK ✦ VERSIONS (separate pictures, optional)
 giyu_mark          Giyu Tomioka (Mark)

@@ -59,10 +59,10 @@ const lost = (u,n) => `[-${pct(u,n)}%]`, gained = (u,n) => `[+${pct(u,n)}%]`;
 // How likely a character is to be dealt, relative to 1 for everyone else. Yoriichi is rare (about 1 draft in 8),
 // and when he is dealt, the old version is twice as likely as the prime one.
 const FAMILY_ODDS = {yoriichi:.4};
-const VERSION_ODDS = {yoriichi:.5, muzan_final:.5};   // the stronger version of these comes up less often
+const VERSION_ODDS = {yoriichi:.5, muzan_final:.5, tanjiro_demon:.3};   // the stronger version of these comes up less often
 // 30-point games deal more and stronger cards, so the hard pulls get their own odds to stay hard pulls
 const STRONG_FAMILY_ODDS = {yoriichi:.4};
-const STRONG_VERSION_ODDS = {yoriichi:.5, muzan_final:.2};
+const STRONG_VERSION_ODDS = {yoriichi:.5, muzan_final:.2, tanjiro_demon:.2};
 // How likely a family / version is to be dealt in the current mode (relative to 1)
 function familyOdds(fam, cards){
   if(!deal().strong) return FAMILY_ODDS[fam] ?? 1;
@@ -138,7 +138,8 @@ function undoPick(){
 }
 // Two-character synergies the computer drafter looks for
 const PAIRS = [['urokodaki','sabito'],['sabito','tanjiro'],['tanjiro','nezuko'],['tamayo','yushiro'],['yoriichi','tanjiro'],['urokodaki','tanjiro'],['urokodaki','giyu'],
-  ['tanjiro','zenitsu'],['tanjiro','inosuke'],['zenitsu','inosuke']];
+  ['tanjiro','zenitsu'],['tanjiro','inosuke'],['zenitsu','inosuke'],
+  ['gyutaro','daki'],['susamaru','yahaba'],['kanae','shinobu'],['kanae','kanao'],['muichiro','typezero']];
 // Computer difficulty. Easy plays like the original simple computer; Normal plays smart but with sloppier choices;
 // Hard is the full planner. Noise = random wobble added to every option's score (bigger = more mistakes).
 const LEVELS = {easy:{label:'Easy', draftNoise:12}, normal:{label:'Normal', draftNoise:6, noise:22}, hard:{label:'Hard', draftNoise:3, noise:4}};
@@ -166,6 +167,7 @@ function cpuDraftStep(level='hard'){
 let UID=0;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:c.pow,spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
+  sunproof:!!c.sunproof,noDefend:!!c.noDefend,basic:c.basic||null,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -183,13 +185,18 @@ function synergies(p){
   if(has('kokushibo') && e.some(u=>u.fam==='yoriichi')){ t.filter(u=>u.fam==='kokushibo').forEach(u=>u.def-=1); out.push('!Kokushibo shaken −1 DEF'); }
   const pupils=t.filter(u=>u.fam==='tanjiro'||u.fam==='giyu'||u.fam==='sabito'); if(has('urokodaki') && pupils.length){ pupils.forEach(u=>u.def+=1); out.push('Mentor: pupils +1 DEF'); }
   if(has('kagaya') && ha.length){ ha.forEach(u=>u.def+=1); out.push('Corps Master: Hashira +1 DEF'); }
+  if(has('gyutaro')&&has('daki')){ S.twins[p]=true; t.filter(u=>u.fam==='gyutaro').forEach(u=>u.pow+=2); out.push('Two as One: Gyutaro +2 PWR'); }
+  if(has('susamaru')&&has('yahaba')){ t.filter(u=>u.fam==='susamaru').forEach(u=>u.pierceAll=true); out.push('Temari & Arrows: past Defend'); }
+  if(has('kanae')&&has('shinobu')){ t.filter(u=>u.fam==='shinobu').forEach(u=>u.poisonTurns=4); out.push('Kocho Sisters: longer poison'); }
+  if(has('kanae')&&has('kanao')){ t.filter(u=>u.fam==='kanao').forEach(u=>u.pow+=1); out.push("Kanae's student: Kanao +1 PWR"); }
+  if(has('typezero')&&has('muichiro')){ t.filter(u=>u.fam==='muichiro').forEach(u=>u.pow+=1); out.push('Training partner: Muichiro +1 PWR'); }
   if(has('zenitsu') && e.some(u=>u.fam==='kaigaku')){ t.filter(u=>u.fam==='zenitsu').forEach(u=>u.pow+=2); out.push('Rival: Zenitsu +2 PWR'); }
   return out;
 }
 function startBattle(){
   S.teams=[fighterIds(0).map(id=>mkUnit(id,0)), fighterIds(1).map(id=>mkUnit(id,1))];
   S.helpers=[S.picks[0].filter(isHelper), S.picks[1].filter(isHelper)]; S.helperPlan=[[],[]]; S.scoutQueue=[]; S.scouting=false;
-  S.sib=[false,false]; S.syn=[synergies(0),synergies(1)];
+  S.sib=[false,false]; S.twins=[false,false]; S.syn=[synergies(0),synergies(1)];
   S.round=1; S.plans=[{},{}]; S.lastPlans=[null,null]; S.log=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
   S.movesLocked=[false,false]; S.readyNext=[false,false]; S.roundId=0;   // online play
   S.phase = S.mode==='2p' ? 'pass' : 'plan';
@@ -253,6 +260,12 @@ const SIG_EST = {
   karaku: u=>({base:u.pow+3}),
   aizetsu: u=>({base:u.pow+4}),
   urogi: u=>({base:u.pow+2}),
+  daki: u=>({all:true, base:u.pow-3}),
+  zohakuten: u=>({all:true, base:u.pow-4, o:{pierce:true}}),
+  susamaru: u=>({base:u.pow-1, bonus:1.6}),          // also hits a second enemy
+  kanae: u=>({base:u.pow+3, bonus:1.15}),             // plus a small heal
+  tanjiro_demon: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
+  nezuko_awakened: ()=>({all:true, base:10, o:{ignoreDef:true}}),
 };
 // Easy: the original simple computer. Specials at random when ready, always hits whoever has the least HP.
 function cpuPlanEasy(p){
@@ -262,7 +275,7 @@ function cpuPlanEasy(p){
     const low=enemy.slice().sort((a,b)=>a.hp-b.hp)[0];
     let type='attack';
     if(u.cd===0 && Math.random()<.7) type='special';
-    else if(u.hp<u.max*.3 && Math.random()<.35) type='defend';
+    else if(u.hp<u.max*.3 && Math.random()<.35 && !u.noDefend) type='defend';
     let t=low.uid;
     if(u.sig.kind==='ally'){ const hurt=alive(p).slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; t=hurt.uid; if(type==='special' && u.sk==='tamayo' && hurt.hp>hurt.max*.75) type='attack'; if(type==='attack') t=low.uid; }
     S.plans[p][u.uid]={type, t};
@@ -292,6 +305,8 @@ function cpuPlan(p, level='hard'){
     if(u.stun) return;
     const at=best(u.pow), atD=estHit(at,u.pow)*u.strikes;
     let plan={type:'attack', t:at.uid, v:score(at,atD), hits:[[at,atD]]};
+    // Nakime's Biwa Strum: slow down the most dangerous enemy
+    if(u.basic){ const t=foes.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }
     if(u.cd===0){
       const e=SIG_EST[u.sk]; let sp=null;
       if(e){ const x=e(u);
@@ -311,13 +326,16 @@ function cpuPlan(p, level='hard'){
           case 'kagaya': sp={type:'special', v: mine.reduce((a,m)=>a+Math.min(4,m.max-m.hp)/m.max*100,0)}; break;
           case 'enmu': sp={type:'special', v: foes.filter(f=>f.cd<=1).length*14}; break;
           case 'shinobu': { const t=foes.slice().sort((a,b)=>(b.demon-a.demon)||(b.hp-a.hp))[0]; sp={type:'special', t:t.uid, v: t.poison ? 0 : t.demon ? 45 : 25}; break; }
+          case 'nakime': { const t=foes.slice().sort((a,b)=>threat(b)-threat(a))[0]; sp={type:'special', t:t.uid, v:15+threat(t)}; break; }
+          case 'yahaba': { const t=foes.slice().sort((a,b)=>threat(b)-threat(a))[0]; sp={type:'special', t:t.uid, v:10+threat(t)*1.2}; break; }
+          case 'typezero': { const t=mine.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes)[0]; sp={type:'special', t:t.uid, v: S.round<=3 ? 25 : 10}; break; }
           case 'kyogai': { const t=foes.slice().sort((a,b)=>threat(b)-threat(a))[0]; sp={type:'special', t:t.uid, v:12+threat(t)}; break; }
         }
       }
       if(sp && sp.v+Math.random()*noise > plan.v+Math.random()*noise) plan=sp;
     }
     // badly hurt with nothing worth doing: guard
-    if(u.hp<=u.max*.25 && plan.v<30 && Math.random()<.6) plan={type:'defend'};
+    if(u.hp<=u.max*.25 && plan.v<30 && Math.random()<.6 && !u.noDefend) plan={type:'defend'};
     (plan.hits||[]).forEach(([t,d])=>{ planned[t.uid]=(planned[t.uid]||0)+d; });
     S.plans[p][u.uid]={type:plan.type, t:plan.t};
   });
@@ -332,6 +350,8 @@ function L(t,c='',extra){ const hp={}; S.teams[0].concat(S.teams[1]).forEach(u=>
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive){ const a=alive(1-u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',fx('revive',null,t)); return; }
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ...fx('ko',a,t)});
+  // Gyutaro and Daki (Two as One): a fallen sibling gets back up (once each) at the end of the round if the other is still standing
+  if(S.twins && S.twins[t.p] && (t.fam==='gyutaro'||t.fam==='daki') && !t.rose){ t.rise=true; t.rose=true; }
   // Shinobu's Wisteria Body: the demon who knocks her out devours her and is poisoned. Not Akaza: he never eats women.
   if(t.fam==='shinobu' && a && a.alive && a.demon && a.fam!=='akaza'){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
   if(t.splits) split(t); }
@@ -344,14 +364,16 @@ function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;
   if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
   if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',fx('miss',a,t)); return 0; }
+  if(t.away){ L(`${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
+  if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
-  const guarded = t.defending && !o.pierce;
+  const guarded = t.defending && !o.pierce && !a.pierceAll;
   if(guarded) d = Math.ceil(d/2);
   let note = guarded?' (guarded)':'';
   if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
   d=Math.max(0,d); const before=t.hp; t.hp = Math.max(0, t.hp - d);
   L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',fx('hit',a,t));
-  if(o.sun && t.demon && t.regen){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
+  if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
   fall(t,a);
   if(o.counter!==false && S.sib[t.p] && a.alive && (t.fam==='tanjiro'||t.fam==='nezuko')){
     const partner = S.teams[t.p].find(u=>u.alive && u!==t && (u.fam==='tanjiro'||u.fam==='nezuko'));
@@ -386,7 +408,7 @@ function special(u,pl){
     case 'mitsuri': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'obanai': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
     case 'rengoku': hit(u,target(u,pl.t),u.pow+8); break;
-    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade){L(`The poison misses.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
+    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade){L(`The poison misses.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:u.poisonTurns||3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t); break; }
     case 'kyogai': stunT(target(u,pl.t)); break;
@@ -394,6 +416,15 @@ function special(u,pl){
     case 'swamp': hit(u,target(u,pl.t),u.pow+1); break;
     case 'gyutaro': en().forEach(e=>{ hit(u,e,4,{ignoreDef:true,counter:false}); if(e.alive&&!S.shield[e.p]&&!e.evade&&(!e.poison||e.poison.dmg<2)) e.poison={dmg:2,turns:2}; }); break;
     case 'akaza': hit(u,target(u,pl.t),u.pow+6); break;
+    case 'daki': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
+    case 'nakime': { const t=target(u,pl.t); if(t&&t.alive){ t.away=true; L(`Nakime strums. ${t.name} is sent to another room of the castle this round.`,'k',fx('stun',u,t)); } break; }
+    case 'zohakuten': en().forEach(e=>hit(u,e,u.pow-4,{pierce:true,counter:false})); break;
+    case 'susamaru': { const t=target(u,pl.t); hit(u,t,u.pow-1); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow-1); break; }
+    case 'yahaba': { const t=target(u,pl.t); if(t&&t.alive){ t.astray=true; L(`Yahaba's arrows lock onto ${t.name}. Every hit they throw this round will miss.`,'k',fx('stun',u,t)); } break; }
+    case 'kanae': { hit(u,target(u,pl.t),u.pow+3); const m=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(m){ const h=Math.min(4,m.max-m.hp); if(h){ m.hp+=h; L(`Kanae's petals heal ${m===u?'her':m.name} ${gained(m,h)}.`,'h',fx('heal',u,m)); } } break; }
+    case 'tanjiro_demon': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
+    case 'nezuko_awakened': { en().forEach(e=>hit(u,e,10,{ignoreDef:true,counter:false})); const sick=alive(u.p).filter(m=>m.poison); sick.forEach(m=>{ m.poison=null; }); if(sick.length) L(`Nezuko's blood burns the poison off ${sick.map(m=>m.name).join(', ')}.`,'h',fx('heal',u,null)); break; }
+    case 'typezero': { let t=findU(pl.t); if(!t||!t.alive||t.p!==u.p) t=u; t.spd+=2; L(`Type Zero drills ${t===u?'itself':t.name}: +2 SPD for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'doma': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'kokushibo': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'sekido': en().forEach(e=>hit(u,e,4,{ignoreDef:true,counter:false})); break;
@@ -410,6 +441,19 @@ function special(u,pl){
   }
   u.cd = s.cd + 1;
 }
+// Gyutaro and Daki (Two as One): one who fell this round gets back up with 30% if the other is still standing.
+// If both fell in the same round, both stay down. Each can only get back up once (unlimited won 94% of matches).
+function twinsRise(){
+  [0,1].forEach(p=>{ if(!S.twins[p]) return;
+    const pair=S.teams[p].filter(u=>u.fam==='gyutaro'||u.fam==='daki');
+    pair.filter(u=>u.rise).forEach(u=>{ u.rise=false; const o=pair.find(x=>x!==u);
+      if(o && o.alive){ u.alive=true; u.hp=Math.ceil(u.max*.3); u.poison=null; L(`${u.name} rises again while ${o.name} still stands ${gained(u,u.hp)}. Two as One!`,'x',fx('revive',null,u)); } }); });
+}
+// Nakime never fights: if she's the last one standing on her team, she flees (counts as knocked out)
+function aloneCheck(){
+  [0,1].forEach(p=>{ const a=alive(p); if(!a.length || !a.every(u=>u.basic)) return;
+    a.forEach(u=>{ u.alive=false; u.hp=0; L(`${u.name} is alone. She flees into the castle.`,'k',{ko:u.uid, ...fx('ko',null,u)}); }); });
+}
 // A back-pocket helper's effect, at the start of the round it's used. It then leaves the back pocket.
 function useHelper(p, id){
   S.helpers[p]=S.helpers[p].filter(h=>h!==id);
@@ -419,6 +463,11 @@ function useHelper(p, id){
     if(u){ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; L(`Chachamaru delivers Tamayo's medicine to ${u.name} ${gained(u,h)}.`,'h',{...tag, on:u.uid}); }
   }
   if(id==='mice'){ team.forEach(u=>{ u.pow+=MICE_PWR; u.miceBoost=(u.miceBoost||0)+MICE_PWR; }); L(`The Muscle Mice flex! ${S.names[p]}'s team gets +${MICE_PWR} PWR this round.`,'h',tag); }
+  if(id==='hotaru'){   // the fighter with the longest wait for their special gets it ready for next round
+    const u=team.slice().sort((a,b)=>b.cd-a.cd)[0];
+    if(u && u.cd>0){ u.cd=0; L(`Hotaru reforges ${u.name}'s blade. Their special is ready next round.`,'h',{...tag, fx:'buff', on:u.uid}); }
+    else L(`Hotaru has nothing to sharpen and storms off.`,'x',tag);
+  }
   if(id==='crow') L(`${S.names[p]}'s Kasugai Crow scouted the enemy's moves.`,'x',tag);
 }
 // Computer back-pocket choices for this round
@@ -429,6 +478,7 @@ function cpuHelpers(p){
     if(have.includes('chachamaru') && team.some(u=>u.hp<=u.max*.5)) use.push('chachamaru');
     if(have.includes('mice') && S.round>=2 && team.length>=2) use.push('mice');
     if(have.includes('crow') && S.round>=2) use.push('crow');
+    if(have.includes('hotaru') && team.some(u=>u.cd>=2)) use.push('hotaru');
   }
   S.helperPlan[p]=use;
 }
@@ -442,7 +492,7 @@ function cpuScout(p){
     const hits = x && x.all ? alive(p) : [findU(q.t)].filter(t=>t && t.p===p);
     hits.forEach(t=>{ incoming[t.uid]=(incoming[t.uid]||0)+estHit(t, base, x?x.o:{}); });
   });
-  alive(p).forEach(u=>{ if(!u.stun && (incoming[u.uid]||0)>=u.hp) S.plans[p][u.uid]={type:'defend'}; });
+  alive(p).forEach(u=>{ if(!u.stun && !u.noDefend && (incoming[u.uid]||0)>=u.hp) S.plans[p][u.uid]={type:'defend'}; });
 }
 // Both sides played by the computer (simulator and checks): moves, back-pocket helpers, then crow scouting
 function cpuBothSides(l0='hard', l1='hard'){
@@ -488,18 +538,25 @@ function resolve(){
   L(`Round ${S.round}`,'r');
   [0,1].forEach(p=>(S.helperPlan&&S.helperPlan[p]||[]).forEach(id=>useHelper(p,id)));   // back-pocket helpers act first
   const acts=[];
-  [0,1].forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:'defend'}), r:Math.random()}); }));
+  [0,1].forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
   acts.forEach(x=>{ if(x.pl.type==='defend') x.u.defending=true; });
+  // Nakime's Biwa Strum always goes first: the enemy she picks acts last this round
+  acts.forEach(x=>{ if(x.pl.type!=='attack' || !x.u.basic) return; const t=findU(x.pl.t); if(!t || !t.alive || t.p===x.u.p) return;
+    t.late=true; S.curMove='attack'; L(`${x.u.name} strums her biwa. ${t.name} will act last this round.`,'x',fx('stun',x.u,t)); S.curMove=null; });
   const prio = x => x.pl.type==='special' ? (x.u.sig.prio||0) : 0;
-  acts.sort((a,b)=> prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
+  acts.sort((a,b)=> (a.u.late?1:0)-(b.u.late?1:0) || prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
+  aloneCheck();
   for(const x of acts){
     const u=x.u; if(!u.alive) continue;
     S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
+    if(u.away){ L(`${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
+    if(x.pl.type==='attack' && u.basic) continue;   // Nakime's strum already happened
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
     if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!alive(1-u.p).length) break; hit(u,target(u,x.pl.t),u.pow); }
     if(x.pl.type==='special') special(u,x.pl);
+    aloneCheck();
     if(!alive(0).length||!alive(1).length) break;
   }
   S.curMove=null;
@@ -509,9 +566,10 @@ function resolve(){
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
     if(u.alive && u.regen && u.hp<u.max){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',fx('heal',null,u)); }
     if(u.cd>0) u.cd--;
-    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false;
+    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false;
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
+  twinsRise(); aloneCheck();
   tallyRound();
   S.plans=[{},{}]; S.helperPlan=[[],[]];
   const a0=alive(0).length, a1=alive(1).length;
