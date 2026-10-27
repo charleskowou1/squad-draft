@@ -24,6 +24,10 @@ function render(){
   const st=S.mode==='story' && STAGES[S.stage], sky=!!(st && st.sunrise && ['plan','result','pass','scout','ready'].includes(view));
   document.body.classList.toggle('dawn', sky);
   if(sky){ const n=st.twist.survive; document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-1)/(n-1))).toFixed(3)); }
+  // Story battles fight in front of the battle's place picture (img/places/, the same one as its cutscenes)
+  const place=st && ['plan','result','pass','scout','ready','over'].includes(view) && (PLACE_ART[st.id]||PLACE_ART[st.arc]);
+  document.body.classList.toggle('placebg', !!place);
+  if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing

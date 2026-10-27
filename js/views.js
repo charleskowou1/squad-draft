@@ -872,7 +872,7 @@ function vScene(){
     : `<div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · ${S.sceneMid?`Round ${S.round}`:`Battle ${S.stage+1} of ${STAGES.length}`}</div><div class="title">${esc(st.title)}</div><div class="splace">${esc(st.place)}</div></div>
       <span class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="sceneskip">Skip</button></span></div>`;
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
-    return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+    return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}${head}
       <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starRow(S.starsGot||1)}
         <div class="goals">${starGoals(st).map((g,k)=>`<span class="${(S.goalsNow||[])[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>
         ${(S.starsGot||0)>(S.starsBest||0)&&S.starsBest?'<span class="muted">New best!</span>':''}
@@ -886,7 +886,7 @@ function vScene(){
   if(S.sceneVs){
     const tw=twistText(st), row=ids=>ids.filter(id=>!BYID[id].helper).map(id=>`<span class="vsc">${seal(BYID[id],'lg')}<small>${esc(BYID[id].short)}</small></span>`).join('');
     const mine=S.storyDraft?'<span class="muted">Your draft</span>':row(st.mine);
-    return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+    return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}${head}
       <div class="vsrow l">${mine}</div><div class="vsmid"><span>VS</span></div><div class="vsrow r">${row(st.enemy)}</div>
       ${tw||st.boosts?`<div class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</div>`:''}
       ${stageCleared(S.stage)?`<div class="goals vsgoals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${goalsGot(st.id)[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>`:''}
@@ -897,7 +897,7 @@ function vScene(){
   const cast=(S.sceneFinale ? [shown[S.sceneAt-1], shown[S.sceneAt+1]].map(l=>l&&l[0]) : [...new Set(shown.map(l=>l[0]))]).filter(id=>id && id!==who).slice(0,2);   // finale: the neighbours in the conversation
   const typed=esc(text);   // lines simply appear (CK didn't want the typing effect)
   return `<div ${placeStyle(st)}class="scene arc-${st.arc}${opt.awaken?' awakening':''}${S.sceneMid?' midscene':''}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
-    <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+    ${head}
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${S.sceneFinale?(side==='l'?'r':'l'):sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
       ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame

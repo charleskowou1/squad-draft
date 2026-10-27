@@ -591,7 +591,6 @@ details ul b{color:var(--fg)}
 .scene{position:relative;min-height:calc(100vh - 40px);min-height:calc(100dvh - 40px);display:flex;flex-direction:column;justify-content:flex-start;gap:16px;
   padding:16px;border-radius:18px;overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none;
   background:radial-gradient(120% 80% at 50% 0%,var(--sc1,#3a2a22),var(--bg-2) 70%)}
-.scenebg{position:absolute;right:-6%;top:12%;font-size:min(70vw,420px);line-height:1;font-weight:800;color:var(--sc2,#e0573b);opacity:.08;pointer-events:none}
 .scenetop{position:relative;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 12px}
 .scenetop>div{flex:1;display:flex;flex-direction:column;gap:2px}
 .scenetop .title{font-family:var(--display);font-weight:800;font-size:1.5rem}
@@ -1197,7 +1196,6 @@ details ul b{color:var(--fg)}
 /* story: scene pictures (img/scenes/), Mark awakenings between rounds, unlocks one at a time */
 .stagecast .scenepor img{object-position:50% 30%}   /* a scene picture in the speaker's portrait frame (same size as the others) */
 @keyframes picin{from{opacity:0;transform:scale(.96)}}
-.scene.midscene .scenebg{color:var(--mark)}
 .scene.awakening::before{content:'';position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(circle at 50% 55%,rgba(255,80,60,.55),rgba(160,20,20,.25) 45%,transparent 70%);animation:awakeflash 1.4s ease-out both}
 @keyframes awakeflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
 .stagecast .lead.awaken .gl.lg{box-shadow:0 0 0 3px var(--mark),0 0 40px rgba(255,70,50,.65),0 18px 40px rgba(0,0,0,.55);animation:awakepulse 1.6s .5s ease-in-out infinite}
@@ -1275,4 +1273,8 @@ body.dawn .dawnsky{display:block}
 
 /* A place picture behind an arc's cutscenes (img/places/<arc>.jpg), darkened so lines stay readable */
 .scene[data-place]{background-image:linear-gradient(to bottom,rgba(12,10,8,.4),rgba(12,10,8,.08) 38%,rgba(12,10,8,.2) 55%,rgba(12,10,8,.88) 80%),var(--place);background-size:cover;background-position:center}
-.scene[data-place] .scenebg{opacity:.06}
+
+/* Story battles: the battle's place picture behind the whole screen, darker than in the cutscenes (more small text) */
+body.placebg{background:transparent}   /* the page colour stays on html; the picture is a fixed layer (iPhones don't do fixed backgrounds) */
+body.placebg::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(rgba(18,15,12,.68),rgba(18,15,12,.68)),var(--placebg) center/cover no-repeat}
