@@ -132,11 +132,11 @@ add({id:'kanae',name:'Kanae Kocho',short:'Kanae',g:'蝶',type:'Former Flower Has
 
 const tanjiro = add({id:'tanjiro',name:'Tanjiro Kamado',short:'Tanjiro',g:'日',type:'Sun & Water',cost:5,hp:28,pow:8,spd:7,def:4,
   sig:{name:'Hinokami Kagura',desc:'Strike for PWR+5, ignores DEF.',cd:3,kind:'single'}});
-markOf(tanjiro,{cost:9, hp:40, selfless:true});   // 9 pts, 40 HP since he gained the Selfless State (Oct 27, 2026): ~50% at 20 pts (36 HP was 34%)
+markOf(tanjiro,{cost:9, hp:46, selfless:true});   // 9 pts, 46 HP (Oct 27, 2026): 49% at 20 pts once attacking reveals him in the Selfless State (40 HP gave 38%)
 // Mark Tanjiro's second special: after his first Hinokami Kagura, the next one ready is the Selfless State (once per
 // match; unlocked by winning Destructive Death in the story). See special() and hit() in engine.js.
 const SELFLESS = {id:'selfless', name:'Selfless State', quote:'No wasted motion. No anger. Just breathe.', cd:Math.max(1,tanjiro.sig.cd-1), kind:'self', prio:3, tag:'untouchable · save allies',
-  desc:"Once per match. Moves first. Until Hinokami Kagura is ready again, Tanjiro can't be hit, stunned or moved by the biwa. Each round he can Attack (ignores DEF) or Save a teammate (they take no damage). Then his Hinokami Kagura can't be blocked by anything."};
+  desc:"Once per match. Moves first. Until Hinokami Kagura is ready again, Tanjiro can't be hit, stunned or moved by the biwa, except on a round he Attacks: striking reveals him for that round (his attacks ignore DEF). Once in the state he can Save a teammate: they take no damage that round. Then his Hinokami Kagura can't be blocked by anything."};
 // Demon King Tanjiro: the third version of Tanjiro (base, Mark or this one is dealt). Rare, like Final Muzan.
 add({id:'tanjiro_demon',fam:'tanjiro',sk:'tanjiro_demon',name:'Tanjiro Kamado (Demon King)',short:'Demon Tanjiro',g:'王',type:'Demon King · Sun-proof',demon:true,cost:17,hp:54,pow:18,spd:11,def:8,regen:4,
   sunproof:true,
@@ -192,7 +192,7 @@ add({id:'crow',name:'Kasugai Crow',short:'Kasugai Crow',g:'烏',type:'Messenger 
 add({id:'mice',name:'Muscle Mice',short:'Muscle Mice',g:'鼠',type:"Tengen's mice · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Flex!',desc:`Every fighter on your team gets +${MICE_PWR} PWR for this round.`,kind:'helper'}});
 add({id:'hotaru',name:'Hotaru Haganezuka',short:'Hotaru',g:'鋼',type:'Swordsmith · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
-  sig:{name:'Reforged Blade',desc:'Your fighter with the longest wait for their special gets it ready for next round.',kind:'helper'}});
+  sig:{name:'Reforged Blade',desc:'At the end of the round, your fighter with the longest wait for their special has it cut to 1 round (ready the round after next). Works on a special fired that same round, so you can use him in round 1.',kind:'helper'}});
 // Kiriya (also speaks in the story finale): a trap on one of your fighters for one round
 add({id:'kiriya',name:'Kiriya Ubuyashiki',short:'Kiriya',g:'産',type:'Corps commander · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Ambush Orders',desc:`Pick one of your fighters. This round, every enemy that attacks them takes ${AMBUSH_DMG} damage back.`,kind:'helper'}});
@@ -203,7 +203,7 @@ const SPECIAL_TAGS = {
   muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
   akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend',
   susamaru:'hit two enemies', yahaba:"enemy's hits miss", kanae:'hit + heal ally', tanjiro_demon:'hit all enemies', nezuko_awakened:'hit all + cure poison',
-  typezero:'ally +2 SPD', hotaru:'special ready next round', hantengu:'hide + heal self', gyokko:'hit + stun', kaigaku:'hit two enemies',
+  typezero:'ally +2 SPD', hotaru:'reload a special', hantengu:'hide + heal self', gyokko:'hit + stun', kaigaku:'hit two enemies',
   sekido:'hit all enemies', karaku:'strong hit', aizetsu:'strong hit', urogi:'fast hit',
   enmu:'delay enemy specials', rui:'hit + stun', kyogai:'stun one enemy', hand:'strong hit', swamp:'dodge + hit',
   giyu:'team takes no damage', gyomei:'hit all enemies', sanemi:'hit two enemies', muichiro:'dodge + hit',

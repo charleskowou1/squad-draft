@@ -61,7 +61,7 @@ function statusChips(u, showSpecial){
   if(u.sunburn) out.push('<span class="chip bad">Sunburned</span>');
   if(u.poison) out.push(`<span class="chip bad">Poison −${pct(u,u.poison.dmg)}% × ${u.poison.turns}</span>`);
   if(u.stun) out.push('<span class="chip bad">Stunned</span>');
-  if(u.selfless) out.push('<span class="chip good">Selfless State · can\'t be touched</span>');
+  if(u.selfless) out.push('<span class="chip good">Selfless State · untouchable unless he attacks</span>');
   if(u.unblock) out.push('<span class="chip s">Hinokami can\'t be blocked</span>');
   if(u.saved) out.push(`<span class="chip good">Guarded by ${esc(u.saved)}</span>`);
   if(showSpecial) out.push(u.cd>0?`<span class="chip">Special in ${u.cd}</span>`:'<span class="chip s">Special ready</span>');
@@ -550,7 +550,7 @@ function vSettings(){
     ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Your name</div>
       <div class="namerow"><input id="pname" type="text" maxlength="14" value="${esc(playerName())}" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="pname">${S.nameSaved?'Saved ✓':'Save'}</button></div>
       <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
-    <div class="setgroup"><div class="tlabel">Battle background</div>
+    <div class="setgroup placeset"><div class="tlabel">Battle background</div>
       ${seg('placecfg',placeChoice(),[['random','Random'],['off','Off'],...Object.keys(PLACE_ART).map(id=>[id,placeName(id)])])}
       <div class="hint">Quickplay, Local, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>
     <div class="setgroup"><div class="tlabel">Playback speed</div>
@@ -640,7 +640,7 @@ function fighter(u, open){
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
   return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
     ${statusChips(u,false)}
-    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.selfless?'ignores DEF':u.strikes>1?'×'+u.strikes:'')}${u.selfless?mv('save','護','Save','ally takes no damage',!friends(u.p).some(f=>f!==u)):mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
+    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.selfless?'ignores DEF · reveals you':u.strikes>1?'×'+u.strikes:'')}${u.selfless?mv('save','護','Save',u.saveUsed?'used':'ally takes no damage · once',u.saveUsed||!friends(u.p).some(f=>f!==u)):mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
     ${opts.length?`<div class="targets"><span class="tlabel">${isAllyMove(u,pl)?'Ally':'Target'}</span>${opts.map(tgt).join('')}</div>`:''}
   </div></div>`;
 }

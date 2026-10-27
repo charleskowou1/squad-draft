@@ -113,9 +113,11 @@ Special rules on single cards:
   the last one standing on her team she flees, which counts as a knockout, so never leave her alone.
 - Mark Tanjiro ✦ (9 pts): after his first Hinokami Kagura, his next special is the Selfless State (once per match;
   unlocked by winning Destructive Death in the story). It goes before everything, even the biwa. Until Hinokami is
-  ready again he can't be hit, stunned, sent away, strummed or arrowed; poison still ticks. Each round he can Attack
-  (ignores DEF) or Save a teammate (they take no damage and can't be stunned that round). When the state ends, his
-  next Hinokami Kagura can't be blocked by anything (Defend, Dead Calm, hides, dodges, Castle Shift, arrows).
+  ready again he can't be hit, stunned, sent away, strummed or arrowed, EXCEPT on a round he Attacks: striking
+  reveals him for that round (his attacks ignore DEF). He can Save a teammate once per state (they take no damage and
+  can't be stunned that round). Poison still ticks. When the state ends, his next Hinokami Kagura can't be blocked
+  by anything (Defend, Dead Calm, hides, dodges, Castle Shift, arrows). Tip: Save when a teammate is about to fall,
+  and only attack when the hit is worth being exposed for.
 - Kagaya never attacks either. His basic move is Words of Resolve (every ally heals 2, in normal speed order). His
   special Final Resolve knocks himself out and awakens the Mark of every Hashira on his team who has one (stats rise,
   special keeps its current wait). He's slow (SPD 5, 14 HP, 1 DEF) and the special has no priority, so enemies can
@@ -155,7 +157,9 @@ round you want; it acts first that round and is then gone.
 - Kasugai Crow: after both sides lock in, you see the enemy's planned moves (and helper) and may change yours.
   Vs computer, the computer's crow switches any of its fighters you're about to knock out to Defend.
 - Muscle Mice (Tengen's mice): every fighter on your team gets +${MICE_PWR} PWR for that round only.
-- Hotaru Haganezuka (swordsmith): your fighter with the longest wait for their special gets it ready for next round.
+- Hotaru Haganezuka (swordsmith): at the END of the round, your fighter with the longest wait for their special has
+  it cut to 1 round (ready the round after next; if it was already 1, ready next round). Use him the round you fire
+  your best special and it comes back fast, even in round 1.
 - Kiriya Ubuyashiki (Ambush Orders): pick one of your fighters; that round every enemy that attacks them takes ${AMBUSH_DMG}
   damage back (once per attacker). The other side only learns where the trap was when it springs. Best on the
   fighter the enemy most wants to finish (usually your most hurt one).

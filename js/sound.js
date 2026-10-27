@@ -54,13 +54,19 @@ function hiss(filter, f0, f1, len, vol=.3, at=0, out=SFX_OUT, q=1.2){
   g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+len);
   src.connect(bq).connect(g).connect(out); src.start(t); src.stop(t+len+.02);
 }
-// a sword ring: two quiet high partials that fade fast
-function shing(at, vol){ tone('sine',2400,2350,.35,vol,at); tone('sine',3600,3500,.25,vol*.6,at); tone('triangle',1200,1180,.2,vol*.5,at); }
+// A sword (CK found the old ringing tones annoying): air rushing past a swinging blade, then a very short, bright
+// scrape of steel on contact, mostly noise, with a touch of uneven metal partials that die in under 0.1 s.
+// Each swing varies a little so repeated hits don't sound identical.
+function swoosh(at, vol, len=.2){ const j=.9+Math.random()*.2; hiss('bandpass',320*j,2600*j,len,vol,at,SFX_OUT,1.6); }
+function steel(at, vol){ const j=.94+Math.random()*.12;
+  hiss('bandpass',6200*j,3400*j,.09,vol*1.7,at,SFX_OUT,7);          // the scrape
+  tone('triangle',3150*j,2950*j,.07,vol*.35,at); tone('sine',4720*j,4500*j,.05,vol*.22,at); }
+function shing(at, vol){ steel(at, vol); }   // older callers: now the short steel scrape, not a ring
 function taikoHit(at, vol=.4, out=SFX_OUT){ tone('sine',95,48,.45,vol,at,out); hiss('lowpass',600,90,.18,vol*.45,at,out); }
 const SFX = {
   // attacks (timed with the lunge): a soft blade whoosh, a short metallic "shing", then a light impact
-  slash(){ hiss('highpass',900,3200,.16,.08,.16); shing(.28,.07); tone('sine',140,70,.12,.16,.32); },
-  bighit(){ hiss('highpass',700,2800,.2,.1,.14); shing(.28,.09); tone('sine',110,40,.3,.32,.32); hiss('lowpass',500,80,.25,.12,.32); },
+  slash(){ swoosh(.12,.12,.2); steel(.3,.06); hiss('highpass',1800,500,.07,.08,.31); tone('sine',150,60,.12,.14,.31); },
+  bighit(){ swoosh(.1,.15,.24); steel(.3,.08); hiss('highpass',1600,400,.09,.1,.31); tone('sine',110,40,.3,.3,.32); hiss('lowpass',500,80,.25,.12,.32); },
   bighitTail(){ tone('sine',90,40,.3,.25,.32); hiss('lowpass',500,80,.25,.1,.32); },
   ko(){ tone('sine',90,28,.8,.55,.3); hiss('lowpass',1200,60,.7,.4,.3); tone('triangle',220,110,.5,.15,.45); },
   miss(){ hiss('highpass',2500,6000,.25,.18,.2); },
@@ -115,7 +121,7 @@ const WEAPON = {akaza:'fist', typezero:'blade', hand:'claw', swamp:'claw', kyoga
   doma:'fan', gyutaro:'sickle', daki:'obi', gyokko:'blunt', susamaru:'blunt', yahaba:'arrow', nezuko:'kick', nezuko_awakened:'kick', tanjiro_demon:'claw',
   tamayo:'blood', yushiro:'claw', hantengu:'claw', sekido:'staff', karaku:'fan', aizetsu:'spear', urogi:'claw', zohakuten:'staff', kokushibo:'blade', kaigaku:'blade'};
 const ATTACK_SFX = {
-  blade:  v=>{ hiss('highpass',900,3200,.16,.08*v,.16); shing(.28,.07*v); tone('sine',140,70,.12,.16*v,.32); },
+  blade:  v=>{ swoosh(.12,.13*v,.2); steel(.3,.06*v); hiss('highpass',1800,500,.07,.08*v,.31); tone('sine',150,60,.12,.14*v,.31); },
   fist:   v=>{ hiss('lowpass',800,200,.08,.12*v,.2); tone('sine',150,55,.16,.5*v,.28); hiss('highpass',2500,4000,.04,.1*v,.28); },
   kick:   v=>{ hiss('bandpass',600,1400,.12,.1*v,.18); tone('sine',120,50,.18,.42*v,.28); },
   claw:   v=>{ hiss('bandpass',3200,1400,.1,.16*v,.24,SFX_OUT,4); hiss('bandpass',3400,1500,.1,.13*v,.32,SFX_OUT,4); tone('sine',110,60,.1,.12*v,.3); },

@@ -112,7 +112,7 @@ const STAGES = [
       ['','The sky to the east is still dark. Dawn is ten rounds away.']]},
   {id:'district', arc:'district', title:'Two as One', place:'Yoshiwara', foe:'Gyutaro & Daki', mine:['tengen','tanjiro','zenitsu','inosuke','nezuko','mice'], enemy:['gyutaro','daki','hand'], level:'hard',
     stars:{standing:3, rounds:4},
-    boosts:[{side:1, hp:1.8, pow:2, label:'Gyutaro & Daki: +80% HP, +2 PWR'}],   // tougher once Nezuko awakens (Oct 26, 2026); +80% after Mark Tanjiro went to 40 HP
+    boosts:[{side:1, hp:2.0, pow:3, label:'Gyutaro & Daki: +100% HP, +3 PWR'}],   // retuned Oct 27, 2026 after Mark Tanjiro went to 46 HP and the Muscle Mice joined (94/74/98%)   // tougher once Nezuko awakens (Oct 26, 2026); +80% after Mark Tanjiro went to 40 HP
     beats:[{when:'ko', id:'daki', who:'gyutaro', text:'Sister! Get back up!'}, {when:'low', id:'tengen', at:.35, text:'Flashy to the very end!'}],
     phases:[{id:'gyutaro', at:.4, pow:2, spd:1, label:'+2 PWR, +1 SPD', line:'You hurt my sister. Now I’ll rip you apart.'}],
     awaken:[{id:'tanjiro', at:.5, round:3, lines:[['','Gyutaro’s blood sickles close in. Tanjiro’s heart pounds like a war drum.'],

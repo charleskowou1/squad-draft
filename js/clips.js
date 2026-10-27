@@ -57,6 +57,8 @@ const CLIP_ACTS = {use:'Back pocket', poison:'Poisoned', special:'', attack:'Att
 // Moments that repeat every round (attacks, guarding, regenerating) show their clip at most once every few rounds
 // per fighter, so long matches don't drag. Specials and one-off moments always play.
 const CLIP_REPEAT = ['attack','defend','regen','poison'], CLIP_GAP = 3;
+// Moments that play every time for a character instead of every CLIP_GAP rounds (CK: Doma's regen and poison)
+const CLIP_ALWAYS = {doma:['regen','poison']};
 
 const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && src[BYID[u.id].fam])) || null;
 // The moment a log line shows and whose it is: {act, u}
@@ -82,7 +84,7 @@ function clipStep(line){
   const m=clipMoment(line); if(!m || !m.u) return null;
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;
-  if(CLIP_REPEAT.includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
+  if(CLIP_REPEAT.includes(m.act) && !(CLIP_ALWAYS[m.u.fam||m.u.id]||[]).includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
   return {src, act:m.act, uid:m.u.uid, who:m.u.helper?m.u:null, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
 }
 // Downloaded copies (app.js fills this), so a clip starts instantly and isn't fetched again
