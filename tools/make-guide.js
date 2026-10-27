@@ -29,7 +29,8 @@ hr('1. THE GAME IN ONE MINUTE');
 out(`- Two sides draft a squad of fighters on a points budget, then battle in rounds.
 - Each round, every fighter secretly picks ATTACK, DEFEND or their SPECIAL. Then everything resolves.
 - Last side with anyone standing wins. A match stopped at round 40 is a draw.
-- Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (2–4 phones, 4-letter room code),
+- Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (live: 2–4 phones, 4-letter room code; or
+  at your own pace: 2 phones, 6-letter code, each player takes their turn whenever they like),
   Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
   them; doesn't count toward records) and Story Mode (21 battles with preset squads).
 - Each mode (not Story) also sets MAX FIGHTERS PER TEAM, 1–6 (default 6). 1 = one-on-one duels.
@@ -157,6 +158,18 @@ hr('8. MODES AND SETTINGS');
 out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but sloppy), Hard (goes for knockouts, spreads
   damage, saves specials, uses helpers well). Hard beats Normal ~59%, Normal beats Easy ~57%.
 - Settings: points (10/20/30), pool (Random/All), playback speed, sound.
+- Online at your own pace: 2 players, no need to be on at the same time. Each phone drafts or locks in moves when it's
+  that player's turn; a resolved round plays back the next time each player opens the game. The home screen lists
+  these games and says whose turn it is. The first pick is a coin flip (no wheel).
+- Daily challenge: the same set enemy team, points and goal for everyone that day; you draft from your unlocked
+  characters. Goals: win, win within N rounds, or win with a named character still standing. For that last goal the
+  named character is already on your squad when the draft opens (its points already spent).
+- Battle log: the win screen has a Battle log of every round with a Copy button. The copied text lists both squads, the
+  result, then for each round what every player chose for each fighter ("Mia chose: Giyu: Dead Calm · Tanjiro: Attack →
+  Akaza") followed by what happened, with damage and healing as % of the fighter's max HP. If a player pastes one,
+  use it to point out the rounds where a different move or target would have changed the outcome.
+- Shared stats: Settings → Stats and every card show how everyone's games went (win rate, and how often a character
+  is picked when dealt), counted from players' finished Local, Online and Quickplay games.
 - Story mode: 21 battles with preset (canon) squads, each opening with a short scene. Win a battle to unlock the
   next; won battles can be replayed drafting your own squad (Corps and allies plus that battle's preset characters,
   same points as the preset squad). Twists: survive N rounds, reinforcements joining on a set round, and two-part
