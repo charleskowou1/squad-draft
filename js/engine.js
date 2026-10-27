@@ -30,6 +30,11 @@ function loadScore(){ try{ return JSON.parse(localStorage.getItem(SCORE_KEY))||{
 function saveScore(s){ try{ localStorage.setItem(SCORE_KEY,JSON.stringify(s)) }catch(e){} }
 function loadNames(){ try{ return JSON.parse(localStorage.getItem(NAMES_KEY)) }catch(e){ return null } }
 function saveNames(n){ try{ localStorage.setItem(NAMES_KEY,JSON.stringify(n)) }catch(e){} }
+// This phone's player name (Settings → Your name, or asked once on the home screen). Used wherever "you" play:
+// story, Quickplay, Practice, the daily challenge, online, and player 1 in Local. Each phone keeps its own.
+const PLAYER_KEY = 'squad-draft-player';
+function playerName(){ try{ return localStorage.getItem(PLAYER_KEY)||'' }catch(e){ return '' } }
+function savePlayerName(n){ n=String(n||'').trim().slice(0,14); if(!n) return; try{ localStorage.setItem(PLAYER_KEY,n) }catch(e){} }
 // Per-character records on this phone: card id → [games played, games won]
 const RECORDS_KEY = 'squad-draft-records';
 function loadRecords(){ try{ return JSON.parse(localStorage.getItem(RECORDS_KEY))||{} }catch(e){ return {} } }
@@ -70,7 +75,7 @@ try{ if(localStorage.getItem('squad-draft-data')!==DATA_VERSION){
   Object.keys(localStorage).filter(k=>k.startsWith('squad-draft')).forEach(k=>localStorage.removeItem(k));
   localStorage.setItem('squad-draft-data', DATA_VERSION); } }catch(e){}
 let S = {phase:'setup', mode:'story', n:2,   // Story is selected when the game opens (CK)
-  level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), names: loadNames() || ['CK','Mia']};
+  level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), names: [playerName()||'Player 1','Player 2']};
 // Players in the match: 2, 3 (triple threat) or 4 (1 v 1 v 1 v 1). Every team fights every other team; last one standing wins.
 const MAX_PLAYERS = 4;
 const nPlayers = () => S.n || 2;
@@ -277,12 +282,15 @@ const foes = p => enemiesOf(p).flatMap(q=>alive(q));
 // Your fighters and (2v2) your partner's: who ally moves (heals, hides, shields, training) can target
 const friends = p => players().filter(q=>sameSide(p,q)).flatMap(q=>alive(q));
 
+// Mark Tanjiro's Selfless State is open once Destructive Death is won (story.js decides; simulations always have it)
+const selflessOpen = () => !!S.unlockAll || typeof selflessUnlocked!=='function' || selflessUnlocked();
+const canSelfless = u => BYID[u.id] && BYID[u.id].selfless && !u.selflessUsed && selflessOpen();
 /* ---------- move planning ---------- */
-const isAllyMove = (u,pl) => pl.type==='special' && u.sig.kind==='ally';
+const isAllyMove = (u,pl) => (pl.type==='special' && u.sig.kind==='ally') || pl.type==='save';   // save: Tanjiro's Selfless State
 // Free-for-all (3–4 players): a special that hits "every enemy" hits every fighter on the team you aim at, so you pick a target
 const aimsTeam = u => u.sig.kind==='all' && nPlayers()>2;
-const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
-const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p) : foes(u.p);
+const needsTarget = (u,pl) => (pl.type==='attack' && !(u.basic && u.basic.kind==='self')) || pl.type==='save' || (pl.type==='special' && (u.sig.kind==='single'||u.sig.kind==='ally'||aimsTeam(u)));
+const targetOptions = (u,pl) => !needsTarget(u,pl) ? [] : isAllyMove(u,pl) ? friends(u.p).filter(f=>pl.type!=='save'||f!==u) : foes(u.p);
 function unitReady(u){ if(u.stun) return true; const pl=S.plans[u.p][u.uid]; if(!pl||!pl.type) return false; return !needsTarget(u,pl) || !!pl.t; }
 const planReady = p => alive(p).every(unitReady);
 function setMove(u,type){
@@ -299,6 +307,7 @@ function setMove(u,type){
    they expect to do, so the team spreads out instead of overkilling one target. */
 // Damage a hit of `base` would do to `t`, by the same formula as hit() (ignores guards and dodges)
 function estHit(t, base, o={}){
+  if((t.selfless||t.saved) && !o.unblockable) return 0;
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
   return Math.max(0, t.cap ? Math.min(d, t.cap) : d);
 }
@@ -319,7 +328,10 @@ const SIG_EST = {
   muichiro: u=>({base:u.pow+2}),
   mitsuri: u=>({all:true, base:u.pow-3}),
   obanai: u=>({base:u.pow+4}),
-  rengoku: u=>({base:u.pow+8}),
+  rengoku: u=>({base:u.pow+4}),
+  seventh: u=>({base:u.pow*3, o:{ignoreDef:true}}),
+  annihilation: u=>({all:true, base:u.pow-4, o:{ignoreDef:true}}),
+  ninth: u=>({base:u.pow+10, o:{ignoreDef:true}}),
   tengen: u=>({all:true, base:u.pow-2}),
   rui: u=>({base:u.pow, stun:true}),
   hand: u=>({base:u.pow+3}),
@@ -350,7 +362,7 @@ function cpuPlanEasy(p){
     const low=enemy.slice().sort((a,b)=>a.hp-b.hp)[0];
     let type='attack';
     if(u.cd===0 && Math.random()<.7 && !(u.sk==='kagaya' && !markReady(u).length)) type='special';
-    else if(u.hp<u.max*.3 && Math.random()<.35 && !u.noDefend) type='defend';
+    else if(u.hp<u.max*.3 && Math.random()<.35 && !u.noDefend && !u.selfless) type='defend';
     let t=low.uid;
     if(u.sig.kind==='ally'){ const hurt=alive(p).slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; t=hurt.uid; if(type==='special' && u.sk==='tamayo' && hurt.hp>hurt.max*.75) type='attack'; if(type==='attack') t=low.uid; }
     S.plans[p][u.uid]={type, t};
@@ -362,7 +374,7 @@ function repeatPlans(p){
   const last=S.lastPlans && S.lastPlans[p]; if(!last) return;
   alive(p).forEach(u=>{
     const q=last[u.uid]; if(u.stun || !q || !q.type) return;
-    setMove(u, q.type==='special' && u.cd>0 ? 'attack' : q.type);
+    setMove(u, q.type==='special' && u.cd>0 ? 'attack' : q.type==='save' && !u.selfless ? 'defend' : q.type==='defend' && u.selfless ? 'attack' : q.type);
     const pl=S.plans[p][u.uid], opts=targetOptions(u,pl);
     if(needsTarget(u,pl)) pl.t = q.t && opts.some(o=>o.uid===q.t) ? q.t : opts.length===1 ? opts[0].uid : undefined;
   });
@@ -383,14 +395,17 @@ function cpuPlan(p, level='hard'){
   const pctHurt = m => m.hp/m.max;
   mine.forEach(u=>{
     if(u.stun) return;
-    const at=best(u.pow), atD=estHit(at,u.pow)*u.strikes;
+    const ao=u.selfless?{ignoreDef:true}:undefined, at=best(u.pow,ao), atD=estHit(at,u.pow,ao)*u.strikes;
     let plan={type:'attack', t:at.uid, v:score(at,atD), hits:[[at,atD]]};
     // Nakime's Biwa Strum: slow down the most dangerous enemy. Kagaya's Words of Resolve: heal the team.
     if(u.basic && u.basic.kind==='self') plan={type:'attack', v: mine.reduce((a,m)=>a+Math.min(2,m.max-m.hp)/m.max*100,0)};
     else if(u.basic){ const t=foesNow.slice().sort((a,b)=>threat(b)-threat(a))[0]; plan={type:'attack', t:t.uid, v:8, hits:[]}; }
+    // Selfless State: Save a teammate who's in danger, otherwise attack (he can't be hit anyway)
+    if(u.selfless){ const low=mine.filter(m=>m!==u).sort((a,b)=>pctHurt(a)-pctHurt(b))[0]; if(low && pctHurt(low)<.45) plan={type:'save', t:low.uid, v:45}; }
     if(u.cd===0){
-      const e=SIG_EST[u.sk]; let sp=null;
-      if(e){ const x=e(u);
+      const e=u.sig.id==='selfless' ? null : SIG_EST[u.sig.id] || SIG_EST[u.sk]; let sp=null;
+      if(u.sig.id==='selfless') sp={type:'special', v:35+mine.filter(m=>pctHurt(m)<.5).length*10};
+      else if(e){ const x=e(u);
         if(x.all){ const teams=aimsTeam(u) ? enemiesOf(p).map(q=>alive(q)).filter(a=>a.length) : [foesNow];
           teams.forEach(team=>{ const c={type:'special', t:team[0].uid, v:0, hits:[]}; team.forEach(t=>{ const d=estHit(t,x.base,x.o); c.v+=score(t,d); c.hits.push([t,d]); }); if(!sp||c.v>sp.v) sp=c; }); }
         else if(x.random){ sp={type:'special', v:x.random*foesNow.reduce((a,t)=>a+score(t,estHit(t,x.base)),0)/foesNow.length, hits:[]}; }
@@ -417,7 +432,7 @@ function cpuPlan(p, level='hard'){
       if(sp && sp.v+Math.random()*noise > plan.v+Math.random()*noise) plan=sp;
     }
     // badly hurt with nothing worth doing: guard
-    if(u.hp<=u.max*.25 && plan.v<30 && Math.random()<.6 && !u.noDefend) plan={type:'defend'};
+    if(u.hp<=u.max*.25 && plan.v<30 && Math.random()<.6 && !u.noDefend && !u.selfless) plan={type:'defend'};
     (plan.hits||[]).forEach(([t,d])=>{ planned[t.uid]=(planned[t.uid]||0)+d; });
     S.plans[p][u.uid]={type:plan.type, t:plan.t};
   });
@@ -452,12 +467,17 @@ function split(t){
 }
 function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;
-  if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
-  if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',fx('miss',a,t)); return 0; }
-  if(t.away){ L(`${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
-  if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
+  const ub=!!o.unblockable;   // Hinokami Kagura out of the Selfless State: nothing blocks it
+  if(!ub){
+    if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
+    if(t.selfless){ L(`${a.name} strikes at ${t.name}, but he's in the Selfless State. Nothing touches him.`,'x',fx('miss',a,t)); return 0; }
+    if(t.saved){ L(`${t.name} is untouched. ${t.saved} stands guard over them.`,'x',fx('block',a,t)); return 0; }
+    if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',fx('miss',a,t)); return 0; }
+    if(t.away){ L(`${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
+    if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
+  } else if(S.shield[t.p]||t.evade||t.away||t.saved||t.defending||a.astray) L(`Nothing can stop it. ${a.name} cuts straight through to ${t.name}.`,'h',fx('special',a,t));
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
-  const guarded = t.defending && !o.pierce && !a.pierceAll;
+  const guarded = t.defending && !o.pierce && !a.pierceAll && !ub;
   if(guarded) d = Math.ceil(d/2);
   let note = guarded?' (guarded)':'';
   if(t.cap){ const room=t.cap-t.taken; if(room<=0){ L(`${t.name} sees it coming in the Transparent World. No damage.`,'x',fx('block',a,t)); return 0; } if(d>room){ d=room; note+=' (capped)'; } t.taken+=d; }
@@ -475,14 +495,21 @@ function hit(a,t,base,o={}){
   }
   return d;
 }
-function stunT(t){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade){ t.stunNext=true; L(`${t.name} will lose next round.`,'k',fx('stun',null,t)); } }
+function stunT(t){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!t.selfless&&!t.saved){ t.stunNext=true; L(`${t.name} will lose next round.`,'k',fx('stun',null,t)); } }
 function special(u,pl){
   const s=u.sig, en=()=>aimsTeam(u) ? aimedTeam(u,pl) : foes(u.p);
-  L(`${u.name}: ${s.name}!`,'x',fx('special',u,null));
-  switch(u.sk){
+  L(`${u.name}: ${s.name}!`,'x',{...fx('special',u,null), sig:s.id||null});
+  if(s.id==='selfless'){   // Mark Tanjiro: untouchable until Hinokami Kagura is ready again (end of round, below)
+    u.selfless=true; u.selflessUsed=true; u.stun=false; u.stunNext=false; u.late=false; u.away=false; u.astray=false;
+    L(`${u.name} hides every trace of killing intent. Nothing can touch him until Hinokami Kagura is ready.`,'h',fx('guard',null,u));
+    u.sig=BYID[u.id].sig; u.cd=s.cd+1; return; }
+  switch(s.id||u.sk){   // a second special has its own id
+    case 'seventh': hit(u,target(u,pl.t),u.pow*3,{ignoreDef:true}); break;
+    case 'annihilation': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
+    case 'ninth': hit(u,target(u,pl.t),u.pow+10,{ignoreDef:true}); break;
     case 'yoriichi': en().forEach(e=>hit(u,e,u.pow,{ignoreDef:true,sun:true,counter:false})); break;
     case 'yoriichi_old': hit(u,target(u,pl.t),u.pow+10,{ignoreDef:true}); break;
-    case 'tanjiro': hit(u,target(u,pl.t),u.pow+5,{ignoreDef:true}); break;
+    case 'tanjiro': { const ub=!!u.unblock; u.unblock=false; u.hinokami=true; hit(u,target(u,pl.t),u.pow+5,{ignoreDef:true, unblockable:ub}); break; }
     case 'nezuko': en().forEach(e=>hit(u,e,5,{ignoreDef:true,counter:false})); break;
     case 'zenitsu': hit(u,target(u,pl.t),u.pow*2); break;
     case 'inosuke': for(let i=0;i<2;i++){ const e=en(); if(e.length) hit(u,rnd(e),u.pow-1); } break;
@@ -501,8 +528,8 @@ function special(u,pl){
     case 'muichiro': hit(u,target(u,pl.t),u.pow+2); break;
     case 'mitsuri': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
     case 'obanai': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
-    case 'rengoku': hit(u,target(u,pl.t),u.pow+8); break;
-    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade){L(`The poison misses.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:u.poisonTurns||3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
+    case 'rengoku': hit(u,target(u,pl.t),u.pow+4); break;   // Fifth Form: Flame Tiger (Ninth Form is his second special)
+    case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||t.selfless){L(`The poison misses.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:u.poisonTurns||3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t); break; }
     case 'kyogai': stunT(target(u,pl.t)); break;
@@ -511,10 +538,10 @@ function special(u,pl){
     case 'gyutaro': en().forEach(e=>{ hit(u,e,4,{ignoreDef:true,counter:false}); if(e.alive&&!S.shield[e.p]&&!e.evade&&(!e.poison||e.poison.dmg<2)) e.poison={dmg:2,turns:2}; }); break;
     case 'akaza': hit(u,target(u,pl.t),u.pow+6); break;
     case 'daki': en().forEach(e=>hit(u,e,u.pow-3,{counter:false})); break;
-    case 'nakime': { const t=target(u,pl.t); if(t&&t.alive){ t.away=true; L(`Nakime strums. ${t.name} is sent to another room of the castle this round.`,'k',fx('stun',u,t)); } break; }
+    case 'nakime': { const t=target(u,pl.t); if(t&&t.selfless){ L(`The castle shifts, but ${t.name}'s presence can't be found.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.away=true; L(`Nakime strums. ${t.name} is sent to another room of the castle this round.`,'k',fx('stun',u,t)); } break; }
     case 'zohakuten': en().forEach(e=>hit(u,e,u.pow-4,{pierce:true,counter:false})); break;
     case 'susamaru': { const t=target(u,pl.t); hit(u,t,u.pow-1); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow-1); break; }
-    case 'yahaba': { const t=target(u,pl.t); if(t&&t.alive){ t.astray=true; L(`Yahaba's arrows lock onto ${t.name}. Every hit they throw this round will miss.`,'k',fx('stun',u,t)); } break; }
+    case 'yahaba': { const t=target(u,pl.t); if(t&&t.selfless){ L(`Yahaba's arrows can't lock onto ${t.name}.`,'x',fx('miss',u,t)); break; } if(t&&t.alive){ t.astray=true; L(`Yahaba's arrows lock onto ${t.name}. Every hit they throw this round will miss.`,'k',fx('stun',u,t)); } break; }
     case 'kanae': { hit(u,target(u,pl.t),u.pow+3); const m=alive(u.p).sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(m){ const h=Math.min(4,m.max-m.hp); if(h){ m.hp+=h; L(`Kanae's petals heal ${m===u?'her':m.name} ${gained(m,h)}.`,'h',fx('heal',u,m)); } } break; }
     case 'tanjiro_demon': en().forEach(e=>hit(u,e,u.pow-4,{ignoreDef:true,counter:false})); break;
     case 'nezuko_awakened': { en().forEach(e=>hit(u,e,10,{ignoreDef:true,counter:false})); const sick=alive(u.p).filter(m=>m.poison); sick.forEach(m=>{ m.poison=null; }); if(sick.length) L(`Nezuko's blood burns the poison off ${sick.map(m=>m.name).join(', ')}.`,'h',fx('heal',u,null)); break; }
@@ -527,7 +554,7 @@ function special(u,pl){
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
     case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',fx('heal',null,u)); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
-    case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
+    case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade||e.selfless) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
     case 'kagaya': { const ha=markReady(u); u.hp=0; u.alive=false;
       L(`Kagaya gives his life for the Corps.`,'k',{ko:u.uid, ...fx('ko',null,u)});
@@ -535,6 +562,8 @@ function special(u,pl){
     case 'muzan': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-7,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(2*n,u.max-u.hp); u.hp+=h; L(`Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
   }
   u.cd = s.cd + 1;
+  if(u.sk==='tanjiro' && canSelfless(u)) u.sig=SELFLESS;   // after Hinokami Kagura, the next special ready is the Selfless State
+  const card=BYID[u.id]; if(card.sig2) u.sig = s.id===card.sig2.id ? card.sig : card.sig2;   // second specials alternate with the first
 }
 // Gyutaro and Daki (Two as One): one who fell this round gets back up with 30% if the other is still standing.
 // If both fell in the same round, both stay down. Each can only get back up once (unlimited won 94% of matches).
@@ -642,16 +671,20 @@ function resolve(){
   players().forEach(p=>(S.helperPlan&&S.helperPlan[p]||[]).forEach(id=>useHelper(p,id)));   // back-pocket helpers act first
   const acts=[];
   players().forEach(p=>alive(p).forEach(u=>{ u.taken=0; acts.push({u, pl: u.stun?{type:'stunned'}:(S.plans[p][u.uid]||{type:u.noDefend?'attack':'defend'}), r:Math.random()}); }));
-  acts.forEach(x=>{ if(x.pl.type==='defend') x.u.defending=true; });
+  acts.forEach(x=>{ if(x.pl.type==='defend') x.u.defending=true;
+    if(x.pl.type==='save' && x.u.selfless){ const t=findU(x.pl.t); if(t && t.alive && t!==x.u && sameSide(t.p,x.u.p)) t.saved=x.u.name; } });
   const moves=players().map(p=>({p, helpers:(S.helperPlan&&S.helperPlan[p]||[]).map(id=>BYID[id].short), picks:acts.filter(x=>x.u.p===p).map(x=>moveText(x.u,x.pl))}));
+  // Mark Tanjiro entering the Selfless State goes before everything, even the biwa: nothing can stop him slipping into it
+  acts.forEach(x=>{ if(x.pl.type==='special' && x.u.sig.id==='selfless' && x.u.alive){ S.curMove='special'; special(x.u,x.pl); S.curMove=null; x.done=true; } });
   // Nakime's Biwa Strum always goes first: the enemy she picks acts last this round
   acts.forEach(x=>{ if(x.pl.type!=='attack' || !x.u.basic || x.u.basic.kind==='self') return; const t=findU(x.pl.t); if(!t || !t.alive || t.p===x.u.p) return;
+    if(t.selfless){ S.curMove='attack'; L(`${x.u.name} strums her biwa, but ${t.name}'s presence can't be found.`,'x',fx('miss',x.u,t)); S.curMove=null; return; }
     t.late=true; S.curMove='attack'; L(`${x.u.name} strums her biwa. ${t.name} will act last this round.`,'x',fx('stun',x.u,t)); S.curMove=null; });
   const prio = x => x.pl.type==='special' ? (x.u.sig.prio||0) : 0;
   acts.sort((a,b)=> (a.u.late?1:0)-(b.u.late?1:0) || prio(b)-prio(a) || b.u.spd-a.u.spd || a.r-b.r);
   aloneCheck(); storyBeats('round');
   for(const x of acts){
-    const u=x.u; if(!u.alive) continue;
+    const u=x.u; if(!u.alive || x.done) continue;
     S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
     if(u.away){ L(`${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
@@ -660,8 +693,9 @@ function resolve(){
       L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); continue; }
     if(x.pl.type==='attack' && u.basic) continue;   // Nakime's strum already happened
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
+    if(x.pl.type==='save'){ const t=findU(x.pl.t); if(t && t.saved===u.name) L(`${u.name} stands guard over ${t.name}. Nothing will touch them this round.`,'h',fx('guard',u,t)); continue; }
     if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
-    if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!foes(u.p).length) break; hit(u,target(u,x.pl.t),u.pow); }
+    if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!foes(u.p).length) break; hit(u,target(u,x.pl.t),u.pow,u.selfless?{ignoreDef:true}:{}); }   // out of the Selfless State: ignores DEF
     if(x.pl.type==='special') special(u,x.pl);
     aloneCheck(); storyBeats();
     if(sidesUp().length<=1 || S.failed) break;
@@ -676,7 +710,8 @@ function resolve(){
     if(sun && u.alive && u.demon && !u.sunproof){ const d=Math.ceil(u.max*SUN_BURN); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u); }
     if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !u.sunproof)){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
     if(u.cd>0) u.cd--;
-    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false; u.ambush=null;
+    if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
+    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null;
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
   twinsRise(); aloneCheck(); storyBeats();
@@ -697,7 +732,7 @@ function resolve(){
    match and see where it turned. Kept after the round resolves only, so online it never shows moves still being chosen. */
 function moveText(u,pl){
   const t=pl.t && findU(pl.t), on=t && needsTarget(u,pl) ? ' → '+t.name : '';
-  const what = pl.type==='stunned' ? "can't move" : pl.type==='defend' ? 'Defend'
+  const what = pl.type==='stunned' ? "can't move" : pl.type==='defend' ? 'Defend' : pl.type==='save' ? 'Save'
     : pl.type==='special' ? u.sig.name : u.basic ? u.basic.name : 'Attack';
   return `${u.name}: ${what}${on}`;
 }
@@ -739,7 +774,7 @@ function storyBeats(when){
     if(hit){ S.said[i]=true; say(who, b.text); } });
   (S.phases||[]).forEach(ph=>{ const u=S.teams[1].find(x=>x.id===ph.id); if(!u || !u.alive || u.phased || u.hp>u.max*ph.at) return;
     u.phased=true; if(ph.line) say(u, ph.line);
-    u.pow+=ph.pow||0; u.spd+=ph.spd||0; u.def+=ph.def||0; if(ph.ready) u.cd=0;
+    u.pow+=ph.pow||0; u.spd+=ph.spd||0; u.def+=ph.def||0; if(ph.ready) u.cd=0; if(ph.second && BYID[u.id].sig2) u.sig=BYID[u.id].sig2;
     L(`${u.name} changes: ${ph.label}.`,'k',fx('buff',null,u)); });
   if(tw.protect && !S.failed){ const u=S.teams[0].find(x=>x.id===tw.protect); if(u && !u.alive){ S.failed=true; L(`${u.name} has fallen. You had to protect ${u.name}.`,'k',fx('ko',null,u)); } }
 }
@@ -754,6 +789,7 @@ function awakenMark(u, ready, to){
   const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def; u.regen+=(m.regen||0)-(b.regen||0);
   const was=u.name;
   Object.assign(u,{id:m.id, name:m.short, g:m.g, sig:m.sig, sk:m.sk, mark:!!m.mark, noDefend:!!m.noDefend, awoke:true}, ready?{cd:0}:{cd:Math.min(u.cd,m.sig.cd+1)});   // now named like that card (Tanjiro ✦)
+  if(m.selfless && u.hinokami && canSelfless(u)) u.sig=SELFLESS;
   if(u.noDefend && S.plans) players().forEach(p=>{ const pl=S.plans[p]&&S.plans[p][u.uid]; if(pl && pl.type==='defend') pl.type='attack'; });
   L(m.mark ? `${was} awakens the Demon Slayer Mark! Stronger and faster${ready?', and the special is ready':''}.`
     : `${was} awakens! ${m.short}: stronger, faster${ready?', special ready':''}.`,'h',{...fx('buff',null,u), act:'awaken'});

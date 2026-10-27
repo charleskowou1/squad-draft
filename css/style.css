@@ -1278,3 +1278,8 @@ body.dawn .dawnsky{display:block}
 body.placebg{background:transparent}   /* the page colour stays on html; the picture is a fixed layer (iPhones don't do fixed backgrounds) */
 body.placebg::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:linear-gradient(rgba(18,15,12,.68),rgba(18,15,12,.68)),var(--placebg) center/cover no-repeat}
+
+/* Your name: Settings field and the home screen's one-time question */
+.namerow{display:flex;gap:8px;margin-top:6px}
+.namerow input{flex:1;min-width:0;background:var(--bg-2);border:1px solid var(--line-2);border-radius:10px;padding:8px 10px;color:var(--fg);font:inherit}
+.askname{display:flex;flex-direction:column;gap:2px;padding:12px;margin:10px 0;border-radius:14px;border:1.5px solid var(--gold);background:var(--grain),linear-gradient(120deg,rgba(214,165,77,.14),var(--surface) 60%)}

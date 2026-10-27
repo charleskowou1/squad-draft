@@ -82,9 +82,9 @@ const STAGES = [
       ['','Two hundred passengers sleep on. Only the slayers can save them.']]},
   {id:'mugen_akaza', arc:'mugen', title:'Set Your Heart Ablaze', place:'Beside the derailed train', foe:'Akaza', mine:['rengoku','tanjiro','inosuke'], enemy:['akaza'], level:'hard',
     stars:{standing:2, rounds:4},
-    boosts:[{side:1, hp:1.5, pow:3, label:'Akaza: +50% HP, +3 PWR'}],
+    boosts:[{side:1, hp:1.5, pow:2, label:'Akaza: +50% HP, +2 PWR'}],   // +3 PWR before Annihilation Type became his second special (Oct 27, 2026)
     beats:[{when:'low', id:'rengoku', at:.3, text:'Set your heart ablaze! I will not fall here!'}, {when:'ko', id:'rengoku', who:'tanjiro', text:'Rengoku!'}, {when:'round', round:6, id:'akaza', text:'The sky is getting lighter… I don’t have long.'}],
-    phases:[{id:'akaza', at:.5, pow:2, ready:true, label:'+2 PWR, special ready', line:'Destructive Death: Annihilation Type!'}],
+    phases:[{id:'akaza', at:.5, pow:2, ready:true, second:true, label:'+2 PWR, Annihilation Type ready', line:'Destructive Death: Annihilation Type!'}],
     outro:[['akaza','The sun! I have to go—',{img:'akaza-sunrise'}],
       ['tanjiro','Don’t run! Come back and fight, coward! He fought you all night and never once ran!',{img:'tanjiro-yelling'}],
       ['rengoku','Enough, Tanjiro. Don’t shout. Your wounds will open. Come here… there’s something I have to tell you.'],
@@ -98,7 +98,7 @@ const STAGES = [
       ['','The sky to the east is still dark. Dawn is ten rounds away.']]},
   {id:'district', arc:'district', title:'Two as One', place:'Yoshiwara', foe:'Gyutaro & Daki', mine:['tengen','tanjiro','zenitsu','inosuke','nezuko'], enemy:['gyutaro','daki','hand'], level:'hard',
     stars:{standing:3, rounds:4},
-    boosts:[{side:1, hp:1.7, pow:2, label:'Gyutaro & Daki: +70% HP, +2 PWR'}],   // tougher once Nezuko awakens (Oct 26, 2026)
+    boosts:[{side:1, hp:1.8, pow:2, label:'Gyutaro & Daki: +80% HP, +2 PWR'}],   // tougher once Nezuko awakens (Oct 26, 2026); +80% after Mark Tanjiro went to 40 HP
     beats:[{when:'ko', id:'daki', who:'gyutaro', text:'Sister! Get back up!'}, {when:'low', id:'tengen', at:.35, text:'Flashy to the very end!'}],
     phases:[{id:'gyutaro', at:.4, pow:2, spd:1, label:'+2 PWR, +1 SPD', line:'You hurt my sister. Now I’ll rip you apart.'}],
     awaken:[{id:'tanjiro', at:.5, round:3, lines:[['','Gyutaro’s blood sickles close in. Tanjiro’s heart pounds like a war drum.'],
@@ -186,11 +186,15 @@ const STAGES = [
       ['zenitsu',"Grandpa cut his own belly because of you. I made a form of my own. For him."]]},
   {id:'akaza', arc:'castle', title:'Destructive Death', place:'Infinity Castle', foe:'Akaza', mine:['tanjiro','giyu'], enemy:['akaza'], level:'hard',
     stars:{standing:1, hp2:15, rounds:10},
-    boosts:[{side:1, hp:1.2, pow:1, label:'Akaza: +20% HP, +1 PWR'}],
+    boosts:[{side:1, hp:1.8, pow:4, label:'Akaza: +80% HP, +4 PWR'}],   // was +20% / +1 before Tanjiro's Selfless State (Oct 27, 2026)
     beats:[{when:'low', id:'akaza', at:.5, text:'Your spirit… it’s just like Kyojuro’s.'}, {when:'low', id:'giyu', at:.4, text:'Tanjiro, keep going. I’ll hold.'}],
     awaken:[{id:'giyu', at:.5, round:4, lines:[['','Akaza’s fists shatter the floor. Giyu takes a blow meant for Tanjiro.'],
       ['giyu','I was never worthy of being a Hashira… but I won’t let him die.'],
-      ['giyu_mark','A wave-shaped mark rises on his cheek. Water Breathing, Eleventh Form: Dead Calm.',{awaken:true}]]}],
+      ['giyu_mark','A wave-shaped mark rises on his cheek. Water Breathing, Eleventh Form: Dead Calm.',{awaken:true}]]},
+      // Tanjiro finds the Selfless State here (it unlocks for Mark Tanjiro everywhere once this battle is won)
+      {id:'tanjiro', at:.5, round:3, lines:[['tanjiro','Father… I remember now. No wasted motion. No anger. Just breathe.'],
+      ['akaza','What…? His fighting spirit… it’s gone. I can’t sense him at all!'],
+      ['tanjiro_mark','The Selfless State. The Transparent World. I can see everything now.',{awaken:'透', pic:'tanjiro_selfless'}]]}],
     outro:[['akaza','Koyuki… I remember now.'],['','Akaza ends himself, choosing his memories over strength.'],['tanjiro','Rengoku… we did it.']],
     blurb:"Tanjiro and Giyu against the demon who killed Rengoku.",
     scene:[['akaza','You again. The weakling from the train.'],
@@ -257,6 +261,9 @@ const STAGES = [
       ['inosuke',"Wake up, Monjiro! Who's gonna be my rival?!"],
       ['zenitsu',"Nezuko's waiting for you! Come home!"]]},
 ];
+// Mark Tanjiro's Selfless State (engine.js) opens once Destructive Death is won, and inside that battle and the ones after it
+function selflessUnlocked(){ const i=STAGES.findIndex(s=>s.id==='akaza');
+  return loadStory().cleared.includes('akaza') || (S.mode==='story' && S.stage>=i); }
 // Story progress. CK reset everyone to 0 on Oct 26, 2026 (new key; the old 'squad-draft-story' is deleted on load).
 // From here on progress is kept: don't change this key again unless CK asks for another reset.
 const STORY_KEY = 'squad-draft-story-v2';   // {cleared:[ids], stars:{id: best stars 1–3}}
@@ -308,7 +315,7 @@ function startStage(i, draft=false){
   const st=STAGES[i];
   Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
-  S.names=[S.names[0], st.foe];
+  S.names=[playerName()||'Player 1', st.foe];   // this phone's player name (Settings)
 }
 // The lines of the scene being shown: the opening, or the ending after a win
 // The story's finale (after beating Demon King Tanjiro, "Finish the story" on the win screen), then the end credits

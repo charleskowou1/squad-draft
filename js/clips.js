@@ -13,12 +13,16 @@ const CLIPS = {
   giyu: {
     special: 'https://media.tenor.com/xHYvGutUP_kAAAPo/giyuu-tamioka.mp4',                   // Dead Calm
   },
-  rengoku:      {special: 'https://media.tenor.com/Bk9kw_WGE5wAAAPo/demon-slayer-demon-slayer-season-2.mp4'},   // Ninth Form
-  zenitsu:      {special: 'https://media.tenor.com/E-dg68_nbcgAAAPo/good-morning.mp4'},       // Thunderclap and Flash
+  rengoku:      {special: 'https://media.tenor.com/z1P4ccPzl9MAAAPo/demon-slayer-demon-slayer-season-2.mp4',   // Fifth Form: Flame Tiger
+                 ninth: 'https://media.tenor.com/Bk9kw_WGE5wAAAPo/demon-slayer-demon-slayer-season-2.mp4'},     // Ninth Form: Rengoku
+  zenitsu:      {special: 'https://media.tenor.com/E-dg68_nbcgAAAPo/good-morning.mp4',       // Thunderclap and Flash
+                 seventh: 'https://media.tenor.com/1cf7FDK2C34AAAPo/zenistu-chong-yeu.mp4'},  // Seventh Form: Flaming Thunder God
   tanjiro:      {special: 'https://media.tenor.com/u2dl8xjsDO0AAAPo/tanjiro-demon-slayer.mp4'},   // Hinokami Kagura
-  tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4'},       // Hinokami Kagura (Mark)
+  tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4',        // Hinokami Kagura (Mark)
+                 selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4'},   // Selfless State
   tanjiro_demon:{},                                                                           // not Hinokami: no clip yet
   akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4',  // Destructive Death: Compass Needle
+                 annihilation: 'clips/akaza-annihilation.mp4',   // Annihilation Type: CK's GIF, converted, served with the game
                  regen:   'https://media.tenor.com/cEpW6MV9Z_YAAAPo/akaza-gif-headless.mp4'},  // head growing back
   inosuke:      {special: 'https://media.tenor.com/J08tCPlL6dIAAAPo/inosuke-demon-slayer.mp4'},   // Fang Frenzy
   nezuko:       {special: 'https://media.tenor.com/MuLdehLf5WcAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Exploding Blood
@@ -57,7 +61,7 @@ function clipMoment(line){
   if(line.helper) return {act:'use', u:{uid:`h-${line.hp}-${line.helper}`, id:line.helper, sk:line.helper, name:BYID[line.helper].short, p:line.hp, helper:true}};
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), has=(u,a)=>!!(clipSet(CLIPS,u)||{})[a];
   switch(line.fx){
-    case 'special': return {act:'special', u:by};
+    case 'special': return {act:line.sig||'special', u:by};   // a second special (or the Selfless State) has its own clip, under its id
     case 'heal': return line.act==='regen' ? {act:'regen', u:on} : by ? {act:'heal', u:by} : null;
     case 'guard': case 'block': return {act:'defend', u:on||by};
     case 'ko': return has(by,'ko') ? {act:'ko', u:by} : {act:'fall', u:on};

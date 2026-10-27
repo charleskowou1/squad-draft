@@ -10,7 +10,9 @@ const ART = {};
 // A character's seal: their picture if there is one, otherwise their kanji
 // In battle, a fighter's picture is a button that opens their info card (stats, special, passive, status)
 const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${u.uid}" aria-label="About ${esc(u.name)}">${seal(u,cls)}</button>`;
-const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:c.g}</span>`;
+// A fighter's picture: Mark Tanjiro shows his Selfless State picture while he's in it (img/tanjiro_selfless.jpg)
+const artOf = c => (c.uid && c.selfless && ART.tanjiro_selfless) || ART[c.id];
+const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${artOf(c)?`<img src="${artOf(c)}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
 // First-time tips: a small banner the first time a player reaches each screen. "Got it" hides it for good (TIPS_KEY).
@@ -59,6 +61,9 @@ function statusChips(u, showSpecial){
   if(u.sunburn) out.push('<span class="chip bad">Sunburned</span>');
   if(u.poison) out.push(`<span class="chip bad">Poison −${pct(u,u.poison.dmg)}% × ${u.poison.turns}</span>`);
   if(u.stun) out.push('<span class="chip bad">Stunned</span>');
+  if(u.selfless) out.push('<span class="chip good">Selfless State · can\'t be touched</span>');
+  if(u.unblock) out.push('<span class="chip s">Hinokami can\'t be blocked</span>');
+  if(u.saved) out.push(`<span class="chip good">Guarded by ${esc(u.saved)}</span>`);
   if(showSpecial) out.push(u.cd>0?`<span class="chip">Special in ${u.cd}</span>`:'<span class="chip s">Special ready</span>');
   return out.length?`<div class="chips">${out.join('')}</div>`:'';
 }
@@ -132,7 +137,7 @@ const MODE_CARDS = [
 // Faint character art behind each mode card (only pictures that exist are used)
 const MODE_ART = {local:['zenitsu','inosuke'], online:['tanjiro','nezuko'], cpu:['muzan'], practice:['typezero'], story:['tanjiro']};
 // Names for local play: up to four, remembered on this phone
-const localNames = () => { const s=loadNames()||[]; return ['CK','Mia','Player 3','Player 4'].map((d,i)=>s[i]||d); };
+const localNames = () => { const s=loadNames()||[]; return [playerName()||'Player 1','Player 2','Player 3','Player 4'].map((d,i)=>s[i]||d); };
 const seg = (act, cur, opts) => `<div class="seg">${opts.map(([v,l])=>`<button data-a="${act}" data-v="${v}" class="${String(cur)===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
 // Match settings for the selected mode (each mode remembers its own)
 function modeSettings(){
@@ -206,6 +211,8 @@ function codexSheet(){
       : ui>=0?`<div class="muted">Unlocked in story battle ${ui+1}: ${esc(STAGES[ui].title)}.</div>`:''}
     ${c.helper?'':statCells(c)}
     <div class="sig"><div class="sname">${esc(c.sig.name)}${c.helper?'':` <span class="muted">· special, cooldown ${c.sig.cd}</span>`}</div>${esc(c.sig.desc)}</div>
+    ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
+    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.</span></div>`:''}
     ${c.basic?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
@@ -265,6 +272,8 @@ function storyHome(){
 }
 function vSetup(){
   return `
+  ${playerName()?'':`<div class="askname"><b>What should we call you?</b><span class="muted">Your name shows when you win, in story mode and online.</span>
+    <div class="namerow"><input id="hname" type="text" maxlength="14" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="hname">Save</button></div></div>`}
   <div class="setbar"><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
@@ -479,6 +488,8 @@ function vInfo(){
     <div class="ihp"><span class="tlabel">Health</span>${health(u,{simple:true})}</div>
     <span class="stats"><span><i>PWR</i>${u.pow}</span><span><i>DEF</i>${u.def}</span><span><i>SPD</i>${u.spd}</span><span><i>REGEN</i>${u.regen?pct(u,u.regen)+'%':'–'}</span></span>
     <div class="sig"><div class="sname">${esc(u.sig.name)} <span class="muted">· ${!u.alive?'knocked out':u.cd>0?`ready in ${plural(u.cd,'round')}`:'ready now'}</span></div>${esc(u.sig.desc)}</div>
+    ${BYID[u.id].sig2?`<div class="pas">Specials take turns: ${esc(BYID[u.id].sig.name)}, then ${esc(BYID[u.id].sig2.name)}. Next up: <b>${esc(u.sig.name)}</b>.</div>`:''}
+    ${BYID[u.id].selfless?`<div class="pas"><b>${esc(SELFLESS.name)}</b>: ${u.selfless?'active now. He can\'t be touched until Hinokami Kagura is ready.':u.selflessUsed?'used this match.':u.sig.id==='selfless'?'his special now.':selflessOpen()?'his next special after Hinokami Kagura (once per match).':'🔒 unlocks when you win Destructive Death in the story.'} ${esc(SELFLESS.desc)}</div>`:''}
     ${u.legend?`<div class="pas">Strikes ×${u.strikes} per Attack · takes at most ${pct(u,u.cap)}% a round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${statusChips(u,false)}
@@ -543,7 +554,10 @@ function vSettings(){
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     <h2>Settings</h2>
     ${seg('settab',S.setTab||'general',[['general','General'],['stats','Stats'],['save','Save']])}
-    ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Playback speed</div>
+    ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Your name</div>
+      <div class="namerow"><input id="pname" type="text" maxlength="14" value="${esc(playerName())}" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="pname">${S.nameSaved?'Saved ✓':'Save'}</button></div>
+      <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
+    <div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
     <div class="setgroup"><div class="tlabel">Music</div>${seg('volmusic',(S.vol||loadVolumes()).music,[[0,'Off'],[1,'Low'],[2,'Medium'],[3,'High']])}</div>
@@ -592,6 +606,8 @@ function vSheet(){
       <div><div class="eyebrow">${esc(c.type)}</div><h2>${esc(c.name)}</h2></div><span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span></div>
     ${statCells(c)}
     <div class="sig"><div class="sname">${esc(c.sig.name)} <span class="muted">· special, cooldown ${c.sig.cd}</span></div>${esc(c.sig.desc)}</div>
+    ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
+    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.</span></div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splits?splitTree(c):''}
@@ -614,7 +630,7 @@ function moveSummary(u){
   if(u.stun) return 'Stunned · skips this round';
   const pl=S.plans[u.p][u.uid];
   if(!pl||!pl.type) return 'Choose a move';
-  const name = pl.type==='attack'?(u.basic?esc(u.basic.name):'Attack'):pl.type==='defend'?'Defend':esc(u.sig.name);
+  const name = pl.type==='attack'?(u.basic?esc(u.basic.name):'Attack'):pl.type==='defend'?'Defend':pl.type==='save'?'Save':esc(u.sig.name);
   if(!needsTarget(u,pl)) return name;
   const t=pl.t&&findU(pl.t);
   return t ? `${name} → ${esc(t.name)}` : `${name} · pick a target`;
@@ -631,7 +647,7 @@ function fighter(u, open){
     ${seal(x,'sm')}${esc(x.name)}<span class="${pct(x)<=LOW?'lo':''}">${pct(x)}%</span></button>`;
   return `<div class="fighter open" style="--tc:${pc(u.p)}">${head}<div class="fbody">
     ${statusChips(u,false)}
-    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.strikes>1?'×'+u.strikes:'')}${mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
+    <div class="moves">${u.basic?mv('attack',u.basic.k,esc(u.basic.name),esc(u.basic.tag)):mv('attack','攻','Attack',u.selfless?'ignores DEF':u.strikes>1?'×'+u.strikes:'')}${u.selfless?mv('save','護','Save','ally takes no damage',!friends(u.p).some(f=>f!==u)):mv('defend','守','Defend',u.noDefend?'berserk':'',u.noDefend)}${mv('special','技',`<span class="spn">${esc(u.sig.name.split(':')[0])}</span>`,u.cd>0?`<span class="cdn">ready in ${u.cd}</span>`:esc(u.sig.tag),u.cd>0)}</div>
     ${opts.length?`<div class="targets"><span class="tlabel">${isAllyMove(u,pl)?'Ally':'Target'}</span>${opts.map(tgt).join('')}</div>`:''}
   </div></div>`;
 }
@@ -901,7 +917,7 @@ function vScene(){
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${S.sceneFinale?(side==='l'?'r':'l'):sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
       ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame
-      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${seal(c,'lg')}${opt.awaken?`<span class="markstamp" aria-hidden="true">${typeof opt.awaken==='string'?opt.awaken:'痣'}</span><span class="markburst" aria-hidden="true"></span>`:''}</span>`:''}</div>
+      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${opt.pic&&ART[opt.pic]?`<span class="gl lg"><img src="${ART[opt.pic]}" alt=""></span>`:seal(c,'lg')}${opt.awaken?`<span class="markstamp" aria-hidden="true">${typeof opt.awaken==='string'?opt.awaken:'痣'}</span><span class="markburst" aria-hidden="true"></span>`:''}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
       <p class="popline" key="${S.sceneAt}">${typed}</p></div>
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>

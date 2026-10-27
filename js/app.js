@@ -145,7 +145,7 @@ function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='r
 
 // Change one of the selected mode's match settings (saved per mode)
 function setCfg(k,v){ const c=loadModeCfg(S.mode); c[k]=v; saveModeCfg(S.mode,c); useModeCfg(); }
-const keepNames = () => { const n0=document.getElementById('n0'); if(n0 && n0.value.trim()) S.names[0]=n0.value.trim();
+const keepNames = () => { const n0=document.getElementById('n0'); if(n0 && n0.value.trim()){ S.names[0]=n0.value.trim(); if(S.mode!=='local') savePlayerName(S.names[0]); }   // your name box on a mode page is your name
   if(S.mode==='local'){ const ns=localNames(); for(let i=0;i<4;i++){ const el=document.getElementById('n'+i); if(el) ns[i]=el.value.trim()||ns[i]; } saveNames(ns); } };
 // Copy text (battle log, round log) and show "Copied ✓" for a moment; older browsers get the hidden-textarea way
 function copyText(t){
@@ -186,6 +186,10 @@ const ACTIONS = {
     if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
   unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
+  // Your name (Settings, or the home screen's one-time question): saved on this phone and used straight away
+  savename(v){ const el=document.getElementById(v), n=el&&el.value.trim(); if(!n) return; savePlayerName(n); S.names[0]=playerName();
+    const ns=loadNames(); if(ns && (ns[0]==='CK'||!ns[0])){ ns[0]=playerName(); saveNames(ns); }
+    S.nameSaved=true; setTimeout(()=>{ S.nameSaved=false; render(); },1500); },
   quit(v){ S.settings=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
   theirs(){ S.showTheirs=!S.showTheirs; },
@@ -274,11 +278,14 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
+// Pictures that aren't a card's own: Mark Tanjiro in the Selfless State
+const EXTRA_ART = ['tanjiro_selfless'];
 function findArt(){
-  const found={}, ids=ROSTER.map(c=>c.id);
+  const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
   let waiting=ids.length;
   const finish=()=>{ if(--waiting>0) return;
     ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
+    EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; });
     if(Object.keys(ART).length) render(); };
   ids.forEach(id=>{
     const exts=['jpg','png','webp'];
@@ -580,7 +587,7 @@ function cloudApply(){
   location.reload();
 }
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off' }catch(e){}
-useModeCfg(S.mode); S.names=localNames();
+useModeCfg(S.mode); S.names=localNames(); if(S.mode!=='local') S.names[0]=playerName()||'Player 1';   // solo modes: this phone's name
 // Add to Home Screen: what this phone can do (shown on the home screen until the game is installed)
 let INSTALL_EVENT=null;
 function installInfo(){

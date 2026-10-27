@@ -105,6 +105,8 @@ TIPS
 
 kiriya.jpg               Kiriya Ubuyashiki (story finale only; until it's added he shows the 産 seal)
 
+tanjiro_selfless.jpg     Mark Tanjiro while he's in the Selfless State (his portrait switches to it; also his Destructive Death awakening line)
+
 Story scene pictures go in img/scenes/ (jpg, png or webp), named after the slot:
   scenes/sabito-smile.jpg    The Boulder ending: Sabito's "You cut it" line
   scenes/akaza-sunrise.jpg   Set Your Heart Ablaze ending: Akaza trying to flee the sunrise

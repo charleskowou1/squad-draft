@@ -88,7 +88,7 @@ function dailyStreak(){
 function markDaily(day){ const d=loadDaily(); d.done=[...new Set([...(d.done||[]), day])].slice(-400); saveDaily(d); }
 // Start today's challenge: the draft, from the characters this phone has unlocked
 function startDaily(){
-  const ch=dailyChallenge(), name=S.names[0]||'You';
+  const ch=dailyChallenge(), name=playerName()||'Player 1';
   dailyDraft(ch, c=>S.unlockAll || typeof isUnlocked!=='function' || isUnlocked(c.id));
   S.names=[name, 'Daily challenger'];
 }
