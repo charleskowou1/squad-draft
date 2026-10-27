@@ -162,11 +162,13 @@ function modeSettings(){
   if(S.mode==='online')
     return `<label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
       <div class="onlinebox">
-      ${S.joinOpen?`<div class="joinrow"><input id="ocode" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.joinCode||'')}" aria-label="Room code"><button class="btn" data-a="ojoin">Join</button></div>
+      ${S.joinOpen?`<div class="joinrow"><input id="ocode" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.joinCode||'')}" aria-label="Game code"><button class="btn" data-a="ojoin">Join</button></div>
       <button class="btn ghost" data-a="ojoinopen">Back</button>`
-      :`<button class="btn" data-a="ocreate">Create a game</button>
+      :`<button class="btn" data-a="ocreate">Play live</button>
+      <button class="btn" data-a="acreate">Play at your own pace</button>
       <button class="btn ghost" data-a="ojoinopen">Join a game</button>`}
-      ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:S.joinOpen?'<p class="hint">Type the 4-letter code shown on the host’s phone.</p>':'<p class="hint">Create a game and share the code. Up to three friends join from their own phones. With 3 or 4 players it’s a free-for-all.</p>'}</div>
+      ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:S.joinOpen?'<p class="hint">Type the code from the other phone: 4 letters for a live game, 6 for an own-pace game.</p>'
+        :'<p class="hint"><b>Live:</b> everyone plays at the same time, up to 4 phones. <b>Your own pace:</b> one friend, and you each take your turn whenever you have a minute. Your games wait on the home screen.</p>'}</div>
       ${S.joinOpen?'':`<details class="subset" id="onlineset"><summary>Room settings <span class="muted">· ${c.budget} pts · ${c.poolType==='all'?'All characters':'Random pool'}${c.duo?' · 2v2':''}</span></summary>${pts}
         <div class="setline"><span class="tlabel">If 4 players join</span>${seg('cfgduo',c.duo?'on':'off',[['off','Free-for-all'],['on','2v2 teams']])}</div>${pool}</details>`}`;
   const won=storyWon();
@@ -210,6 +212,7 @@ function codexSheet(){
     ${c.helper?'<div class="pas">Back-pocket helper: doesn\'t fight or take a fighter slot. Use it once, on the round you choose.</div>':''}
     ${c.splits?splitTree(c):''}
     <div class="recline">${rec?`On this phone: won <b>${rec[1]} of ${plural(rec[0],'game')}</b> (${Math.round(rec[1]/rec[0]*100)}%)`:'Not played on this phone yet'}</div>
+    <div class="recline">${globalLine(c.id)}</div>
     ${notes.length?`<div class="mnotes"><div class="tlabel">Synergies and matchups</div>${notes.map(n=>`<div class="note"><div class="nh"><span class="nk ${n.kind}">${n.kind==='team'?'Same team':'Opponents'}</span></div><div class="nt">${esc(n.title)}</div><div class="nx">${esc(n.text)}</div></div>`).join('')}</div>`:''}
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button></div>
   </div></div>`;
@@ -226,6 +229,14 @@ function dailyCard(){
     <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
     <div class="dfoot"><div class="dsq"><span class="svs">vs</span>${ch.enemy.map(id=>seal(BYID[id],'sm')).join('')}</div>
       <button class="btn small${done?' ghost':''}" data-a="daily">${done?'✓ Done · Replay':'Take it on'}</button></div></div>`;
+}
+// Own-pace online games on the home screen: who against, and whether it's your turn (your turn first, then newest)
+function gamesCard(){
+  const list=loadGames().slice().sort((a,b)=>(gameStatus(b).mine?1:0)-(gameStatus(a).mine?1:0) || ((b.meta||{}).updated||0)-((a.meta||{}).updated||0));
+  if(!list.length) return '';
+  return `<section class="games"><div class="eyebrow">Your games · at your own pace</div>${list.map(g=>{ const st=gameStatus(g), m=g.meta||{}, opp=m.names&&m.names[1-g.seat];
+    return `<div class="grow${st.mine?' mine':''}"><button class="gopen" data-a="agame" data-v="${esc(g.code)}"><b>${opp?'vs '+esc(opp):'New game'}</b><span>${esc(st.t)}</span></button>
+      <button class="gx" data-a="agamex" data-v="${esc(g.code)}" aria-label="Remove this game">×</button></div>`; }).join('')}</section>`;
 }
 // A mode's own page (opened from its card on the home screen): its settings and the Start button
 function vModeSet(){
@@ -260,6 +271,7 @@ function vSetup(){
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${artStrip()}
+  ${gamesCard()}
   ${dailyCard()}
   ${storyHome()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
@@ -341,7 +353,7 @@ function vDraft(){
     ${S.banning?`<p class="hint">Tap a card and ban it: nobody can pick that character this match.${S.bans.length?` Banned so far: ${S.bans.map(b=>esc(BYID[b.id].short)).join(', ')}.`:''}</p>`:''}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
     ${daily?`<p class="hint">Their team is set. Draft a squad to beat it with ${budget()} points, from the characters you've unlocked.</p>`:''}
-    ${awayBanner()}${S.banning||cpuTurn?'':tip('draft','Tap a card to read it, then <b>Confirm</b> to pick it. Stay within your points (up to 6 fighters), and tap <b>Lock team</b> when you’re done.')}
+    ${awayBanner()}${isAsync()&&cpuTurn?`<p class="hint asynchint">${asyncHintText}</p>`:''}${S.banning||cpuTurn?'':tip('draft','Tap a card to read it, then <b>Confirm</b> to pick it. Stay within your points (up to 6 fighters), and tap <b>Lock team</b> when you’re done.')}
     ${S.banning?'':orderStrip(p)}
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
     ${lockbar}
@@ -390,12 +402,18 @@ function awayBanner(){
   const h=hostSeat(), next=players().find(p=>p!==h && !(S.away&&S.away[p])), mins=Math.max(1, Math.ceil((S.hostAwaySince+HANDOFF_MS-Date.now())/60000));
   return `<div class="netnote">${nm(h)} has stepped away. The game waits for them${next!==undefined?`; if they’re not back in about ${plural(mins,'minute')}, ${next===S.me?'you take':nm(next)+' takes'} over hosting so the game can go on`:''}.</div>`;
 }
+const asyncHintText = 'You can close the game. It waits on your home screen and says when it’s your turn.';
 // A simple "waiting for the other phone" screen (online play)
 function waitScreen(eyebrow, title, line){
-  return `${topbar(eyebrow, title)}${awayBanner()}<div class="waiting"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><p class="muted">${line}</p></div>`;
+  return `${topbar(eyebrow, title)}${awayBanner()}<div class="waiting"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><p class="muted">${line}</p>${isAsync()?`<p class="hint">${asyncHintText}</p>`:''}</div>`;
 }
 // Online lobby: the host shares the room code; up to three guests take seats 2–4. The host starts when ready.
 function vLobby(){
+  if(isAsync()) return `${topbar('Own-pace game', 'Your game')}
+    <div class="lobby"><div class="tlabel">Game code</div><div class="roomcode">${esc(S.asyncCode||'······')}</div>
+      <p class="muted">Send this code to your friend. They tap Online → Join a game and type it.</p>
+      <p class="hint">${asyncHintText}</p></div>
+    ${actionbar('<button class="btn" data-a="home">Back to the home screen</button>')}`;
   const L=S.lobby||{}, host=iAmHost(), seats=L.seats||[], taken=seats.filter(x=>x&&x.on).length, ok=taken>=1 && seats.slice(0,taken).every(x=>x&&x.on);
   const seat=(i,name,on)=>`<div class="seat${on?' on':''}" style="--tc:${pc(i)}"><span class="sn">${i+1}</span><b>${on?esc(name):'Open seat'}</b>${i===0?'<small>host</small>':i===S.me&&!host?'<small>you</small>':''}</div>`;
   return `${topbar('Online game', host?'Your room':'Joined')}
@@ -489,12 +507,28 @@ function saveTab(){
 }
 // Stats (a tab in Settings): wins per player name and per-character records, on this phone.
 // Only Local, Online and Quickplay games count: not Story (preset, boosted fights) or Practice (curated matches).
+// Everyone's games (shared stats from Firebase): one line for a card
+function globalLine(id){
+  if(!GLOBAL_STATS) return `Everyone: <span class="muted">${S.globalErr?'not available right now':'loading…'}</span>`;
+  const g=globalOf(id), pick=g.d>=10 ? ` · picked <b>${Math.round(g.r/g.d*100)}%</b> of the times it’s dealt` : '';
+  return g.p>=GLOBAL_MIN ? `Everyone: wins <b>${Math.round(g.w/g.p*100)}%</b> of ${plural(g.p,'game')}${pick}` : `Everyone: ${g.p?`only ${plural(g.p,'game')} so far`:'not played yet'}${pick}`;
+}
+function globalPanel(){
+  if(!GLOBAL_STATS) return `<div class="setgroup"><div class="tlabel">Everyone’s games</div><div class="muted">${S.globalErr?'Not available right now.':'Loading…'}</div></div>`;
+  const rows=ROSTER.filter(c=>!c.spawn).map(c=>({c, ...globalOf(c.id)})).filter(x=>x.p>=GLOBAL_MIN).sort((a,b)=>b.w/b.p-a.w/a.p), n=GLOBAL_STATS.games||0;
+  return `<div class="setgroup"><div class="tlabel">Everyone’s games · ${n} ${n===1?'match':'matches'}</div>
+    ${rows.length?`<div class="recs"><div class="rec head"><span></span><span>Character</span><span>Win rate</span><span>Picked</span></div>
+    ${rows.map(x=>`<div class="rec">${seal(x.c,'sm')}<span class="rn">${esc(x.c.short)}</span><b>${Math.round(x.w/x.p*100)}%</b><span class="muted">${x.d>=10?Math.round(x.r/x.d*100)+'%':'–'}</span></div>`).join('')}</div>`
+      :`<div class="muted">Not enough games yet. A character shows up here after ${GLOBAL_MIN} games.</div>`}
+    <div class="hint">From every player's finished games (Local, Online and Quickplay; in Quickplay only your squad counts). Picked = how often players take a character when it's dealt. Anonymous: no names are sent.</div></div>`;
+}
 function statsTab(){
   const sc=loadScore(), top=Object.entries(sc).sort((a,b)=>b[1]-a[1]);
   return `<div class="setgroup"><div class="tlabel">All-time wins</div>
       <div class="score">${top.length ? top.slice(0,6).map(([k,v])=>`<div><b>${v}</b>${esc(k)}</div>`).join('') : '<div class="muted">No matches yet</div>'}</div></div>
     ${recordsPanel()}
-    <div class="hint">Counts Local, Online and Quickplay games on this phone. Story and Practice battles don't count.</div>`;
+    <div class="hint">Counts Local, Online and Quickplay games on this phone. Story and Practice battles don't count.</div>
+    ${globalPanel()}`;
 }
 // Settings (gear on the main screen): general options only. Match settings live with each mode on the main menu.
 function vSettings(){
@@ -552,6 +586,7 @@ function vSheet(){
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splits?splitTree(c):''}
     <div class="recline">${rec?`On this phone: won <b>${rec[1]} of ${plural(rec[0],'game')}</b> (${Math.round(rec[1]/rec[0]*100)}%)`:'Not played on this phone yet'}</div>
+    <div class="recline">${globalLine(c.id)}</div>
     ${notes.length?`<div class="mnotes"><div class="tlabel">Notes for ${esc(c.short)} in this deal</div>${notes.map(n=>noteHTML(n,c.id)).join('')}</div>`:''}
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button>${ok?`<button class="btn team${S.banning?' banbtn':''}" data-a="confirmPick" style="--bc:${pc(p)}">${verbBtn} ${esc(c.short)}</button>`:''}</div>
   </div></div>`;

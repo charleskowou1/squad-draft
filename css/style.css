@@ -1228,3 +1228,14 @@ details ul b{color:var(--fg)}
 .mlr{font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
 .mlmoves{font-size:.82rem;color:var(--ink-2);border-left:3px solid var(--tc);padding:2px 8px;margin-bottom:4px}
 .mlmoves b{color:var(--tc);margin-right:4px}
+
+/* Home: own-pace online games (your turn first, in gold) */
+.games{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.games .eyebrow{margin-bottom:2px}
+.grow{display:flex;align-items:stretch;border-radius:14px;border:1px solid var(--line-2);background:var(--grain),var(--surface);overflow:hidden}
+.grow.mine{border-color:var(--gold);background:var(--grain),linear-gradient(120deg,rgba(214,165,77,.16),var(--surface) 60%)}
+.gopen{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:none;border:0;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
+.gopen span{color:var(--muted);font-size:.86rem}
+.grow.mine .gopen span{color:var(--gold);font-weight:700}
+.gx{width:44px;background:none;border:0;border-left:1px solid var(--line);color:var(--muted);font-size:1.2rem;cursor:pointer}
+.asynchint{margin:6px 0}

@@ -147,3 +147,88 @@ function onlineNext(){
   if(iAmHost()) hostMaybeNextRound(); else send({a:'next'});
 }
 function onlineRematch(){ if(iAmHost()) hostRematch(); else send({a:'rematch'}); }
+
+/* ---------- play at your own pace (2 phones, no host) ----------
+   A game lives in Firebase at games/<6-letter code>: the whole shared state (s, JSON) plus a small summary (meta) for
+   the home screen. There's no host: the phone that acts loads the state, applies its action with the same rules the
+   host uses (hostHandle), and writes it back in one transaction, so either phone can be closed between turns.
+   When a round resolves the game moves straight on to the next round's choices; each phone plays the round back
+   the next time it's opened (it remembers the last round it watched).
+   Privacy: each phone only draws the other player's moves once the round has resolved (asyncView = snapshotFor),
+   but they are in the database, so this is "no peeking in the game", not a lock against someone reading the data. */
+const ASYNC_EXTRA = ['bansOn','async','first','matchNo'];
+const isAsync = () => isOnline() && !!S.async;
+const asyncJSON = () => { const o={}; SHARED.concat(ASYNC_EXTRA).forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; }); return JSON.stringify(o); };
+// A new match in an own-pace game: no wheel, a fair coin flip decides who picks first
+function asyncBegin(){
+  Object.assign(S,{final:false, localOver:false, winner:undefined, spin:null, matchLog:[], roundId:0, matchNo:(S.matchNo||0)+1});
+  newDraft(spinWheel().r);
+}
+// Who has to do something now (seats), from the shared state in S
+function asyncTurnOf(){
+  if(S.phase==='draft') return [turn()];
+  if(S.phase==='plan') return players().filter(p=>alive(p).length && !S.movesLocked[p]);
+  if(S.phase==='scout') return [S.scoutP];
+  return [];
+}
+const asyncMeta = () => ({names:S.names, matchNo:S.matchNo||0, phase:S.phase, turn:asyncTurnOf(), round:S.round||0, roundId:S.roundId||0, final:!!S.final, winner:S.winner===undefined?null:S.winner, updated:Date.now()});
+// Apply one action (msg.p = the acting seat) to the stored state. Returns {json, meta, ended} or null if it doesn't
+// apply (out of turn, already taken…). `ended` holds the finished match for the shared stats (only the phone whose
+// action ended it reports it, so a match is counted once).
+function asyncApply(json, msg){
+  const keep=S, hook=ONLINE.hooks.roundPlayed;
+  S=Object.assign(JSON.parse(json), {mode:'online', async:true, hostSeat:-1, unlockAll:keep.unlockAll});
+  ONLINE.hooks.roundPlayed=()=>{};
+  try{
+    const wasFinal=!!S.final;
+    if(msg.a==='join'){ if(S.phase!=='lobby' || S.names[1]) return null; S.names=[S.names[0], msg.name]; asyncBegin(); }
+    else if(msg.a==='rematch'){ if(!(S.phase==='result' && S.final)) return null; hostRematch(); asyncBegin(); }
+    else {
+      const before=JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId]);
+      hostHandle(msg);
+      if(JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId])===before) return null;
+      if(S.phase==='result' && !S.final){ S.readyNext=players().map(()=>true); hostMaybeNextRound(); }   // straight on to the next round
+    }
+    const ended = !wasFinal && S.final ? {pool:S.pool, poolType:S.poolType, teams:players().map(p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.id)),
+      helpers:players().map(p=>(S.picks[p]||[]).filter(isHelper)), won:players().map(p=>S.winner>=0 && sameSide(S.winner,p)), humans:players()} : null;
+    return {json:asyncJSON(), meta:asyncMeta(), ended};
+  } finally { S=keep; ONLINE.hooks.roundPlayed=hook; }
+}
+// What seat `me` may see of the stored state (the other player's moves are left out while choosing)
+function asyncView(json, me){
+  const keep=S; S=JSON.parse(json);
+  try{ const o=JSON.parse(snapshotFor(me)); ASYNC_EXTRA.forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; }); return JSON.stringify(o); } finally { S=keep; }
+}
+
+/* ---------- this phone's own-pace games (the home screen list) ----------
+   squad-draft-games: [{code, seat, meta (the game's latest summary), seen:{m, r} (match and round last watched),
+   scored (match already counted in this phone's records)}] */
+const GAMES_KEY = 'squad-draft-games';
+function loadGames(){ try{ return JSON.parse(localStorage.getItem(GAMES_KEY))||[] }catch(e){ return [] } }
+function saveGames(g){ try{ localStorage.setItem(GAMES_KEY, JSON.stringify(g)) }catch(e){} }
+const myGame = code => loadGames().find(g=>g.code===code);
+function setGame(code, patch){ const g=loadGames(), i=g.findIndex(x=>x.code===code); if(i<0) g.unshift(Object.assign({code},patch)); else Object.assign(g[i],patch); saveGames(g); }
+function dropGame(code){ saveGames(loadGames().filter(g=>g.code!==code)); }
+// the last round this phone has watched in the game's current match (0 = none yet)
+const seenRound = (g, matchNo) => g && g.seen && g.seen.m===matchNo ? g.seen.r : 0;
+// One line for the home screen list; mine = this phone has something to do
+function gameStatus(g){
+  const m=g.meta, me=g.seat, opp=m && m.names && m.names[1-me];
+  if(g.gone) return {t:'This game no longer exists'};
+  if(!m) return {t:'Loading…'};
+  if(m.phase==='lobby') return {t:`Waiting for someone to join · code ${g.code}`};
+  const unseen=(m.roundId||0) > seenRound(g, m.matchNo);
+  if(m.final) return unseen ? {t:'The last round is ready to watch', mine:true} : {t: m.winner===me ? 'You won' : m.winner===null||m.winner<0 ? 'Nobody won' : `${opp} won`};
+  if(unseen) return {t:'New round to watch', mine:true};
+  if((m.turn||[]).includes(me)) return {t: m.phase==='draft' ? 'Your pick' : m.phase==='scout' ? 'Your crow is back' : 'Your turn', mine:true};
+  return {t:`Waiting for ${opp}`};
+}
+const gamesToPlay = () => loadGames().filter(g=>gameStatus(g).mine).length;
+
+/* ---------- shared stats: every finished game adds to anonymous counts in Firebase (stats/) ----------
+   stats/games = matches counted; stats/chars/<card id> = {d: dealt (Random pool games), r: picked by a player in
+   those games, p: picked in any game, w: won}. Only players' squads count (in Quickplay, not the computer's), and
+   not Story, Practice or the daily challenge. Pick rate = r/d, win rate = w/p. */
+let GLOBAL_STATS = null;   // {games, chars, at} once loaded (app.js)
+function globalOf(id){ const c=GLOBAL_STATS && GLOBAL_STATS.chars[id]; return c ? {d:c.d||0, r:c.r||0, p:c.p||0, w:c.w||0} : {d:0,r:0,p:0,w:0}; }
+const GLOBAL_MIN = 5;   // games before a win rate is shown

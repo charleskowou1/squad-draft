@@ -13,7 +13,8 @@ function render(){
   if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
-  if(view==='over' && !scored){ scored=true; if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
+  if(view==='over' && !scored && isAsync()){ const g=myGame(S.asyncCode); if(g && g.scored===S.matchNo) scored=true; else setGame(S.asyncCode,{scored:S.matchNo}); }   // a reopened game isn't counted twice
+  if(view==='over' && !scored){ scored=true; postStats(statsGame()); if(S.winner>=0){ const sc=loadScore(); players().filter(q=>sameSide(q,S.winner)).forEach(q=>{ const n=S.names[q]; sc[n]=(sc[n]||0)+1; }); saveScore(sc); } recordMatch();
     sfx(S.winner<0 || (soloView() && !sameSide(S.winner,myP())) ? 'lose' : 'win'); }
   if(view!=='over') scored=false;
   // keep fold-out sections (How to play, records…) open across redraws
@@ -156,6 +157,10 @@ const ACTIONS = {
   toDraft(){ if(isOnline() && !iAmHost()) return; newDraft(S.spin.r); },
   redeal(){ if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
   ocreate(){ onlineCreate(); },
+  acreate(){ asyncCreate(); },
+  agame(v){ keepNames(); openGame(v); },
+  agamex(v){ const g=myGame(v), st=g&&g.meta; if(st && !st.final && st.phase!=='lobby' && !confirm('Remove this game? It can’t be finished after that.')) return;
+    const f=GAME_WATCH[v]; if(f){ f(); delete GAME_WATCH[v]; } dropGame(v); gamesBadge(); },
   ojoin(){ onlineJoin(); },
   ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
   ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
@@ -164,7 +169,7 @@ const ACTIONS = {
     if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
   unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
-  settab(v){ S.setTab=v; },
+  settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
   theirs(){ S.showTheirs=!S.showTheirs; },
   install(){ if(INSTALL_EVENT){ INSTALL_EVENT.prompt(); INSTALL_EVENT.userChoice.finally(()=>{ INSTALL_EVENT=null; installInfo(); render(); }); } },
   installlater(){ try{ localStorage.setItem('squad-draft-install-later', Date.now()) }catch(e){} installInfo(); },
@@ -177,7 +182,7 @@ const ACTIONS = {
     const old=()=>{ const a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select(); try{ document.execCommand('copy'); done(); }catch(e){} a.remove(); };
     try{ navigator.clipboard.writeText(t).then(done, old); }catch(e){ old(); } },
   tipok(v){ try{ const t=JSON.parse(localStorage.getItem(TIPS_KEY))||[]; t.push(v); localStorage.setItem(TIPS_KEY,JSON.stringify([...new Set(t)])); }catch(e){} },
-  codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
+  codex(){ keepNames(); loadGlobalStats(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
   daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); window.scrollTo(0,0); },
@@ -228,8 +233,8 @@ const ACTIONS = {
     nextScoutOrFight();
   },
   skip(){ clearTimeout(S._t); S.play.done=true; storyEnd(); },
-  next(){ if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
-  finish(){ if(isOnline()){ S.localOver=true; return window.scrollTo(0,0); } S.play=null;
+  next(){ if(isAsync()) return asyncWatched(); if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
+  finish(){ if(isAsync()) setGame(S.asyncCode,{seen:{m:S.matchNo, r:S.roundId}}); if(isOnline()){ S.asyncWatching=false; S.localOver=true; return window.scrollTo(0,0); } S.play=null;
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
     S.phase='over'; window.scrollTo(0,0); },
 };
@@ -268,7 +273,7 @@ function findScenePics(){
     tryNext(); });
 }
 /* ---------- online play: Firebase connection and create / join ---------- */
-ONLINE.hooks.roundPlayed = () => playRound();
+ONLINE.hooks.roundPlayed = () => { if(!isAsync()) playRound(); };
 const FB_VERSION = '10.12.2';
 const loadScript = src => new Promise((ok,fail)=>{ const el=document.createElement('script'); el.src=src; el.onload=ok; el.onerror=()=>fail(new Error('Could not load '+src)); document.head.appendChild(el); });
 // The transport ONLINE uses: rooms/<CODE> holds the host, guest seats 1–3 (name, on), one state copy per seat
@@ -363,7 +368,8 @@ async function onlineCreate(){
 }
 async function onlineJoin(){
   const el=document.getElementById('ocode'), code=((el&&el.value)||'').trim().toUpperCase(); S.joinCode=code;
-  if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the 4-letter code from the other phone.'; return render(); }
+  if(/^[A-Z]{6}$/.test(code)) return asyncJoin(code);
+  if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the code from the other phone (4 or 6 letters).'; return render(); }
   const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
   try{
     const net=await firebaseNet('guest'), {room, seat}=await net.join(code,name);
@@ -373,6 +379,128 @@ async function onlineJoin(){
     render();
   }catch(e){ S.onlineMsg=e.message||'Could not join.'; render(); }
 }
+/* ---------- own-pace games (2 phones, no host): games/<6-letter code> in Firebase ----------
+   The rules are in online.js (asyncApply). Here: create / join / open, the transaction that applies this phone's
+   actions, playing back rounds this phone hasn't watched, and the home screen list (each game's meta, watched live). */
+const newGameCode = () => Array.from({length:6}, ()=>ROOM_LETTERS[Math.floor(Math.random()*ROOM_LETTERS.length)]).join('');
+const netError = e => /permission/i.test(String(e&&(e.code||e.message))) ? 'Firebase blocked this: the database rules need the “games” and “stats” entries (see the setup notes).' : (e&&e.message)||'Could not connect.';
+function asyncNet(db, code){
+  const ref=db.ref('games/'+code), offs=[];
+  return {
+    // apply this phone's action in one transaction; resolves true if it changed the game
+    send(msg){ let res=null;
+      return ref.transaction(g=>{ res=null; if(!g || !g.s) return g; const r=asyncApply(g.s, msg); if(!r) return; res=r; return Object.assign({}, g, {s:r.json, meta:r.meta}); })
+        .then(t=>{ if(t.committed && res && res.ended) postStats({...res.ended, humans:res.ended.humans}); return t.committed && !!res; })
+        .catch(e=>{ S.onlineMsg=netError(e); render(); return false; }); },
+    onGame(cb){ const f=s=>{ const v=s.val(); if(v && v.s) cb(v); else if(!v){ setGame(code,{gone:true}); } }; ref.on('value',f); offs.push(()=>ref.off('value',f)); },
+    leave(){ offs.forEach(f=>f()); offs.length=0; },
+  };
+}
+async function asyncCreate(){
+  const name=myName(); S.names[0]=name; S.onlineMsg='Connecting…'; render();
+  try{
+    const db=await firebaseReady(), c=useModeCfg('online'), now=Date.now();
+    const state=JSON.stringify({phase:'lobby', n:2, names:[name], budget:c.budget, poolType:c.poolType, maxTeam:c.maxTeam, bansOn:!!c.bans, async:true, hostSeat:-1, duo:false, matchNo:0});
+    let code=null;
+    for(let i=0;i<8 && !code;i++){ const k=newGameCode(), r=await db.ref('games/'+k).transaction(v=>v ? undefined : {created:now, s:state, meta:{names:[name], matchNo:0, phase:'lobby', turn:[], round:0, roundId:0, final:false, winner:null, updated:now}}); if(r.committed) code=k; }
+    if(!code) throw new Error('Could not make a game code. Try again.');
+    setGame(code,{seat:0}); watchGames(); await openGame(code);
+  }catch(e){ S.onlineMsg=netError(e); render(); }
+}
+async function asyncJoin(code){
+  if(myGame(code)) return openGame(code);
+  const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
+  try{
+    const db=await firebaseReady(), snap=await db.ref('games/'+code).get();
+    if(!snap.exists()) throw new Error('No game with that code.');
+    const st=JSON.parse(snap.val().s);
+    if(st.phase!=='lobby' || (st.names||[])[1]) throw new Error('That game already has two players.');
+    const ok=await asyncNet(db, code).send({a:'join', p:1, name});
+    if(!ok){ if(!S.onlineMsg || S.onlineMsg==='Joining…') S.onlineMsg='That game already has two players.'; return render(); }
+    setGame(code,{seat:1}); watchGames(); await openGame(code);
+  }catch(e){ S.onlineMsg=netError(e); render(); }
+}
+// Open one of this phone's games: listen to it, and draw it as this player sees it
+async function openGame(code){
+  const g=myGame(code); if(!g) return;
+  S.onlineMsg='Connecting…'; render();
+  try{
+    const db=await firebaseReady();
+    if(ONLINE.net) ONLINE.net.leave();
+    clearTimeout(S._t);
+    Object.assign(S,{mode:'online', async:true, asyncCode:code, me:g.seat, planFor:g.seat, hostSeat:-1, away:{}, phase:'lobby', lobby:{code, seats:[]},
+      onlineMsg:'', asyncWatching:false, play:null, final:false, localOver:false, plans:null, helperPlan:null, lastPlans:null, sel:null, info:null});
+    ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null;
+    ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; setGame(code,{meta:v.meta, gone:false});
+      if(!S.asyncWatching){ asyncShow(); render(); } });
+    window.scrollTo(0,0);
+  }catch(e){ S.onlineMsg=netError(e); render(); }
+}
+// Draw the latest state; a round this phone hasn't watched yet plays back first
+function asyncShow(){
+  if(!ONLINE.full) return;
+  const wasPhase=S.phase;
+  applySnapshot(asyncView(ONLINE.full, S.me));
+  S.away={};
+  if(S.phase==='lobby'){ S.lobby={code:S.asyncCode, seats:[]}; return; }
+  const seen=seenRound(myGame(S.asyncCode), S.matchNo);
+  if((S.roundId||0)>seen && S.log && S.log.length){
+    S.asyncWatching=true; S.localOver=false;
+    if(!S.final) S.round--;   // the shared game has already moved on to the next round
+    S.phase='result'; S.readyNext=players().map(()=>false); playRound(); return;
+  }
+  if(S.final){ S.phase='result'; S.localOver=true; }
+  if(wasPhase!==S.phase) newPlanTurn();
+}
+// "Next round" after watching: remember it and show the game as it is now
+function asyncWatched(){
+  setGame(S.asyncCode,{seen:{m:S.matchNo, r:S.roundId}}); S.asyncWatching=false; S.play=null; clearTimeout(S._t);
+  asyncShow(); newPlanTurn(); gamesBadge();
+}
+// Home screen: keep each game's summary up to date, and show how many are waiting on you
+const GAME_WATCH = {};
+async function watchGames(){
+  const list=loadGames(); if(!list.length || !FIREBASE_CONFIG || !navigator.onLine) return gamesBadge();
+  try{
+    const db=await firebaseReady();
+    loadGames().forEach(g=>{ if(GAME_WATCH[g.code]) return;
+      const ref=db.ref('games/'+g.code+'/meta'), f=s=>{ const m=s.val(); if(!myGame(g.code)) return; setGame(g.code, m ? {meta:m, gone:false} : {gone:true}); gamesBadge(); if(S.phase==='setup') render(); };
+      ref.on('value',f); GAME_WATCH[g.code]=()=>ref.off('value',f); });
+  }catch(e){}
+}
+function gamesBadge(){
+  const n=gamesToPlay();
+  document.title = n ? `(${n}) Squad Draft` : 'Squad Draft';
+  try{ if(n && navigator.setAppBadge) navigator.setAppBadge(n); else if(navigator.clearAppBadge) navigator.clearAppBadge(); }catch(e){}
+}
+
+/* ---------- shared stats (see online.js): sent when a match ends, read for the Codex and the Stats tab ---------- */
+// The match that just ended, as the stats count it (null = not counted: Story, Practice, the daily challenge, and
+// online games, which are counted once by the phone that hosts / ended them)
+function statsGame(){
+  if(S.mode==='story' || S.mode==='daily' || isPractice() || !S.teams) return null;
+  if(isOnline() && (isAsync() || !iAmHost())) return null;
+  return {pool:S.pool||[], poolType:S.poolType, teams:players().map(p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.id)), helpers:players().map(p=>(S.picks[p]||[]).filter(isHelper)),
+    won:players().map(p=>S.winner>=0 && sameSide(S.winner,p)), humans: S.mode==='cpu' ? [0] : players()};
+}
+function postStats(g){
+  if(!g || !FIREBASE_CONFIG || !navigator.onLine) return;
+  firebaseReady().then(db=>{
+    const inc=firebase.database.ServerValue.increment(1), up={games:inc}, add=(id,k)=>{ up[`chars/${id}/${k}`]=inc; }, random=g.poolType!=='all';
+    if(random) [...new Set(g.pool)].forEach(id=>add(id,'d'));
+    g.humans.forEach(p=>[...g.teams[p], ...(g.helpers[p]||[])].forEach(id=>{ add(id,'p'); if(random) add(id,'r'); if(g.won[p]) add(id,'w'); }));
+    return db.ref('stats').update(up);
+  }).catch(()=>{});
+}
+async function loadGlobalStats(){
+  if(GLOBAL_STATS && Date.now()-GLOBAL_STATS.at<5*60*1000) return;
+  if(!FIREBASE_CONFIG || !navigator.onLine){ S.globalErr=true; return; }
+  try{ const db=await firebaseReady(), v=(await db.ref('stats').get()).val()||{};
+    GLOBAL_STATS={games:v.games||0, chars:v.chars||{}, at:Date.now()}; S.globalErr=false; }
+  catch(e){ S.globalErr=true; }
+  render();
+}
+
 /* ---------- cloud backup with a recovery code ----------
    Every 'squad-draft…' setting and save on this phone (story, stars, stats, records, daily streak, names, settings) is
    copied to Firebase at saves/<CODE> a few seconds after it changes. The code (like KMRT-7Q2X-9HEA) is shown in
@@ -439,6 +567,7 @@ installInfo();
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
+setTimeout(watchGames, 200);   // own-pace games on the home screen: whose turn it is
 render();
 findArt(); findScenePics();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)
