@@ -98,12 +98,15 @@ const STAGES = [
       ['','The sky to the east is still dark. Dawn is ten rounds away.']]},
   {id:'district', arc:'district', title:'Two as One', place:'Yoshiwara', foe:'Gyutaro & Daki', mine:['tengen','tanjiro','zenitsu','inosuke','nezuko'], enemy:['gyutaro','daki','hand'], level:'hard',
     stars:{standing:3, rounds:4},
-    boosts:[{side:1, hp:1.3, pow:1, label:'Gyutaro & Daki: +30% HP, +1 PWR'}],
+    boosts:[{side:1, hp:1.7, pow:2, label:'Gyutaro & Daki: +70% HP, +2 PWR'}],   // tougher once Nezuko awakens (Oct 26, 2026)
     beats:[{when:'ko', id:'daki', who:'gyutaro', text:'Sister! Get back up!'}, {when:'low', id:'tengen', at:.35, text:'Flashy to the very end!'}],
     phases:[{id:'gyutaro', at:.4, pow:2, spd:1, label:'+2 PWR, +1 SPD', line:'You hurt my sister. Now I’ll rip you apart.'}],
     awaken:[{id:'tanjiro', at:.5, round:3, lines:[['','Gyutaro’s blood sickles close in. Tanjiro’s heart pounds like a war drum.'],
       ['tanjiro','I can’t lose here. Not with everyone counting on me!'],
-      ['tanjiro_mark','My forehead is burning… and my body feels light. Hinokami Kagura!',{awaken:true}]]}],
+      ['tanjiro_mark','My forehead is burning… and my body feels light. Hinokami Kagura!',{awaken:true}]]},
+      {id:'nezuko', to:'nezuko_awakened', at:.6, round:2, lines:[['daki','Is that all? A demon who won’t even eat humans is nothing.'],
+      ['tanjiro','Nezuko? Nezuko, what’s happening to you?!'],
+      ['nezuko_awakened','Grrrrr…!',{awaken:'鬼'}]]}],
     outro:[['daki','Brother! It’s not fair!'],['gyutaro','Wherever you’re going, I’m going with you.'],['tengen','Flashy. Now let me sit down for a second.']],
     blurb:'Two demons sharing one life. Cut both heads at the same time.',
     scene:[['daki',"How dare you look at me! Brother, they're bullying me!"],
@@ -326,7 +329,7 @@ function beginStage(){
 const STARTER_DEMONS = ['nezuko','tamayo','yushiro','hand','swamp'];
 const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.includes(c.id)) || c.mark || c.legend || c.id!==c.fam || c.id==='typezero');
 // Extra unlocks that never fight in a story battle themselves, tied to the battle where they belong in canon
-const UNLOCK_EXTRAS = {district:['nezuko_awakened','tengen_retired'], kokushibo:['sanemi_mark','gyomei_mark']};
+const UNLOCK_EXTRAS = {district:['tengen_retired'], kokushibo:['sanemi_mark','gyomei_mark']};
 // stage id → the card ids winning it unlocks (each card is unlocked by the first battle it appears in)
 const STAGE_UNLOCKS = (()=>{ const seen=new Set(), out={};
   STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(st.awaken||[]).map(a=>a.to||a.id+'_mark'), ...(UNLOCK_EXTRAS[st.id]||[])];

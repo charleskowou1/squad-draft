@@ -871,7 +871,7 @@ function vScene(){
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
       ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame
-      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${seal(c,'lg')}${opt.awaken?'<span class="markstamp" aria-hidden="true">痣</span><span class="markburst" aria-hidden="true"></span>':''}</span>`:''}</div>
+      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${seal(c,'lg')}${opt.awaken?`<span class="markstamp" aria-hidden="true">${typeof opt.awaken==='string'?opt.awaken:'痣'}</span><span class="markburst" aria-hidden="true"></span>`:''}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
       <p class="popline" key="${S.sceneAt}">${typed}</p></div>
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>

@@ -729,13 +729,16 @@ function storyBeats(when){
 // Story: a fighter awakens their Demon Slayer Mark at the end of a round (when hurt to `at` of their health, or after
 // round `round`): they become the Mark card (its extra HP, PWR, SPD, DEF and faster special, which is ready now), and
 // the stage's short cutscene plays before the next round (S.midScene, shown by app.js).
-// A fighter becomes their Mark card mid-battle: the Mark card's extra HP, PWR, SPD and DEF on top of what they have now,
-// and its faster special. Story Marks (ready) also get the special ready now; Kagaya's Final Resolve keeps the current wait.
+// A fighter becomes their Mark card mid-battle (or, in story, another awakened card: Nezuko → Awakened Nezuko): that
+// card's extra HP, PWR, SPD, DEF and regen on top of what they have now, its special, and its name. Story Marks (ready) also get the special ready now; Kagaya's Final Resolve keeps the current wait.
 function awakenMark(u, ready, to){
   const b=BYID[u.id], m=BYID[to||u.id+'_mark'];
-  const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def;
-  Object.assign(u,{id:m.id, sig:m.sig, sk:m.sk, mark:true, awoke:true}, ready?{cd:0}:{cd:Math.min(u.cd,m.sig.cd+1)});
-  L(`${u.name} awakens the Demon Slayer Mark! Stronger and faster${ready?', and the special is ready':''}.`,'h',{...fx('buff',null,u), act:'awaken'});
+  const dh=m.hp-b.hp; u.max+=dh; u.hp+=dh; u.pow+=m.pow-b.pow; u.spd+=m.spd-b.spd; u.def+=m.def-b.def; u.regen+=(m.regen||0)-(b.regen||0);
+  const was=u.name;
+  Object.assign(u,{id:m.id, name:m.short, g:m.g, sig:m.sig, sk:m.sk, mark:!!m.mark, noDefend:!!m.noDefend, awoke:true}, ready?{cd:0}:{cd:Math.min(u.cd,m.sig.cd+1)});   // now named like that card (Tanjiro ✦)
+  if(u.noDefend && S.plans) players().forEach(p=>{ const pl=S.plans[p]&&S.plans[p][u.uid]; if(pl && pl.type==='defend') pl.type='attack'; });
+  L(m.mark ? `${was} awakens the Demon Slayer Mark! Stronger and faster${ready?', and the special is ready':''}.`
+    : `${was} awakens! ${m.short}: stronger, faster${ready?', special ready':''}.`,'h',{...fx('buff',null,u), act:'awaken'});
 }
 // Kagaya's Final Resolve: the Hashira on his team still standing who have a Mark card and haven't awakened it
 const markReady = k => alive(k.p).filter(m=>m!==k && BYID[m.id].hashira && !m.mark && BYID[m.id+'_mark']);
