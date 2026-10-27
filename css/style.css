@@ -1304,3 +1304,7 @@ body.placebg::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:
 /* Settings → Battle background: one button per place, so the row wraps onto more lines on a phone */
 .placeset .seg{flex-wrap:wrap}
 .placeset .seg button{flex:1 1 calc(33% - 3px);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Clips never show the phone's own play button: they start by themselves (or on the next tap in Low Power Mode) */
+video::-webkit-media-controls,video::-webkit-media-controls-start-playback-button,video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none}
+video{pointer-events:none}

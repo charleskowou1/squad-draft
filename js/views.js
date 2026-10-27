@@ -714,7 +714,7 @@ function cutin(u, clip, line){
 }
 // A move clip: muted, plays once inline (app.js keeps the same element across redraws of the beat, using data-k)
 const clipWho = c => c.who || findU(c.uid);   // a fighter, or a helper's stand-in
-const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[clipWho(c).id]?` poster="${ART[clipWho(c).id]}"`:''} muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
+const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[clipWho(c).id]?` poster="${ART[clipWho(c).id]}"`:''} muted playsinline webkit-playsinline autoplay preload="auto" disablepictureinpicture></video>`;
 const CLIP_KANJI = {regen:'再', heal:'癒', poison:'毒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
 // A beat with a move clip that isn't a special (regen, heal, guard, knockout…): the clip with who and what over it
 function clipBeat(c, line){

@@ -7,6 +7,16 @@ let scored = false, spinShown = null;
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
 const viewName = () => isOnline() && S.final && S.localOver ? 'over' : S.phase==='scout' && S.scouting ? 'plan' : S.phase;
 
+// Start a clip with no play button: phones only autoplay a video that is muted inline, and a video added by script
+// has to be told so in code. If the phone still refuses (iPhone Low Power Mode), the next tap anywhere starts it.
+const PENDING_VIDS = new Set();
+function playVid(v){
+  v.muted=true; v.defaultMuted=true; v.playsInline=true; v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+  const p=v.play(); if(p && p.catch) p.catch(()=>PENDING_VIDS.add(v));
+}
+['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, ()=>{
+  PENDING_VIDS.forEach(v=>{ if(!v.isConnected){ PENDING_VIDS.delete(v); return; } const p=v.play(); if(p && p.then) p.then(()=>PENDING_VIDS.delete(v)).catch(()=>{}); });
+}, {passive:true}));
 function render(){
   if(isOnline()) S.planFor=S.me;
   const view=viewName();
@@ -32,7 +42,7 @@ function render(){
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
-  app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else { v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; v.play().catch(()=>{}); } }; v.play().catch(()=>{}); } });
+  app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else { v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
