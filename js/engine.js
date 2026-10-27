@@ -712,10 +712,13 @@ function battleLogText(){
   const out=[`Squad Draft battle log · ${new Date().toLocaleDateString()}`,
     ...players().map(p=>`${S.names[p]}: ${team(p)}${(S.picks[p]||[]).filter(isHelper).length?' + '+S.picks[p].filter(isHelper).map(id=>BYID[id].short).join(', '):''}`),
     `Result: ${w<0?'nobody wins':S.names[w]+' wins'} after ${S.round} round${S.round===1?'':'s'}`, ''];
-  ml.forEach(r=>{ out.push(`— Round ${r.r} —`);
-    r.moves.forEach(m=>out.push(`${S.names[m.p]} chose: ${m.picks.join(' · ')||'nothing'}${m.helpers.length?' · used '+m.helpers.join(', '):''}`));
-    r.lines.forEach(l=>out.push('  '+plainLog(l.t))); out.push(''); });
+  ml.forEach(r=>out.push(roundText(r), ''));
   return out.join('\n');
+}
+// One round as text: what each player chose, then what happened (the round results screen copies the latest one)
+function roundText(r){
+  return [`— Round ${r.r} —`, ...r.moves.map(m=>`${S.names[m.p]} chose: ${m.picks.join(' · ')||'nothing'}${m.helpers.length?' · used '+m.helpers.join(', '):''}`),
+    ...r.lines.map(l=>'  '+plainLog(l.t))].join('\n');
 }
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).

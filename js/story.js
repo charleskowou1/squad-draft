@@ -276,13 +276,13 @@ function goalsMet(st){
   return [true, g.hp2 ? hp>=g.hp2 : up>=g.standing, g.rounds ? S.round<=g.rounds && !S.survived : hp>=g.health];
 }
 const starsEarned = st => goalsMet(st).filter(Boolean).length;
-// Goals met in any win of this battle (they add up across replays). Saves from before Oct 26, 2026 only kept a count:
-// those count as the first goals.
+// The goals met in this battle's best single win (most goals; stars don't add up across replays: CK, Oct 26, 2026).
+// Saves that only kept a count show it as the first goals.
 function goalsGot(id){ const s=loadStory(), g=(s.goals||{})[id], n=(s.stars||{})[id]||0; return [0,1,2].map(k=>!!(g&&g[k]) || (!g && k<n)); }
 const stageStars = id => goalsGot(id).filter(Boolean).length;
 const totalStars = () => STAGES.reduce((a,st)=>a+stageStars(st.id),0);
-function saveStars(id,met){ const had=goalsGot(id), s=loadStory(); s.goals=s.goals||{}; s.stars=s.stars||{};
-  s.goals[id]=had.map((x,k)=>x||!!met[k]); s.stars[id]=s.goals[id].filter(Boolean).length; try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
+function saveStars(id,met){ const n=met.filter(Boolean).length, s=loadStory(); if(n<=stageStars(id)) return;   // only a better run replaces the best
+  s.goals=s.goals||{}; s.stars=s.stars||{}; s.goals[id]=met.map(Boolean); s.stars[id]=n; try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
 const storyWon = () => loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length;
 function saveStoryClear(id){ const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
 const stageCleared = i => loadStory().cleared.includes(STAGES[i].id);

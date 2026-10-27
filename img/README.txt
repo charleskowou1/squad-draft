@@ -111,3 +111,29 @@ Story scene pictures go in img/scenes/ (jpg, png or webp), named after the slot:
   scenes/rengoku-heart.jpg   Set Your Heart Ablaze ending: Rengoku's "set your heart ablaze"
   scenes/tanjiro-yelling.jpg Set Your Heart Ablaze ending: Tanjiro shouting after Akaza as he runs from the sun
 A line without its picture shows the character portraits instead.
+
+Cutscene backgrounds go in img/places/ (jpg, png or webp), one per battle, named by the battle:
+  places/training.jpg         1. The Boulder: Mount Sagiri
+  places/selection.jpg        2. Final Selection: Mount Fujikasane (wisteria)
+  places/asakusa.jpg          3. Temari and Arrows: Asakusa, Tokyo at night
+  places/tsuzumi.jpg          4. Tsuzumi Mansion: the drum house
+  places/natagumo.jpg         5. Spider Family: Mount Natagumo
+  places/mugen.jpg            6. The Dream Train: the Mugen Train
+  places/mugen_akaza.jpg      7. Set Your Heart Ablaze: beside the derailed train
+  places/district.jpg         8. Two as One: Yoshiwara
+  places/typezero.jpg         9. Type Zero: the hidden village (training ground)
+  places/gyokko.jpg          10. Pots and Mist: the hidden village
+  places/swordsmith.jpg      11. Splitting Emotions: the hidden village
+  places/nakime.jpg          12. The Shifting Floors: Infinity Castle
+  places/doma1.jpg           13. Wisteria: Infinity Castle, the lotus pond
+  places/doma2.jpg           14. Petals of Futility: Infinity Castle, the lotus pond
+  places/kaigaku.jpg         15. Senior Brother: Infinity Castle
+  places/akaza.jpg           16. Destructive Death: Infinity Castle
+  places/flash_kokushibo.jpg 17. Brothers: sixty years later
+  places/kokushibo.jpg       18. Upper Moon One: Infinity Castle, deep
+  places/flash_muzan.jpg     19. The Sun Itself: four hundred years ago
+  places/dawn.jpg            20. Until Dawn: the city streets
+  places/epilogue.jpg        21. Demon King: the rising sun (also behind the finale)
+A battle without its own picture uses its arc's, if there is one: prologue, asakusa, flashback, tsuzumi, natagumo,
+mugen, district, swordsmith, castle, dawn (so one castle.jpg covers every Infinity Castle battle).
+Wide pictures work best. They're darkened behind the lines; without one the scene keeps its colour and kanji.

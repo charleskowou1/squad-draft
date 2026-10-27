@@ -741,12 +741,12 @@ function groupSummary(lines){
 }
 // Knockouts and hits of 30%+ shake the stage
 const bigHit = line => line.fx==='ko' || (/\[-(\d+)%\]/.exec(line.t)||[])[1] >= 30;
+const COPY_ICON='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 // Win screen: every round of the match (what each player chose, then what happened), with a Copy button for the text
 function matchLogPanel(){
   const ml=S.matchLog||[]; if(!ml.length) return `<details class="panel" id="finallog"><summary>Final round</summary>${logHTML()}</details>`;
-  const copyIcon='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
   return `<section class="panel matchlog"><div class="mlhead"><span class="tlabel">Battle log</span>
-      <button class="btn ghost small copylog" data-a="copylog" aria-label="Copy the full battle log">${copyIcon}${S.logCopied?'Copied ✓':'Copy'}</button></div>
+      <button class="btn ghost small copylog" data-a="copylog" aria-label="Copy the full battle log">${COPY_ICON}${S.logCopied?'Copied ✓':'Copy'}</button></div>
     <details id="finallog"><summary>All ${plural(ml.length,'round')}</summary>
     ${ml.map(r=>`<div class="mlround"><div class="mlr">Round ${r.r}</div>
       ${r.moves.map(m=>`<div class="mlmoves" style="--tc:${pc(m.p)}"><b>${nm(m.p)}</b> ${m.picks.map(x=>esc(x)).join(' · ')}${m.helpers.length?` · used ${esc(m.helpers.join(', '))}`:''}</div>`).join('')}
@@ -783,7 +783,7 @@ function vResult(){
       :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
     <div class="rcol">${done?teamBlock(me,solo?'Your team':null,moment):miniTeam(me,moment,involved)}</div></div>
-    ${done?`<div class="panel"><div class="tlabel">Round log</div>${logHTML()}</div>`:''}
+    ${done?`<div class="panel"><div class="mlhead"><span class="tlabel">Round log</span>${(S.matchLog||[]).length?`<button class="btn ghost small copylog" data-a="copyround" aria-label="Copy this round's log">${COPY_ICON}${S.logCopied?'Copied ✓':'Copy'}</button>`:''}</div>${logHTML()}</div>`:''}
     ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }
 // MVP of the match plus a few awards, from S.stats (see tallyRound in engine.js)
@@ -861,6 +861,9 @@ const ARC_FX = {prologue:'snow', asakusa:'petal', flashback:'ember', tsuzumi:'du
 // Tap to finish the line, tap again for the next. After the last line, a versus card shows both squads and the twist.
 // Scene pictures found in img/scenes/ (app.js fills this at startup)
 const SCENE_ART = {};
+const placeStyle = st => { const src=PLACE_ART[st.id]||PLACE_ART[st.arc]; return src ? `style="--place:url('${src}')" data-place="1" ` : ''; };
+// Place pictures behind the cutscenes: a battle's own (img/places/<battle id>.jpg), else its arc's (app.js fills this)
+const PLACE_ART = {};
 function vScene(){
   const st=STAGES[S.stage], lines=st.scene;
   const fx=`<span class="particles p-${ARC_FX[st.arc]||'dust'}" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i*0.73)%6}s;--s:${0.6+(i%5)*0.15}"></i>`).join('')}</span>`;
@@ -869,10 +872,10 @@ function vScene(){
     : `<div class="scenetop"><div><div class="eyebrow">${esc(ARCS[st.arc].title)} · ${S.sceneMid?`Round ${S.round}`:`Battle ${S.stage+1} of ${STAGES.length}`}</div><div class="title">${esc(st.title)}</div><div class="splace">${esc(st.place)}</div></div>
       <span class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="sceneskip">Skip</button></span></div>`;
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
-    return `<div class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+    return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starRow(S.starsGot||1)}
         <div class="goals">${starGoals(st).map((g,k)=>`<span class="${(S.goalsNow||[])[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>
-        ${stageStars(st.id)>(S.starsBest||0)&&S.starsBest?`<span class="muted">New star! ${stageStars(st.id)} of 3 for this battle.</span>`:''}
+        ${(S.starsGot||0)>(S.starsBest||0)&&S.starsBest?'<span class="muted">New best!</span>':''}
         ${S.newUnlocks&&S.newUnlocks.length?'<b>You have unlocked</b>':''}</div>
       ${(()=>{ const all=S.newUnlocks||[], at=Math.min(S.unlockAt||0, all.length-1), id=all[at]; if(!id) return '';   // one at a time: tap for the next
         return `<div class="ulist one"><span class="ucard big" key="${id}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].name)}</b><small>${esc(BYID[id].type)}</small></span></div>
@@ -883,7 +886,7 @@ function vScene(){
   if(S.sceneVs){
     const tw=twistText(st), row=ids=>ids.filter(id=>!BYID[id].helper).map(id=>`<span class="vsc">${seal(BYID[id],'lg')}<small>${esc(BYID[id].short)}</small></span>`).join('');
     const mine=S.storyDraft?'<span class="muted">Your draft</span>':row(st.mine);
-    return `<div class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
+    return `<div ${placeStyle(st)}class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="vsrow l">${mine}</div><div class="vsmid"><span>VS</span></div><div class="vsrow r">${row(st.enemy)}</div>
       ${tw||st.boosts?`<div class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</div>`:''}
       ${stageCleared(S.stage)?`<div class="goals vsgoals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${goalsGot(st.id)[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>`:''}
@@ -893,7 +896,7 @@ function vScene(){
   // the other speakers in this scene stand dimmed behind the line
   const cast=(S.sceneFinale ? [shown[S.sceneAt-1], shown[S.sceneAt+1]].map(l=>l&&l[0]) : [...new Set(shown.map(l=>l[0]))]).filter(id=>id && id!==who).slice(0,2);   // finale: the neighbours in the conversation
   const typed=esc(text);   // lines simply appear (CK didn't want the typing effect)
-  return `<div class="scene arc-${st.arc}${opt.awaken?' awakening':''}${S.sceneMid?' midscene':''}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
+  return `<div ${placeStyle(st)}class="scene arc-${st.arc}${opt.awaken?' awakening':''}${S.sceneMid?' midscene':''}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${S.sceneFinale?(side==='l'?'r':'l'):sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}

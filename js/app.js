@@ -143,6 +143,12 @@ function fight(){ S.info=null; resolve(); S.final = S.phase==='over'; S.phase='r
 function setCfg(k,v){ const c=loadModeCfg(S.mode); c[k]=v; saveModeCfg(S.mode,c); useModeCfg(); }
 const keepNames = () => { const n0=document.getElementById('n0'); if(n0 && n0.value.trim()) S.names[0]=n0.value.trim();
   if(S.mode==='local'){ const ns=localNames(); for(let i=0;i<4;i++){ const el=document.getElementById('n'+i); if(el) ns[i]=el.value.trim()||ns[i]; } saveNames(ns); } };
+// Copy text (battle log, round log) and show "Copied ✓" for a moment; older browsers get the hidden-textarea way
+function copyText(t){
+  const done=()=>{ S.logCopied=true; render(); setTimeout(()=>{ S.logCopied=false; render(); },1600); };
+  const old=()=>{ const a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select(); try{ document.execCommand('copy'); done(); }catch(e){} a.remove(); };
+  try{ navigator.clipboard.writeText(t).then(done, old); }catch(e){ old(); }
+}
 const ACTIONS = {
   mode(v){ keepNames(); S.mode=v; S.joinOpen=false; S.onlineMsg=''; useModeCfg(v); if(v==='local') S.names=localNames(); },
   // a mode card on the home screen: Story goes straight to the map, the others open their settings page
@@ -186,9 +192,8 @@ const ACTIONS = {
   restoreok(){ cloudApply(); },
   unrestore(){ S.restoreFound=null; },
   copycode(){ const c=showCode(loadCloud().code); try{ navigator.clipboard.writeText(c); S.copied=true; setTimeout(()=>{ S.copied=false; render(); },1500); }catch(e){} },
-  copylog(){ const t=battleLogText(), done=()=>{ S.logCopied=true; render(); setTimeout(()=>{ S.logCopied=false; render(); },1600); };
-    const old=()=>{ const a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select(); try{ document.execCommand('copy'); done(); }catch(e){} a.remove(); };
-    try{ navigator.clipboard.writeText(t).then(done, old); }catch(e){ old(); } },
+  copyround(){ const ml=S.matchLog||[]; if(ml.length) copyText(roundText(ml[ml.length-1])); },
+  copylog(){ copyText(battleLogText()); },
   tipok(v){ try{ const t=JSON.parse(localStorage.getItem(TIPS_KEY))||[]; t.push(v); localStorage.setItem(TIPS_KEY,JSON.stringify([...new Set(t)])); }catch(e){} },
   codex(){ keepNames(); loadGlobalStats(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
@@ -279,6 +284,14 @@ function findArt(){
   });
 }
 // Scene pictures (img/scenes/<name>.jpg/png/webp) for story lines that ask for one; lines without a file keep the portraits
+// Place pictures behind the cutscenes: img/places/<battle id>.jpg/png/webp, or <arc id> for a whole arc (optional,
+// see img/README.txt)
+function findPlaces(){
+  [...STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const exts=['jpg','png','webp','jpeg'];
+    const tryNext=()=>{ const ext=exts.shift(); if(!ext) return;
+      const im=new Image(); im.onload=()=>{ PLACE_ART[arc]=im.src; if(S.phase==='scene') render(); }; im.onerror=tryNext; im.src=`img/places/${arc}.${ext}`; };
+    tryNext(); });
+}
 function findScenePics(){
   scenePics().forEach(name=>{ const exts=['jpg','png','webp','jpeg'];
     const tryNext=()=>{ const ext=exts.shift(); if(!ext) return;
@@ -582,7 +595,7 @@ try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persis
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
 setTimeout(()=>{ watchGames(); loadGlobalStats(); }, 200);   // own-pace games on the home screen; everyone's stats for the cards   // own-pace games on the home screen: whose turn it is
 render();
-findArt(); findScenePics();
+findArt(); findScenePics(); findPlaces();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)
 // Updates: a phone that keeps the game open in the background never reloads it, so check for a new version whenever
 // the game comes back to the screen; when one arrives, reload right away on the home screen, or on the next return home.
