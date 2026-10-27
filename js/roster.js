@@ -175,6 +175,10 @@ add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and fi
   passive:'Somehow Survives: the first hit that would knock him out leaves him at 1 HP instead.',
   sig:{name:'Water Surface Slash',desc:'Strike for PWR+2.',cd:2,kind:'single'}});
 
+// Kiriya Ubuyashiki only appears in the story's finale (scene-only: spawn keeps him out of drafts, the Codex and records)
+add({id:'kiriya',spawn:true,cameo:true,name:'Kiriya Ubuyashiki',short:'Kiriya',g:'産',type:'Last head of the Ubuyashiki family',cost:0,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'—',desc:'Appears only in the story finale.',cd:9,kind:'self'}});
+
 // Back-pocket helpers: 1 pt each, not fighters. They sit in your "back pocket" (no fighter slot, can't attack or be
 // attacked); you choose a round to use each one, it acts first that round, then it leaves. Effects live in useHelper().
 const MICE_PWR = 2;

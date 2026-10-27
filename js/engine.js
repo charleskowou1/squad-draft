@@ -253,7 +253,7 @@ function startBattle(){
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
   if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; S.awaken=null; }   // story twists never leak into other games
-  S.said={}; S.failed=false; S.awoke={}; S.midScene=null;
+  S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[];
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
@@ -487,7 +487,7 @@ function special(u,pl){
     case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',fx('guard',u,t)); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'giyu': players().filter(q=>sameSide(q,u.p)).forEach(q=>{ S.shield[q]=true; }); L(`${S.names[u.p]}'s team can't be hurt this round.`,'h',fx('guard',u,null)); break;
+    case 'giyu': players().filter(q=>sameSide(q,u.p)).forEach(q=>{ S.shield[q]=true; }); L(`${u.name}'s team can't be hurt this round.`,'h',fx('guard',u,null)); break;
     case 'gyomei': en().forEach(e=>hit(u,e,s.dmg,{ignoreDef:true,counter:false})); break;
     case 'sanemi': { const t=target(u,pl.t); hit(u,t,u.pow); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),u.pow); break; }
     case 'muichiro': hit(u,target(u,pl.t),u.pow+2); break;
@@ -727,8 +727,9 @@ function storyBeats(when){
   if(tw.protect && !S.failed){ const u=S.teams[0].find(x=>x.id===tw.protect); if(u && !u.alive){ S.failed=true; L(`${u.name} has fallen. You had to protect ${u.name}.`,'k',fx('ko',null,u)); } }
 }
 // Story: a fighter awakens their Demon Slayer Mark at the end of a round (when hurt to `at` of their health, or after
-// round `round`): they become the Mark card (its extra HP, PWR, SPD, DEF and faster special, which is ready now), and
-// the stage's short cutscene plays before the next round (S.midScene, shown by app.js).
+// round `round`). The stage's short cutscene plays before the next round (S.midScene, shown by app.js), and they become
+// the Mark card (its extra HP, PWR, SPD, DEF and faster special, which is ready) when the scene reaches their awakening
+// line ({awaken:true}), not before: S.pendingAwake holds them until then (applyAwakenings).
 // A fighter becomes their Mark card mid-battle (or, in story, another awakened card: Nezuko → Awakened Nezuko): that
 // card's extra HP, PWR, SPD, DEF and regen on top of what they have now, its special, and its name. Story Marks (ready) also get the special ready now; Kagaya's Final Resolve keeps the current wait.
 function awakenMark(u, ready, to){
@@ -742,11 +743,19 @@ function awakenMark(u, ready, to){
 }
 // Kagaya's Final Resolve: the Hashira on his team still standing who have a Mark card and haven't awakened it
 const markReady = k => alive(k.p).filter(m=>m!==k && BYID[m.id].hashira && !m.mark && BYID[m.id+'_mark']);
+// Awaken the fighters waiting for their cutscene line: the one becoming card `to`, or everyone still waiting. The
+// awakening line goes into the battle log's last round too.
+function applyAwakenings(to){
+  S.pendingAwake=(S.pendingAwake||[]).filter(w=>{ if(to && w.to!==to) return true;
+    const u=findU(w.uid); if(u && u.alive){ const n=S.log.length; awakenMark(u,true,w.to);
+      const last=S.matchLog && S.matchLog[S.matchLog.length-1]; if(last) S.log.slice(n).forEach(l=>last.lines.push({t:l.t, c:l.c})); }
+    return false; });
+}
 function awakenings(){
   (S.awaken||[]).forEach((a,i)=>{ if(S.awoke[i]) return;
     const u=S.teams[0].find(x=>x.id===a.id && x.alive); if(!u) return;
     if(!(u.hp<=u.max*(a.at||0) || (a.round && S.round>=a.round))) return;
-    S.awoke[i]=true; awakenMark(u,true,a.to);
+    S.awoke[i]=true; S.pendingAwake=(S.pendingAwake||[]).concat({uid:u.uid, to:a.to||a.id+'_mark'});
     S.midScene=(S.midScene||[]).concat(a.lines||[]);
   });
 }

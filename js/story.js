@@ -236,7 +236,7 @@ const STAGES = [
     beats:[{when:'round', round:5, id:'tanjiro', text:'Hold on! The sky is getting lighter!'}, {when:'low', id:'giyu_mark', at:.35, text:'Don’t stop. Not now.'}],
     phases:[{id:'muzan_final', at:.5, pow:3, ready:true, label:'+3 PWR, special ready', line:'Enough! I will destroy all of you before the sun!'}],
     outro:[['muzan_final','The sun… no… NO—'],['','The sun rises. Muzan Kibutsuji is gone.'],['tanjiro','It’s over… everyone…']],
-    twist:{survive:9},
+    twist:{survive:9}, sunrise:true,   // the battle screen's sun rises round by round (app.js)
     blurb:'The last fight. Hold him until the sun comes up.',
     scene:[['muzan_final','I am the closest thing to perfection. Why won\'t you just die?'],
       ['tanjiro','Everyone fought to get us here. Hold him! Just until the sun rises!'],
@@ -247,7 +247,12 @@ const STAGES = [
     phases:[{id:'tanjiro_demon', at:.3, pow:1, label:'+1 PWR', line:'Get… away… from me…'}],
     outro:[['kanao','Tanjiro, come back!'],['tanjiro','…Kanao? Nezuko? I’m… home.'],['','The sun rises on the Demon Slayer Corps. Their war is over.']],
     blurb:"Muzan's last trick: he poured himself into Tanjiro. Bring him back.",
-    scene:[['tanjiro_demon',"Get away… I can't… stop…"],
+    scene:[['muzan_final','You think you’ve won, boy? The sun can take my body. It will never take my will.'],
+      ['tanjiro','Muzan…? Get out… What are you doing to me?!'],
+      ['muzan_final','I give you everything. My blood. My power. My dream. Tanjiro… become the King of Demons.'],
+      ['tanjiro','No… I won’t… I won’t become you…'],
+      ['tanjiro_demon','GRAAAAH!',{awaken:'王'}],
+      ['tanjiro_demon',"Get away… I can't… stop…"],
       ['kanao',"Tanjiro! Shinobu left one more medicine. I just need to reach you!"],
       ['inosuke',"Wake up, Monjiro! Who's gonna be my rival?!"],
       ['zenitsu',"Nezuko's waiting for you! Come home!"]]},
@@ -292,8 +297,6 @@ function twistText(st){
   return out.join(' · ');
 }
 // Draft replay pool: the Corps and its allies (no demons, no Legends), plus whoever is in this stage's preset squad
-const STORY_ALLIES = ['nezuko','tamayo','yushiro'];
-const storyCard = c => !c.spawn && !c.legend && (!c.demon || STORY_ALLIES.includes(c.fam));   // includes the back-pocket helpers
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
   const st=STAGES[i];
@@ -302,7 +305,33 @@ function startStage(i, draft=false){
   S.names=[S.names[0], st.foe];
 }
 // The lines of the scene being shown: the opening, or the ending after a win
-const sceneLines = () => S.sceneMid ? S.midScene||[] : S.sceneOutro ? STAGES[S.stage].outro : STAGES[S.stage].scene;
+// The story's finale (after beating Demon King Tanjiro, "Finish the story" on the win screen), then the end credits
+const FINALE = [
+  ['kanao','Tanjiro… you’re back. You’re really back.'],
+  ['tanjiro','Kanao… everyone… I’m sorry. I’m so sorry I hurt you.'],
+  ['inosuke','Hmph! Took you long enough, Monjiro! I almost won our rivalry by default!'],
+  ['zenitsu','Don’t ever scare us like that again! I cried so much I’m all dried out!'],
+  ['nezuko','Big brother… welcome home.'],
+  ['giyu','Tanjiro. You did well. All of you did.'],
+  ['sanemi','Tch. Don’t get used to hearing it from me… but you earned your rest.'],
+  ['kiriya','Everyone. On behalf of the Ubuyashiki family… thank you.'],
+  ['kiriya','Muzan Kibutsuji is gone. With no demons left to hunt, the Demon Slayer Corps is disbanded as of today.'],
+  ['kiriya','Giyu. Sanemi. You are the last of the Hashira. Your duty is done. Please… go and live.'],
+  ['sanemi','Live, huh… Genya would’ve wanted that. Fine. I’ll live.'],
+  ['giyu','Then I’ll live for the ones who couldn’t. For Sabito. For all of them.'],
+  ['urokodaki','Giyu. Tanjiro. My boys came home.'],
+  ['tengen_retired','Ha! Now THAT was a flashy ending! You kids really did it!'],
+  ['tanjiro','Nezuko, Zenitsu, Inosuke… let’s go home. Back to the mountain.'],
+  ['nezuko','Let’s light the stove again. Just like before.'],
+  ['zenitsu','Nezuko, I’ll chop all the firewood! Every day! Forever!'],
+  ['inosuke','And I’ll eat all the food! Every day! Forever!'],
+  ['kanao','Tanjiro… may I come and visit?'],
+  ['tanjiro','Any day you want, Kanao. The door’s always open.'],
+  ['tanjiro','Mother. Father. Everyone. We did it. The sun is shining… and we’re home.'],
+];
+const FINALE_SURVIVORS = ['tanjiro','nezuko','zenitsu','inosuke','kanao','giyu','sanemi','kiriya','urokodaki','tengen_retired','murata','yushiro'];
+const FINALE_FALLEN = ['Kagaya Ubuyashiki','Kyojuro Rengoku','Shinobu Kocho','Mitsuri Kanroji','Obanai Iguro','Muichiro Tokito','Gyomei Himejima','Genya Shinazugawa','Kanae Kocho','Sabito','Tamayo'];
+const sceneLines = () => S.sceneFinale ? FINALE : S.sceneMid ? S.midScene||[] : S.sceneOutro ? STAGES[S.stage].outro : STAGES[S.stage].scene;
 // Every scene picture any stage asks for (app.js looks for the files at startup)
 const scenePics = () => [...new Set(STAGES.flatMap(st=>[...(st.scene||[]), ...(st.outro||[]), ...(st.awaken||[]).flatMap(a=>a.lines||[])])
   .map(l=>l[2]&&l[2].img).filter(Boolean))];
@@ -316,8 +345,10 @@ function beginStage(){
     return startBattle();
   }
   S.phase='draft'; S.picks=[[],st.enemy.slice()]; S.locked=[false,true];
-  const fams=new Set(st.mine.map(id=>BYID[id].fam));
-  S.pool=ROSTER.filter(c=>(storyCard(c) || fams.has(c.fam)) && !c.spawn && c.cost<=S.budget).map(c=>c.id)
+  // Draft replay: every character within the points except the ones you're fighting (any version of them), from your
+  // unlocked characters plus the battle's own squad (CK, Oct 26, 2026; it used to be Corps and allies only)
+  const fams=new Set(st.mine.map(id=>BYID[id].fam)), foes=new Set(st.enemy.map(id=>BYID[id].fam));
+  S.pool=ROSTER.filter(c=>!c.spawn && c.cost<=S.budget && !foes.has(c.fam) && (isUnlocked(c.id) || fams.has(c.fam))).map(c=>c.id)
     .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
 }
 
@@ -330,10 +361,12 @@ const STARTER_DEMONS = ['nezuko','tamayo','yushiro','hand','swamp'];
 const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.includes(c.id)) || c.mark || c.legend || c.id!==c.fam || c.id==='typezero');
 // Extra unlocks that never fight in a story battle themselves, tied to the battle where they belong in canon
 const UNLOCK_EXTRAS = {district:['tengen_retired'], kokushibo:['sanemi_mark','gyomei_mark']};
+// Cards that unlock at a later battle than their first appearance (Doma: when Kanao and Inosuke finish him, not when he beats Shinobu)
+const UNLOCK_AT = {doma:'doma2'};
 // stage id → the card ids winning it unlocks (each card is unlocked by the first battle it appears in)
 const STAGE_UNLOCKS = (()=>{ const seen=new Set(), out={};
   STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(st.awaken||[]).map(a=>a.to||a.id+'_mark'), ...(UNLOCK_EXTRAS[st.id]||[])];
-    out[st.id]=[...new Set(ids)].filter(id=>BYID[id] && lockable(BYID[id]) && !seen.has(id)); out[st.id].forEach(id=>seen.add(id)); });
+    out[st.id]=[...new Set(ids)].filter(id=>BYID[id] && lockable(BYID[id]) && !seen.has(id) && (!UNLOCK_AT[id] || UNLOCK_AT[id]===st.id)); out[st.id].forEach(id=>seen.add(id)); });
   return out; })();
 // Lockable cards that no battle unlocks start unlocked
 const UNLOCKED_FROM_STORY = new Set(Object.values(STAGE_UNLOCKS).flat());

@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
@@ -20,6 +20,10 @@ function render(){
   // keep fold-out sections (How to play, records…) open across redraws
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
   document.body.classList.toggle('localmode', S.mode==='local');
+  // Until Dawn: a sun climbs over the battle screen as the rounds count down to sunrise (stage.sunrise)
+  const st=S.mode==='story' && STAGES[S.stage], sky=!!(st && st.sunrise && ['plan','result','pass','scout','ready'].includes(view));
+  document.body.classList.toggle('dawn', sky);
+  if(sky){ const n=st.twist.survive; document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-1)/(n-1))).toFixed(3)); }
   cloudCheck();   // back up saved progress a few seconds after it changes
   music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
@@ -86,10 +90,13 @@ function playRound(){
 // Story: a Mark awakened this round, so its short cutscene plays now, then the next round starts
 function storyMid(){
   if(S.mode!=='story' || S.final || !(S.midScene&&S.midScene.length)) return false;
-  clearTimeout(S._t); S._t=setTimeout(()=>{ Object.assign(S,{phase:'scene', sceneMid:true, sceneOutro:false, sceneVs:false, sceneUnlock:false, sceneAt:0}); sfx('unlock'); render(); }, quickMotion()?0:900);
+  clearTimeout(S._t); S._t=setTimeout(()=>{ Object.assign(S,{phase:'scene', sceneMid:true, sceneOutro:false, sceneVs:false, sceneUnlock:false, sceneAt:0}); midAwake(); sfx('unlock'); render(); }, quickMotion()?0:900);
   return true;
 }
-function midDone(){ S.sceneMid=false; S.midScene=null; S.phase='result'; ACTIONS.next(); }
+// The fighter awakens as their awakening line comes up in the cutscene (its speaker is the card they become)
+function midAwake(){ const l=sceneLines()[S.sceneAt]; if(S.sceneMid && l && (l[2]||{}).awaken) applyAwakenings(l[0]); }
+function toCredits(){ S.sceneFinale=false; S.creditsDone=false; S.phase='credits'; sfx('win'); window.scrollTo(0,0); }
+function midDone(){ applyAwakenings(); S.sceneMid=false; S.midScene=null; S.phase='result'; ACTIONS.next(); }   // skipped scenes still awaken
 function storyEnd(){
   if(S.mode!=='story' || !S.final) return false;
   clearTimeout(S._t); S._t=setTimeout(()=>{ ACTIONS.finish(); render(); }, quickMotion()?0:700);
@@ -201,14 +208,18 @@ const ACTIONS = {
   storysel(v){ S.storySel = S.storySel===+v ? -1 : +v; },
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
+  // the story's finale (win screen of the last battle): a long scene, then the end credits
+  finale(){ clearTimeout(S._t); Object.assign(S,{phase:'scene', sceneFinale:true, sceneOutro:false, sceneMid:false, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('page'); window.scrollTo(0,0); },
+  creditsend(){ S.creditsDone=true; },
   scenenext(){ if(S.sceneVs) return;
     if(S.sceneUnlock){ if((S.unlockAt||0)+1<(S.newUnlocks||[]).length){ S.unlockAt=(S.unlockAt||0)+1; sfx('unlock'); return; } return afterOutro(); }   // unlocks one at a time
-    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); sfx(((sceneLines()[S.sceneAt]||[])[2]||{}).awaken?'cutin':'page'); return; }
+    if(S.sceneAt+1<sceneLines().length){ S.sceneAt++; S.sceneInstant=false; S.sceneShownAt=Date.now(); midAwake(); sfx(((sceneLines()[S.sceneAt]||[])[2]||{}).awaken?'cutin':'page'); return; }
     if(S.sceneMid) return midDone();
+    if(S.sceneFinale) return toCredits();
    
     if(S.sceneOutro) return afterOutro();
     S.sceneVs=true; sfx('vs'); },
-  sceneskip(){ if(S.sceneMid) return midDone(); if(S.sceneUnlock){ S.unlockAt=(S.newUnlocks||[]).length; return afterOutro(); } if(S.sceneOutro) return afterOutro();
+  sceneskip(){ if(S.sceneFinale) return toCredits(); if(S.sceneMid) return midDone(); if(S.sceneUnlock){ S.unlockAt=(S.newUnlocks||[]).length; return afterOutro(); } if(S.sceneOutro) return afterOutro();
     if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },

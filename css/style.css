@@ -1237,3 +1237,34 @@ details ul b{color:var(--fg)}
 .grow.mine .gopen span{color:var(--gold);font-weight:700}
 .gx{width:44px;background:none;border:0;border-left:1px solid var(--line);color:var(--muted);font-size:1.2rem;cursor:pointer}
 .asynchint{margin:6px 0}
+
+/* Until Dawn: the sun rises over the battle screen, one step a round (--dawn 0 → 1, set by app.js). It glows over the
+   page (screen blend, no taps), under the action bar. */
+.dawnsky{display:none;position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen}
+body.dawn .dawnsky{display:block}
+.dawnsky::before{content:'';position:absolute;inset:0;opacity:calc(var(--dawn,0)*.9);transition:opacity 2.4s ease;
+  background:linear-gradient(to top,rgba(255,140,60,.34),rgba(224,87,59,.14) 30%,transparent 62%)}
+.dawnsky .sun{position:absolute;right:-70px;bottom:70px;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,244,205,.75) 0 26%,rgba(255,201,105,.5) 40%,rgba(255,140,60,.22) 58%,transparent 71%);
+  transform:translateY(calc((1 - var(--dawn,0)) * 340px));opacity:calc(.3 + var(--dawn,0)*.7);
+  transition:transform 2.4s cubic-bezier(.3,.7,.3,1),opacity 2.4s ease;animation:sunpulse 5s ease-in-out infinite}
+@keyframes sunpulse{50%{filter:brightness(1.12)}}
+@media (prefers-reduced-motion: reduce){.dawnsky::before,.dawnsky .sun{transition:none;animation:none}}
+
+/* End credits (story finale): the roll rises slowly; tapping it (or the roll ending) settles it in place */
+.credits{position:relative;min-height:calc(100vh - 160px);overflow:hidden;text-align:center;cursor:pointer}
+.credits .roll{padding:40px 16px 60px;animation:creditroll 42s linear both}
+.credits .roll.done{animation:none}
+@keyframes creditroll{from{transform:translateY(70vh)}to{transform:translateY(0)}}
+.credits .ckanji{display:inline-grid;place-items:center;width:84px;height:84px;border-radius:18px;background:var(--accent);color:#fff;font-family:var(--display);font-size:3rem;box-shadow:0 10px 30px rgba(224,87,59,.35)}
+.credits h1{font-family:var(--display);font-size:2.6rem;margin:16px 0 10px}
+.credits .cline{margin:4px 0;color:var(--ink-2);font-size:1.05rem}
+.credits .cline b{color:var(--gold)}
+.credits .cblock{margin:44px 0 0}
+.credits .cseals{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:14px}
+.credits .cseals span{display:flex;flex-direction:column;align-items:center;gap:6px;width:76px}
+.credits .cseals .gl.lg{width:64px;height:78px;border-radius:12px}
+.credits .cseals small{color:var(--ink-2);font-size:.78rem}
+.credits .cfallen{color:var(--ink-2);line-height:1.9;margin:10px auto 0;max-width:420px}
+.credits .cthanks{margin:56px 0 0;font-family:var(--display);font-size:1.6rem;color:var(--gold)}
+@media (prefers-reduced-motion: reduce){.credits .roll{animation:none}}

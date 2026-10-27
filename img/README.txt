@@ -103,6 +103,8 @@ TIPS
 - These are for playing at home only. If the game is ever shared publicly or sold,
   use original art instead.
 
+kiriya.jpg               Kiriya Ubuyashiki (story finale only; until it's added he shows the 産 seal)
+
 Story scene pictures go in img/scenes/ (jpg, png or webp), named after the slot:
   scenes/sabito-smile.jpg    The Boulder ending: Sabito's "You cut it" line
   scenes/akaza-sunrise.jpg   Set Your Heart Ablaze ending: Akaza trying to flee the sunrise

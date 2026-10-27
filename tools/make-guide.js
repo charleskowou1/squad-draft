@@ -128,7 +128,7 @@ hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);
 // extra tags not already in the card's type line
 const tags = c => [c.legend&&'Legend', c.mark&&'Mark ✦', c.hashira&&'Hashira', c.upper&&'Upper Moon', c.demon&&!c.upper&&'Demon', c.spawn&&'split form (not draftable)'].filter(t=>t && !c.type.includes(t.replace(' ✦',''))).join(', ');
-const fighters = ROSTER.filter(c => !c.helper).slice().sort((a,b)=> (a.spawn?1:0)-(b.spawn?1:0) || b.cost-a.cost || a.name.localeCompare(b.name));
+const fighters = ROSTER.filter(c => !c.helper && !c.cameo).slice().sort((a,b)=> (a.spawn?1:0)-(b.spawn?1:0) || b.cost-a.cost || a.name.localeCompare(b.name));
 for (const c of fighters) {
   const s = c.sig, prio = PRIO[s.prio] ? ` · ${PRIO[s.prio]}` : '';
   out(`\n${c.name}  [id: ${c.id}]  — ${c.type}${tags(c)?' · '+tags(c):''}

@@ -60,7 +60,7 @@ function check(games){
       S.planFor=0; vPlan(); cpuPlan(0); S.lastPlans[0]=JSON.parse(JSON.stringify(S.plans[0])); cpuPlan(1,stageLevel()); resolve();
       if(S.phase==='result'){ S.round++; S.phase='plan'; repeatPlans(0); vPlan(); }
       while(S.phase!=='over'){ cpuPlan(0); cpuPlan(1,stageLevel()); resolve(); vResult();
-        if(S.midScene && S.midScene.length){ const ph=S.phase; S.phase='scene'; S.sceneMid=true; for(S.sceneAt=0;S.sceneAt<S.midScene.length;S.sceneAt++) vScene(); S.sceneMid=false; S.midScene=null; S.phase=ph; mids++; }   // a Mark awakening's cutscene
+        if(S.midScene && S.midScene.length){ const ph=S.phase; S.phase='scene'; S.sceneMid=true; for(S.sceneAt=0;S.sceneAt<S.midScene.length;S.sceneAt++) vScene(); applyAwakenings(); S.sceneMid=false; S.midScene=null; S.phase=ph; mids++; }   // a Mark awakening's cutscene
         if(S.phase==='result') S.round++; }
       if((STAGES[i].awaken||[]).length && !S.teams[0].some(u=>u.awoke) && S.round>1) throw new Error('nobody awakened their Mark');
       vOver(); mvpPanel();
