@@ -546,6 +546,9 @@ function vSettings(){
     <div class="setgroup"><div class="tlabel">Vibration on knockouts</div>${seg('vibe',S.vibeOn===false?'off':'on',[['on','On'],['off','Off']])}
       <div class="hint">Android phones only (iPhones don't allow it).</div></div>
     <div class="hint">Saved on this phone. Players, points, pool and difficulty are set per mode on the main menu.</div>`}
+    ${S.mode==='story' && !['story','setup','modeset'].includes(S.phase)?`<div class="setgroup"><div class="tlabel">Leave this battle</div>
+      <div class="row"><button class="btn ghost" data-a="quit" data-v="map">Quit to story map</button><button class="btn ghost" data-a="quit" data-v="home">Quit to home screen</button></div>
+      <div class="hint">The battle isn't saved. You can start it again from the story map.</div></div>`:''}
     <div class="row"><button class="btn" data-a="unsel">Done</button></div>
   </div></div>`;
 }
@@ -866,9 +869,9 @@ function vScene(){
   return `<div class="scene arc-${st.arc}${opt.awaken?' awakening':''}${S.sceneMid?' midscene':''}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     <span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
-    ${pic?`<div class="scenepic" key="${S.sceneAt}"><img src="${pic}" alt=""></div>`
-    :`<div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
-      ${c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${seal(c,'lg')}${opt.awaken?'<span class="markstamp" aria-hidden="true">痣</span><span class="markburst" aria-hidden="true"></span>':''}</span>`:''}</div>`}
+    <div class="stagecast">${cast.map(id=>`<span class="extra ${sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
+      ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame
+      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${seal(c,'lg')}${opt.awaken?'<span class="markstamp" aria-hidden="true">痣</span><span class="markburst" aria-hidden="true"></span>':''}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
       <p class="popline" key="${S.sceneAt}">${typed}</p></div>
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>

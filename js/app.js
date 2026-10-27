@@ -165,10 +165,11 @@ const ACTIONS = {
   ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
   ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
-  sel(v){ if(S.mode==='cpu' && turn()!==0) return;
+  sel(v){ if(S.mode==='cpu' && turn()!==0) return; loadGlobalStats();
     if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
   unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
+  quit(v){ S.settings=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
   theirs(){ S.showTheirs=!S.showTheirs; },
   install(){ if(INSTALL_EVENT){ INSTALL_EVENT.prompt(); INSTALL_EVENT.userChoice.finally(()=>{ INSTALL_EVENT=null; installInfo(); render(); }); } },
@@ -567,7 +568,7 @@ installInfo();
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
-setTimeout(watchGames, 200);   // own-pace games on the home screen: whose turn it is
+setTimeout(()=>{ watchGames(); loadGlobalStats(); }, 200);   // own-pace games on the home screen; everyone's stats for the cards   // own-pace games on the home screen: whose turn it is
 render();
 findArt(); findScenePics();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)
