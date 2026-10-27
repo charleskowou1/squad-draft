@@ -25,7 +25,7 @@ function render(){
   document.body.classList.toggle('dawn', sky);
   if(sky){ const n=st.twist.survive; document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-1)/(n-1))).toFixed(3)); }
   // Story battles fight in front of the battle's place picture (img/places/, the same one as its cutscenes)
-  const place=st && ['plan','result','pass','scout','ready','over'].includes(view) && (PLACE_ART[st.id]||PLACE_ART[st.arc]);
+  const place=['plan','result','pass','scout','ready','over'].includes(view) && (st ? PLACE_ART[st.id]||PLACE_ART[st.arc] : S.place && PLACE_ART[S.place]);   // story: the battle's place; other modes: the match's
   document.body.classList.toggle('placebg', !!place);
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
@@ -191,6 +191,7 @@ const ACTIONS = {
     const ns=loadNames(); if(ns && (ns[0]==='CK'||!ns[0])){ ns[0]=playerName(); saveNames(ns); }
     S.nameSaved=true; setTimeout(()=>{ S.nameSaved=false; render(); },1500); },
   quit(v){ S.settings=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
+  placecfg(v){ try{ localStorage.setItem(PLACE_KEY,v) }catch(e){} },   // Settings → Battle background
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
   theirs(){ S.showTheirs=!S.showTheirs; },
   install(){ if(INSTALL_EVENT){ INSTALL_EVENT.prompt(); INSTALL_EVENT.userChoice.finally(()=>{ INSTALL_EVENT=null; installInfo(); render(); }); } },

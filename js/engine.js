@@ -76,6 +76,15 @@ try{ if(localStorage.getItem('squad-draft-data')!==DATA_VERSION){
   localStorage.setItem('squad-draft-data', DATA_VERSION); } }catch(e){}
 let S = {phase:'setup', mode:'story', n:2,   // Story is selected when the game opens (CK)
   level: loadLevel(), budget: loadBudget(), poolType: loadPoolType(), names: [playerName()||'Player 1','Player 2']};
+// Battle backgrounds outside story mode (Settings → Battle background): 'random' (default), 'off', or a place id from
+// img/places/. Picked when a battle starts and shared online, so every phone shows the same place.
+const PLACE_KEY = 'squad-draft-place';
+function placeChoice(){ try{ return localStorage.getItem(PLACE_KEY)||'random' }catch(e){ return 'random' } }
+function pickPlace(){
+  const have = typeof PLACE_ART!=='undefined' ? Object.keys(PLACE_ART) : [], c=placeChoice();
+  if(c==='off' || !have.length) return null;
+  return have.includes(c) ? c : have[Math.floor(Math.random()*have.length)];
+}
 // Players in the match: 2, 3 (triple threat) or 4 (1 v 1 v 1 v 1). Every team fights every other team; last one standing wins.
 const MAX_PLAYERS = 4;
 const nPlayers = () => S.n || 2;
@@ -261,6 +270,7 @@ function startBattle(){
   S.n=S.picks.length;
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
+  S.place = S.mode==='story' ? null : pickPlace();   // the background for this match (story battles use their own)
   if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; S.awaken=null; }   // story twists never leak into other games
   S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
   S.survived=false;

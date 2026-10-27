@@ -207,6 +207,7 @@ function codexSheet(){
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     ${banner(c)}
     <div class="shead">${seal(c,'lg')}<div><div class="eyebrow">${esc(c.type)}</div><h2>${esc(c.name)}</h2></div><span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span></div>
+    ${loreOf(c)?`<div class="lore"><q>${esc(loreOf(c)[0])}</q><p>${esc(loreOf(c)[1])}</p></div>`:''}
     ${lock?`<div class="lockline">🔒 Locked. Win <b>${esc(STAGES[ui].title)}</b> (story battle ${ui+1}) to play with ${esc(c.short)} in every mode.</div>`
       : ui>=0?`<div class="muted">Unlocked in story battle ${ui+1}: ${esc(STAGES[ui].title)}.</div>`:''}
     ${c.helper?'':statCells(c)}
@@ -557,6 +558,9 @@ function vSettings(){
     ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Your name</div>
       <div class="namerow"><input id="pname" type="text" maxlength="14" value="${esc(playerName())}" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="pname">${S.nameSaved?'Saved ✓':'Save'}</button></div>
       <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
+    <div class="setgroup"><div class="tlabel">Battle background</div>
+      ${seg('placecfg',placeChoice(),[['random','Random'],['off','Off'],...Object.keys(PLACE_ART).map(id=>[id,placeName(id)])])}
+      <div class="hint">Quickplay, Local, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>
     <div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
@@ -880,6 +884,8 @@ const SCENE_ART = {};
 const placeStyle = st => { const src=PLACE_ART[st.id]||PLACE_ART[st.arc]; return src ? `style="--place:url('${src}')" data-place="1" ` : ''; };
 // Place pictures behind the cutscenes: a battle's own (img/places/<battle id>.jpg), else its arc's (app.js fills this)
 const PLACE_ART = {};
+// A place's name for Settings: the battle's place, or the arc's title
+const placeName = id => { const st=STAGES.find(s=>s.id===id); return st ? st.place.split(',')[0] : ARCS[id] ? ARCS[id].title : id; };
 function vScene(){
   const st=STAGES[S.stage], lines=st.scene;
   const fx=`<span class="particles p-${ARC_FX[st.arc]||'dust'}" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i*0.73)%6}s;--s:${0.6+(i%5)*0.15}"></i>`).join('')}</span>`;
