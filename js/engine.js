@@ -141,7 +141,7 @@ function buildPool(){
   if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
   for(let tries=0;tries<200;tries++){
     const left=fams.slice(), f=[];
-    while(f.length<poolSize()) f.push(takeWeighted(left, x=>familyOdds(x,cards)));
+    while(f.length<Math.min(poolSize(),fams.length)) f.push(takeWeighted(left, x=>familyOdds(x,cards)));   // a new phone with few unlocks can have fewer characters than a 4-player deal
     const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), versionOdds).id);
     if(ids.filter(id=>BYID[id].cost<=4).length>=3+(nPlayers()-2)*2) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost).concat(dealHelpers());
   }
@@ -262,7 +262,7 @@ function startBattle(){
   S.teams=players().map(p=>fighterIds(p).map(id=>mkUnit(id,p)));
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
   if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; S.awaken=null; }   // story twists never leak into other games
-  S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[];
+  S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
@@ -564,6 +564,8 @@ function special(u,pl){
   u.cd = s.cd + 1;
   if(u.sk==='tanjiro' && canSelfless(u)) u.sig=SELFLESS;   // after Hinokami Kagura, the next special ready is the Selfless State
   const card=BYID[u.id]; if(card.sig2) u.sig = s.id===card.sig2.id ? card.sig : card.sig2;   // second specials alternate with the first
+  // story chain (stage.chain, e.g. Senior Brother): after this fighter's first special, a cutscene, then the second one at once
+  const ch=S.mode==='story' && S.chain; if(ch && !S.chainDone && u.p===0 && u.fam===ch.id && !s.id && card.sig2) S.chainPending=u.uid;
 }
 // Gyutaro and Daki (Two as One): one who fell this round gets back up with 30% if the other is still standing.
 // If both fell in the same round, both stay down. Each can only get back up once (unlimited won 94% of matches).
@@ -805,6 +807,8 @@ function applyAwakenings(to){
     return false; });
 }
 function awakenings(){
+  if(S.chainPending){ const u=findU(S.chainPending), card=u&&BYID[u.id]; S.chainPending=null; S.chainDone=true;
+    if(u && u.alive && card.sig2){ u.sig=card.sig2; u.cd=0; S.midScene=(S.midScene||[]).concat(S.chain.lines||[]); } }
   (S.awaken||[]).forEach((a,i)=>{ if(S.awoke[i]) return;
     const u=S.teams[0].find(x=>x.id===a.id && x.alive); if(!u) return;
     if(!(u.hp<=u.max*(a.at||0) || (a.round && S.round>=a.round))) return;

@@ -32,7 +32,7 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
 - Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (live: 2–4 phones, 4-letter room code; or
   at your own pace: 2 phones, 6-letter code, each player takes their turn whenever they like),
   Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
-  them; doesn't count toward records) and Story Mode (21 battles with preset squads).
+  them; doesn't count toward records) and Story Mode (${STAGES.length} battles with preset squads).
 - Each mode (not Story) also sets MAX FIGHTERS PER TEAM, 1–6 (default 6). 1 = one-on-one duels.
 - 2v2 TEAMS (4 players): players 1 & 3 vs 2 & 4 (Quickplay: you + an allied computer vs two). Each player drafts
   and controls their own squad; heals, hides, shields and training can target the partner's fighters; Giyu's Dead
@@ -178,10 +178,22 @@ out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but slop
   use it to point out the rounds where a different move or target would have changed the outcome.
 - Shared stats: Settings → Stats and every card show how everyone's games went (win rate, and how often a character
   is picked when dealt), counted from players' finished Local, Online and Quickplay games.
-- Story mode: 21 battles with preset (canon) squads, each opening with a short scene. Win a battle to unlock the
-  next; won battles can be replayed drafting your own squad (Corps and allies plus that battle's preset characters,
-  same points as the preset squad). Twists: survive N rounds, reinforcements joining on a set round, and two-part
-  fights where part 2 starts with the enemy already hurt. Boosts (shown on each card) tune the difficulty.
+- Story mode: ${STAGES.length} battles with preset (canon) squads, each opening with a short scene. Win a battle to unlock the
+  next; won battles can be replayed drafting your own squad (every unlocked character within the same points as the
+  preset squad, except any version of the enemies). Twists: survive N rounds, reinforcements joining on a set round,
+  and two-part fights where part 2 starts with the enemy already hurt. Boosts (shown on each card) tune the difficulty.
+- Stars: each battle has 3 goals (win, plus two harder ones); each goal met is a star. A battle's stars are your
+  best single win, not added up across replays.
+- Mid-battle awakenings: some fighters awaken during the fight (Tanjiro and Nezuko in Two as One, Muichiro, Mitsuri,
+  Giyu, Tanjiro in Destructive Death, Sanemi and Gyomei). A short cutscene plays between rounds and they become the
+  stronger card on their awakening line, with their special ready.
+- Story tips: in the survival battles with one fighter (Wisteria: Shinobu, The Flower Hashira: Kanae) attacking every
+  round loses; Defend whenever she's under half health and she lasts. In Senior Brother, open with Thunderclap and
+  Flash: Kaigaku mocks it and Seventh Form is ready straight after, back to back. The Ubuyashiki Estate is a 7-round
+  hold against a huge Muzan whose whips hit everyone through DEF: spread out the damage, Defend the low ones, and
+  let Tamayo's medicine (it cuts his regeneration) work. Helpers are in some battles' squads (Muscle Mice in Two as
+  One, Kasugai Crow in Spider Family, Kiriya in Upper Moon One, Chachamaru in Until Dawn): use them on the round
+  that matters. Mark Tanjiro's Selfless State unlocks when Destructive Death is won.
   Battles:`);
 STAGES.forEach((s,i)=>out(`  ${i+1}. ${s.title} (${ARCS[s.arc].title}) — you: ${s.mine.map(id=>BYID[id].short).join(', ')} · enemy: ${s.enemy.map(id=>BYID[id].short).join(', ')}`
   + [twistText(s), ...(s.boosts||[]).map(b=>b.label)].filter(Boolean).map(x=>' · '+x).join('')));

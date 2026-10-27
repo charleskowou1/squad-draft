@@ -1,5 +1,5 @@
 /* ================= STORY MODE =================
-   21 battles following the arcs, plus two Yoriichi flashbacks. Each stage gives you a preset squad (the canon one)
+   25 battles following the arcs, plus flashbacks (Kanae, two with Yoriichi). Each stage gives you a preset squad (the canon one)
    and opens with a short scene. Once cleared, a stage can be replayed drafting your own squad from the Corps and its
    allies, with the same points as the preset squad.
    After a win, a short ending scene (outro) plays, then any characters the battle unlocks are revealed.
@@ -16,10 +16,24 @@ const ARCS = {
   castle:{title:'Infinity Castle', g:'城'}, dawn:{title:'Until Dawn', g:'暁'},
 };
 // scene lines: [speaker card id, or '' for the narrator, text, options]; options: {img:'name'} shows the picture
-//   img/scenes/<name>.jpg (or .png/.webp) for that line if the file exists; {awaken:true} plays the Mark awakening flash.
+//   img/scenes/<name>.jpg (or .png/.webp) for that line if the file exists; {awaken:true} plays the Mark awakening flash;
+//   {clip:'card id'} plays that card's special clip (js/clips.js) in a wide box; {pic:'name'} shows that picture as the portrait.
+// chain: {id, lines}: after that fighter of yours uses their first special, `lines` play between rounds and their second
+//   special is ready at once (Senior Brother: Thunderclap and Flash, Kaigaku's trash talk, then Seventh Form).
 // awaken: [{id, at, round, lines}] — that fighter of yours becomes their Mark card at the end of a round once hurt to
 //   `at` of their health or after round `round`, and `lines` play as a short cutscene before the next round.
 const STAGES = [
+  // Urokodaki's training (CK, Oct 27, 2026): the year before the boulder. Hold out against your teacher.
+  {id:'mentor', arc:'prologue', title:'Sharpen Your Judgment', place:'Mount Sagiri, the year before', foe:'Urokodaki', mine:['tanjiro'], enemy:['urokodaki'], level:'easy',
+    stars:{standing:1, hp2:40, health:55},
+    twist:{survive:3},
+    boosts:[{side:1, hp:1.5, label:'Urokodaki: +50% HP'}],
+    beats:[{when:'round', round:2, id:'urokodaki', text:'Your judgment is too slow. Again!'}],
+    outro:[['urokodaki','…You lasted. Your body is learning.'],['tanjiro','Thank you, Mr. Urokodaki! I won’t give up.'],['urokodaki','Then go up the mountain. There is a boulder waiting for you.']],
+    blurb:'Your teacher in the tengu mask. Last three rounds against him.',
+    scene:[['urokodaki','You want to be a demon slayer? Your judgment is too slow.'],
+      ['tanjiro','Then teach me! I’ll do anything to turn Nezuko back into a human!'],
+      ['urokodaki','Words mean nothing. Draw your sword. Stand against me until the sun moves.']]},
   {id:'training', arc:'prologue', title:'The Boulder', place:'Mount Sagiri', foe:'Sabito', mine:['tanjiro'], enemy:['sabito'], level:'easy',
     stars:{standing:1, hp2:45, rounds:5},
     beats:[{when:'low', id:'tanjiro', at:.4, text:'Breathe. Feel the gap in his guard.'}, {when:'low', id:'sabito', at:.35, text:'That’s it. Again!'}],
@@ -60,7 +74,7 @@ const STAGES = [
       ['inosuke','Ha! Finally, something worth fighting!'],
       ['kyogai','My writing was not trash… This is MY house!'],
       ['tanjiro','Zenitsu, Inosuke, together!']]},
-  {id:'natagumo', arc:'natagumo', title:'Spider Family', place:'Mount Natagumo', foe:'Rui', mine:['tanjiro','nezuko'], enemy:['rui','kyogai'], level:'normal',
+  {id:'natagumo', arc:'natagumo', title:'Spider Family', place:'Mount Natagumo', foe:'Rui', mine:['tanjiro','nezuko','crow'], enemy:['rui','kyogai'], level:'normal',
     stars:{standing:3, rounds:4},
     boosts:[{side:1, hp:1.25, pow:2, label:'Demons: +25% HP, +2 PWR'}],
     beats:[{when:'low', id:'nezuko', at:.5, text:'Mmph!'}, {when:'low', id:'tanjiro', at:.35, text:'Father… the Fire God dance…'}, {when:'round', round:3, id:'rui', text:'Who are you? You don’t belong to my family.'}],
@@ -96,7 +110,7 @@ const STAGES = [
     scene:[['akaza','What a fighting spirit. Become a demon, Kyojuro, and fight me forever!'],
       ['rengoku','I will never become a demon. Tanjiro, Inosuke, stay back!'],
       ['','The sky to the east is still dark. Dawn is ten rounds away.']]},
-  {id:'district', arc:'district', title:'Two as One', place:'Yoshiwara', foe:'Gyutaro & Daki', mine:['tengen','tanjiro','zenitsu','inosuke','nezuko'], enemy:['gyutaro','daki','hand'], level:'hard',
+  {id:'district', arc:'district', title:'Two as One', place:'Yoshiwara', foe:'Gyutaro & Daki', mine:['tengen','tanjiro','zenitsu','inosuke','nezuko','mice'], enemy:['gyutaro','daki','hand'], level:'hard',
     stars:{standing:3, rounds:4},
     boosts:[{side:1, hp:1.8, pow:2, label:'Gyutaro & Daki: +80% HP, +2 PWR'}],   // tougher once Nezuko awakens (Oct 26, 2026); +80% after Mark Tanjiro went to 40 HP
     beats:[{when:'ko', id:'daki', who:'gyutaro', text:'Sister! Get back up!'}, {when:'low', id:'tengen', at:.35, text:'Flashy to the very end!'}],
@@ -145,6 +159,35 @@ const STAGES = [
       ['genya',"Cut his head off and he splits? Then I'll eat them all!"],
       ['mitsuri',"I won't let anyone else get hurt. Leave the big one to me!"],
       ['','Two Upper Moons attack the village at once. The Mark on Tanjiro’s forehead is already burning.']]},
+  // Hashira Training (CK, Oct 27, 2026): the retired Sound Hashira drills the trio. Beat him.
+  {id:'hashira_training', arc:'castle', title:'Hashira Training', place:'The Ubuyashiki estate, weeks before', foe:'Retired Tengen', mine:['tanjiro','zenitsu','inosuke'], enemy:['tengen_retired'], level:'normal',
+    stars:{standing:2, rounds:7},
+    boosts:[{side:1, hp:3.75, pow:6, label:'Retired Tengen: +275% HP, +6 PWR'}],
+    beats:[{when:'round', round:2, id:'tengen_retired', text:'Too slow! Flashier! FLASHIER!'}],
+    outro:[['tengen_retired','Not bad! You three are almost flashy enough.'],['zenitsu','Almost?! I’ve been running for nine hours!'],['inosuke','Again! I’m not done!']],
+    blurb:'The retired Sound Hashira wants to see some flash. Knock him down.',
+    scene:[['tengen_retired','Listen up! Muzan is coming, and every one of you has to get stronger. Fast!'],
+      ['tanjiro','We’re ready, Mr. Uzui!'],
+      ['tengen_retired','Ready? Then come at me, all three of you. Make it flashy!']]},
+  // Kagaya's sacrifice (CK, Oct 27, 2026): he blows himself up in the opening scene (his Final Resolve clip), then five
+  // Hashira and Tamayo hold Muzan until Nakime drops everyone into the castle. Winning unlocks Kagaya.
+  {id:'estate', arc:'castle', title:'The Ubuyashiki Estate', place:'The Ubuyashiki mansion', foe:'Muzan', mine:['gyomei','sanemi','obanai','mitsuri','muichiro','tamayo'], enemy:['muzan'], level:'hard',
+    stars:{standing:2, health:15},
+    twist:{survive:7},
+    boosts:[{side:0, only:['gyomei','sanemi','obanai','mitsuri','muichiro'], pow:2, spd:1, label:"Kagaya's Final Resolve: Hashira +2 PWR, +1 SPD"},
+      {side:1, hp:5, pow:7, label:'Muzan: +400% HP, +7 PWR'}],   // ~70% at every level (+8 PWR is a cliff: his whips ignore DEF)
+    beats:[{when:'round', round:3, id:'tamayo', text:'My medicine is working. Keep him here!'}, {when:'low', id:'muzan', at:.5, text:'Enough of this. Nakime!'}],
+    outro:[['nakime','*strum*'],['gyomei','The floor is falling away… Everyone, stay alive. We meet again in his castle.'],['muzan','Come, then. I will kill every one of you in my own home.']],
+    blurb:'Kagaya’s last gift. Five Hashira and Tamayo against Muzan himself.',
+    scene:[['muzan','So this is where you hide, Ubuyashiki. A dying man in an empty house.'],
+      ['kagaya','Welcome, Muzan. I knew you would come… and I knew it would be tonight.'],
+      ['muzan','You disgust me. Your body rots from the inside, and still you smile.'],
+      ['kagaya','You think of yourself as eternal. But what is eternal is human will. My children carry it… and they will cut you down.'],
+      ['muzan','Your children are insects. I will crush every one of them.'],
+      ['kagaya','Then let me give you my final resolve. My children… thank you.',{clip:'kagaya'}],
+      ['gyomei','Namu Amida Butsu… Master. We will not waste this.'],
+      ['tamayo','Muzan. Do you remember me? My medicine is already inside you.'],
+      ['sanemi','Surround him! Nobody lets him out of this garden!']]},
   {id:'nakime', arc:'castle', title:'The Shifting Floors', place:'Infinity Castle', foe:'Nakime', mine:['tanjiro','giyu','murata'], enemy:['nakime','hand','swamp','kyogai'], level:'normal',
     stars:{standing:2, rounds:5},
     beats:[{when:'round', round:2, id:'nakime', text:'*strum*'}, {when:'low', id:'murata', at:.5, text:'Why is it always me?!'}],
@@ -155,11 +198,22 @@ const STAGES = [
       ['nakime','*strum* The castle answers to me.'],
       ['murata',"Why am I always here?!"],
       ['giyu','Stay close. The demons here are hers to command.']]},
+  // Kanae's last night (CK, Oct 27, 2026): a flashback. Hold Doma until dawn; winning unlocks Kanae.
+  {id:'kanae', arc:'flashback', title:'The Flower Hashira', place:'Four years earlier, before dawn', foe:'Doma', mine:['kanae'], enemy:['doma'], level:'hard',
+    stars:{standing:1, hp2:10, health:20},
+    twist:{survive:4},
+    boosts:[{side:0, hp:1.3, label:"Kanae's resolve: +30% HP"}],   // attack blindly and she falls; Defend when hurt and she makes dawn
+    beats:[{when:'low', id:'kanae', at:.4, text:'Just until the sun… just a little longer.'}],
+    outro:[['doma','The sun! What a shame. You were such a lovely one.'],['kanae','Shinobu… don’t become a slayer for my sake. Live a happy life.'],['shinobu','No. I’ll find the demon who did this. And I’ll kill him.']],
+    blurb:'The night Shinobu lost her sister. Hold the Upper Moon until the sun comes up.',
+    scene:[['doma','What a beautiful Hashira. Your breathing smells of flowers. Shall I save you from your suffering?'],
+      ['kanae','I wish demons and humans could get along. But you… you’ve eaten too many people.'],
+      ['kanae','Flower Breathing. I only need to last until the sky turns light.']]},
   {id:'doma1', arc:'castle', title:'Wisteria', place:'Infinity Castle, the lotus pond', foe:'Doma', mine:['shinobu'], enemy:['doma'], level:'hard',
     stars:{standing:1, hp2:10, health:20},
     beats:[{when:'low', id:'shinobu', at:.5, text:'Just a little longer. The poison is working.'}],
     outro:[['shinobu','Kanao… finish it. I’m counting on you.'],['','Doma swallows Shinobu whole. The wisteria inside her starts to work.']],
-    boosts:[{side:0, hp:1.4, label:"Shinobu's resolve: +40% HP"}],
+    boosts:[{side:0, hp:1.2, label:"Shinobu's resolve: +20% HP"}],   // +40% was a free win; at +20% she must Defend when hurt (Oct 27, 2026)
     twist:{survive:3},
     blurb:'Part 1. Shinobu alone against the demon who killed her sister.',
     scene:[['doma',"A Kocho! You smell like the girl I ate. Your sister, wasn't she?"],
@@ -178,9 +232,13 @@ const STAGES = [
       ['','Doma starts at 60% health and loses 5 HP every round.']]},
   {id:'kaigaku', arc:'castle', title:'Senior Brother', place:'Infinity Castle', foe:'Kaigaku', mine:['zenitsu'], enemy:['kaigaku'], level:'normal',
     stars:{standing:1, hp2:50, rounds:2},
-    beats:[{when:'low', id:'zenitsu', at:.5, text:'Grandpa… watch this. Seventh Form.'}],
+    beats:[{when:'low', id:'zenitsu', at:.5, text:'Grandpa… I won’t lose to him.'}],
     outro:[['kaigaku','Thunder… a form I never learned…'],['zenitsu','I wanted to fight beside you, you know.']],
-    boosts:[{side:0, pow:4, label:'Seventh Form: Zenitsu +4 PWR'}, {side:1, pow:1, label:'Kaigaku: +1 PWR'}],
+    boosts:[{side:1, hp:1.5, pow:1, label:'Kaigaku: +50% HP, +1 PWR'}],
+    // Zenitsu opens with First Form; Kaigaku mocks it; then Seventh Form is ready straight away (CK, Oct 27, 2026)
+    chain:{id:'zenitsu', lines:[['kaigaku','Thunderclap and Flash. That’s it? The only form you ever learned, and you still think it can touch me?'],
+      ['kaigaku','Grandpa should have thrown you out years ago. You’re trash, Zenitsu. You always were.'],
+      ['zenitsu','I told you. I made a form of my own. Thunder Breathing, Seventh Form…',{awaken:'雷'}]]},
     blurb:'Zenitsu faces the student who betrayed their master.',
     scene:[['kaigaku',"Still only one form, Zenitsu? Grandpa wasted his time on you."],
       ['zenitsu',"Grandpa cut his own belly because of you. I made a form of my own. For him."]]},
@@ -209,7 +267,7 @@ const STAGES = [
     scene:[['','Decades pass. One night, a demon with six eyes meets an old man on the road.'],
       ['kokushibo','Yoriichi… You are old. You will die soon.'],
       ['yoriichi_old',"Brother. How sad. I'm here to cut you down."]]},
-  {id:'kokushibo', arc:'castle', title:'Upper Moon One', place:'Infinity Castle, deep', foe:'Kokushibo', mine:['muichiro','genya'], enemy:['kokushibo'], level:'hard',
+  {id:'kokushibo', arc:'castle', title:'Upper Moon One', place:'Infinity Castle, deep', foe:'Kokushibo', mine:['muichiro','genya','kiriya'], enemy:['kokushibo'], level:'hard',
     stars:{standing:2, rounds:7},
     boosts:[{side:1, hp:1.65, pow:5, label:'Kokushibo: +65% HP, +5 PWR'}],
     beats:[{when:'round', round:3, id:'sanemi', text:'Hands off my brother!'}, {when:'round', round:4, id:'gyomei', text:'Namu Amida Butsu. It ends here.'}],
@@ -234,7 +292,7 @@ const STAGES = [
       ['muzan','A swordsman? Step aside before I lose my patience.'],
       ['yoriichi','What do you think the life of a person is?'],
       ['tamayo',"That man… Muzan is afraid. I've never seen him afraid."]]},
-  {id:'dawn', arc:'dawn', title:'Until Dawn', place:'The city streets', foe:'Muzan (Final Form)', mine:['tanjiro_mark','giyu_mark','obanai_mark','kanao'], enemy:['muzan_final'], level:'hard',
+  {id:'dawn', arc:'dawn', title:'Until Dawn', place:'The city streets', foe:'Muzan (Final Form)', mine:['tanjiro_mark','giyu_mark','obanai_mark','kanao','chachamaru'], enemy:['muzan_final'], level:'hard',
     stars:{standing:2, health:30},
     boosts:[{side:1, hp:3.5, pow:4, label:'Muzan (Final Form): +250% HP, +4 PWR'}],
     beats:[{when:'round', round:5, id:'tanjiro', text:'Hold on! The sky is getting lighter!'}, {when:'low', id:'giyu_mark', at:.35, text:'Don’t stop. Not now.'}],
@@ -313,7 +371,7 @@ function twistText(st){
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
   const st=STAGES[i];
-  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
+  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, chain:st.chain||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
   S.names=[playerName()||'Player 1', st.foe];   // this phone's player name (Settings)
 }
@@ -371,11 +429,11 @@ function beginStage(){
    the small demons (Hand Demon, Swamp Demon) and the back-pocket helpers. Locked until the story reaches them:
    every other demon, every Mark ✦ version, the Legends and the alternate versions. */
 const STARTER_DEMONS = ['nezuko','tamayo','yushiro','hand','swamp'];
-const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.includes(c.id)) || c.mark || c.legend || c.id!==c.fam || c.id==='typezero');
+const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.includes(c.id)) || c.mark || c.legend || c.id!==c.fam || ['typezero','kagaya','kanae'].includes(c.id));
 // Extra unlocks that never fight in a story battle themselves, tied to the battle where they belong in canon
-const UNLOCK_EXTRAS = {district:['tengen_retired'], kokushibo:['sanemi_mark','gyomei_mark']};
+const UNLOCK_EXTRAS = {district:['tengen_retired'], estate:['kagaya'], kokushibo:['sanemi_mark','gyomei_mark']};
 // Cards that unlock at a later battle than their first appearance (Doma: when Kanao and Inosuke finish him, not when he beats Shinobu)
-const UNLOCK_AT = {doma:'doma2'};
+const UNLOCK_AT = {doma:'doma2', muzan:'flash_muzan'};   // Muzan first fights at the Estate but unlocks late (CK)
 // stage id → the card ids winning it unlocks (each card is unlocked by the first battle it appears in)
 const STAGE_UNLOCKS = (()=>{ const seen=new Set(), out={};
   STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(st.awaken||[]).map(a=>a.to||a.id+'_mark'), ...(UNLOCK_EXTRAS[st.id]||[])];

@@ -267,7 +267,7 @@ function storyHome(){
   const won=storyWon(), next=nextStage(), st=STAGES[next], all=won>=STAGES.length;
   return `<div class="storyhome"><div class="sprog" style="--won:${won/STAGES.length*100}"><b>${won}</b><span>of ${STAGES.length}</span></div>
     <div class="shbody"><div class="eyebrow">Story mode</div><b>${all?'Story complete':won?`Next: ${esc(st.title)}`:'The Slayer’s journey'}</b>
-      <span class="muted">${all?`${totalStars()} of ${STAGES.length*3} stars`:won?`Battle ${next+1} · ${esc(ARCS[st.arc].title)}`:'21 battles, from Mount Sagiri to the last dawn'}</span></div>
+      <span class="muted">${all?`${totalStars()} of ${STAGES.length*3} stars`:won?`Battle ${next+1} · ${esc(ARCS[st.arc].title)}`:`${STAGES.length} battles, from Mount Sagiri to the last dawn`}</span></div>
     <button class="btn small" data-a="storymap">${all?'Star chase':won?'Continue':'Begin'}</button></div>`;
 }
 function vSetup(){
@@ -915,6 +915,7 @@ function vScene(){
   return `<div ${placeStyle(st)}class="scene arc-${st.arc}${opt.awaken?' awakening':''}${S.sceneMid?' midscene':''}" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}
     ${head}
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
+    ${opt.clip&&(CLIPS[opt.clip]||{}).special&&S.clipsOn!==false?`<div class="scenevid" key="${S.sceneAt}"><video data-k="scene-${S.stage}-${S.sceneAt}" src="${esc(clipSrc(CLIPS[opt.clip].special))}"${ART[opt.clip]?` poster="${ART[opt.clip]}"`:''} muted playsinline autoplay loop preload="auto" disablepictureinpicture></video></div>`:''}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${S.sceneFinale?(side==='l'?'r':'l'):sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
       ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame
       :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${opt.pic&&ART[opt.pic]?`<span class="gl lg"><img src="${ART[opt.pic]}" alt=""></span>`:seal(c,'lg')}${opt.awaken?`<span class="markstamp" aria-hidden="true">${typeof opt.awaken==='string'?opt.awaken:'痣'}</span><span class="markburst" aria-hidden="true"></span>`:''}</span>`:''}</div>
