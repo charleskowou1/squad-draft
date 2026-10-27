@@ -18,7 +18,10 @@ const CLIPS = {
                  ninth: 'https://media.tenor.com/Bk9kw_WGE5wAAAPo/demon-slayer-demon-slayer-season-2.mp4'},     // Ninth Form: Rengoku
   zenitsu:      {special: 'https://media.tenor.com/E-dg68_nbcgAAAPo/good-morning.mp4',       // Thunderclap and Flash
                  seventh: 'https://media.tenor.com/1cf7FDK2C34AAAPo/zenistu-chong-yeu.mp4'},  // Seventh Form: Flaming Thunder God
-  tanjiro:      {special: 'https://media.tenor.com/u2dl8xjsDO0AAAPo/tanjiro-demon-slayer.mp4'},   // Hinokami Kagura
+  tanjiro:      {special: 'https://media.giphy.com/media/7NXthOnRv4UQAyv34a/giphy.mp4'},     // Hinokami Kagura (CK's better one, Giphy)
+  nakime:       {special: 'https://media.tenor.com/KcTOA0-I_8IAAAPo/%D0%B2%D1%8B%D1%81%D1%88%D0%B0%D1%8F%D0%BB%D1%83%D0%BD%D0%B04-%D0%BB%D1%83%D0%BD%D0%B04.mp4'},   // Castle Shift (biwa)
+  rui:          {special: 'https://media.tenor.com/8F1cpYMAkQoAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Cutting Thread Cage
+  shinobu:      {special: 'https://media.tenor.com/ows-n9TDResAAAPo/shinobu-kocho-demon-slayer.mp4'},     // Wisteria Poison (butterfly sting)
   tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4',        // Hinokami Kagura (Mark)
                  selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4'},   // Selfless State
   tanjiro_demon:{},                                                                           // not Hinokami: no clip yet
