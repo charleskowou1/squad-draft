@@ -291,7 +291,7 @@ function vSetup(){
       <li><span class="sk">陣</span><div><b>Draft a squad</b>Take turns picking characters within your points. Tap a card to read it first.</div></li>
       <li><span class="sk">技</span><div><b>Choose moves in secret</b>Each fighter picks Attack, Defend (half damage) or their Special, and a target.</div></li>
       <li><span class="sk">斬</span><div><b>Watch the clash</b>The fastest act first. Health shows as a percent; red means 25% or less.</div></li>
-      <li><span class="sk">勝</span><div><b>Last team standing wins</b>Specials recharge, demons regenerate, and the sun burns demons after round 12.</div></li>
+      <li><span class="sk">勝</span><div><b>Last team standing wins</b>Specials recharge, demons regenerate, and the sun burns demons from round ${SUNRISE_ROUND}.</div></li>
     </ol>
     <div class="goodtoknow"><div class="tlabel">Good to know</div>
       <p><b>Synergies</b> (like Tanjiro + Nezuko) are listed in the draft's Pool notes and in the 📖 Codex.</p>

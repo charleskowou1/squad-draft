@@ -759,7 +759,7 @@ function roundText(r){
 }
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
-const SUNRISE_ROUND = 12, SUN_BURN = .1;
+const SUNRISE_ROUND = 10, SUN_BURN = .1;   // round 10 since Oct 27, 2026 (CK: sun in ~10% / 25% / 30% of 10 / 20 / 30-pt games; at 12 it was 5 / 14 / 16%)
 const sunUp = () => S.mode!=='story' && S.round>=SUNRISE_ROUND;
 /* ---------- story beats: protect, boss phases and mid-battle lines (all set by the stage; nothing hidden) ----------
    twist.protect: id      you lose if that fighter on your team falls

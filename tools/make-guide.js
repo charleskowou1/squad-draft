@@ -11,8 +11,8 @@ function winRates(n){ const st={};
     while(S.phase!=='over'){ cpuBothSides(); resolve(); if(S.phase==='result') S.round++; }
     t.forEach((team,p)=>team.forEach(id=>{ st[id]=st[id]||[0,0]; st[id][0]++; if(S.winner===p) st[id][1]++; })); }
   return st; }
-function data(){ return {ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, ARCS, twistText}; }`);
-const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, ARCS, twistText } = g.data();
+function data(){ return {ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, SUNRISE_ROUND, ARCS, twistText}; }`);
+const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, SUNRISE_ROUND, ARCS, twistText } = g.data();
 const T = []; const out = s => T.push(s); const hr = t => out('\n' + '='.repeat(78) + '\n' + t + '\n' + '='.repeat(78));
 const PRIO = { 3: 'acts first (priority 3)', 2: 'acts very early (priority 2)', 1: 'acts early (priority 1)' };
 
@@ -38,7 +38,7 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
   and controls their own squad; heals, hides, shields and training can target the partner's fighters; Giyu's Dead
   Calm covers both squads; a side wins when the other side has nobody left. The 12-pt card cap applies.
 - OPTIONAL BANS (off by default, under "More options"): before the draft each player bans one character.
-- SUNRISE: from round 12 (not in Story) demons burn 10% of their max HP every round and stop regenerating
+- SUNRISE: from round ${SUNRISE_ROUND} (not in Story) demons burn 10% of their max HP every round and stop regenerating
   (Demon King Tanjiro is sun-proof). Long games end; Final Muzan got weaker in long fights.
 - STORY UNLOCKS: winning a story battle unlocks the demons, Marks, Legends and alternate versions it introduces for
   every other mode. Base slayers, allies, Hand/Swamp Demon and helpers are always available.
