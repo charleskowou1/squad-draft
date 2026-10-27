@@ -35,7 +35,7 @@ add({id:'doma',name:'Doma',short:'Doma',g:'氷',type:'Upper Moon 2',demon:true,u
   sig:{name:'Frozen Lotus',desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'akaza',name:'Akaza',short:'Akaza',g:'拳',type:'Upper Moon 3',demon:true,upper:true,cost:9,hp:44,pow:13,spd:10,def:5,regen:2,
   sig:{name:'Destructive Death: Compass Needle',desc:'Strike for PWR+6.',cd:3,kind:'single'},
-  sig2:{id:'annihilation',name:'Destructive Death: Annihilation Type',desc:'Every enemy takes PWR−4, ignoring DEF.',cd:3,kind:'all',tag:'hit all, ignores DEF'}});
+  sig2:{id:'annihilation',name:'Destructive Death: Annihilation Type',desc:'Every enemy takes PWR−4, ignoring DEF.',cd:3,kind:'all',tag:'hit all, ignores DEF',quote:'Destructive Death: Annihilation Type!'}});
 // Gyutaro and Daki: two cards. Together they're "Two as One" (see synergies() and fall() in engine.js).
 add({id:'gyutaro',name:'Gyutaro',short:'Gyutaro',g:'鎌',type:'Upper Moon 6',demon:true,upper:true,cost:8,hp:40,pow:12,spd:9,def:5,regen:2,
   passive:'Two as One: with Daki on his team he gets +2 PWR. If one of them falls while the other is still standing, they get back up at the end of the round with 30% health (once each). Knock both out in the same round to stop it.',
@@ -114,7 +114,7 @@ const obanai = add({id:'obanai',name:'Obanai Iguro',short:'Obanai',g:'蛇',type:
 markOf(obanai,{cost:8});
 add({id:'rengoku',name:'Kyojuro Rengoku',short:'Rengoku',g:'炎',type:'Flame Hashira',hashira:true,cost:7,hp:38,pow:11,spd:9,def:5,
   sig:{name:'Fifth Form: Flame Tiger',desc:'Strike for PWR+4.',cd:3,kind:'single'},
-  sig2:{id:'ninth',name:'Ninth Form: Rengoku',desc:'Strike for PWR+10, ignores DEF.',cd:3,kind:'single',tag:'huge hit, ignores DEF'}});
+  sig2:{id:'ninth',name:'Ninth Form: Rengoku',desc:'Strike for PWR+10, ignores DEF.',cd:3,kind:'single',tag:'huge hit, ignores DEF',quote:'Flame Breathing, Ninth Form: Rengoku!'}});
 add({id:'tengen',name:'Tengen Uzui',short:'Tengen',g:'音',type:'Sound Hashira',hashira:true,cost:6,hp:34,pow:10,spd:10,def:5,
   sig:{name:'Constant Resounding Slashes',desc:'Every enemy takes PWR−2.',cd:3,kind:'all'}});
 // Retired Tengen: the other version of Tengen (one or the other is dealt). Lost a hand and an eye, no longer a Hashira.
@@ -135,7 +135,7 @@ const tanjiro = add({id:'tanjiro',name:'Tanjiro Kamado',short:'Tanjiro',g:'日',
 markOf(tanjiro,{cost:9, hp:40, selfless:true});   // 9 pts, 40 HP since he gained the Selfless State (Oct 27, 2026): ~50% at 20 pts (36 HP was 34%)
 // Mark Tanjiro's second special: after his first Hinokami Kagura, the next one ready is the Selfless State (once per
 // match; unlocked by winning Destructive Death in the story). See special() and hit() in engine.js.
-const SELFLESS = {id:'selfless', name:'Selfless State', cd:Math.max(1,tanjiro.sig.cd-1), kind:'self', prio:3, tag:'untouchable · save allies',
+const SELFLESS = {id:'selfless', name:'Selfless State', quote:'No wasted motion. No anger. Just breathe.', cd:Math.max(1,tanjiro.sig.cd-1), kind:'self', prio:3, tag:'untouchable · save allies',
   desc:"Once per match. Moves first. Until Hinokami Kagura is ready again, Tanjiro can't be hit, stunned or moved by the biwa. Each round he can Attack (ignores DEF) or Save a teammate (they take no damage). Then his Hinokami Kagura can't be blocked by anything."};
 // Demon King Tanjiro: the third version of Tanjiro (base, Mark or this one is dealt). Rare, like Final Muzan.
 add({id:'tanjiro_demon',fam:'tanjiro',sk:'tanjiro_demon',name:'Tanjiro Kamado (Demon King)',short:'Demon Tanjiro',g:'王',type:'Demon King · Sun-proof',demon:true,cost:17,hp:54,pow:18,spd:11,def:8,regen:4,
@@ -151,7 +151,7 @@ add({id:'nezuko_awakened',fam:'nezuko',sk:'nezuko_awakened',name:'Nezuko Kamado 
   sig:{name:'Exploding Blood',desc:'Every enemy takes 10, ignores DEF, and poison burns off your whole team.',cd:3,kind:'all'}});
 add({id:'zenitsu',name:'Zenitsu Agatsuma',short:'Zenitsu',g:'雷',type:'Thunder',cost:4,hp:26,pow:7,spd:10,def:2,
   sig:{name:'Thunderclap and Flash',desc:'Always moves first. Strike for PWR×2.',cd:3,kind:'single',prio:2},
-  sig2:{id:'seventh',name:'Seventh Form: Flaming Thunder God',desc:'Always moves first. Strike for PWR×3, ignores DEF.',cd:3,kind:'single',prio:2,tag:'massive hit, first'}});
+  sig2:{id:'seventh',name:'Seventh Form: Flaming Thunder God',desc:'Always moves first. Strike for PWR×3, ignores DEF.',cd:3,kind:'single',prio:2,tag:'massive hit, first',quote:'Thunder Breathing, Seventh Form.',lock:'kaigaku'}});   // revealed against Kaigaku: locked until Senior Brother
 add({id:'inosuke',name:'Inosuke Hashibira',short:'Inosuke',g:'獣',type:'Beast',cost:4,hp:28,pow:8,spd:8,def:3,
   sig:{name:'Fang Frenzy',desc:'Two wild strikes of PWR−1 at random enemies.',cd:2,kind:'auto'}});
 add({id:'kanao',name:'Kanao Tsuyuri',short:'Kanao',g:'花',type:'Flower',cost:4,hp:24,pow:7,spd:10,def:3,

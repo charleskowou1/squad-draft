@@ -11,7 +11,7 @@ const ART = {};
 // In battle, a fighter's picture is a button that opens their info card (stats, special, passive, status)
 const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${u.uid}" aria-label="About ${esc(u.name)}">${seal(u,cls)}</button>`;
 // A fighter's picture: Mark Tanjiro shows his Selfless State picture while he's in it (img/tanjiro_selfless.jpg)
-const artOf = c => (c.uid && c.selfless && ART.tanjiro_selfless) || ART[c.id];
+const artOf = c => (c.uid && (c.selfless || c.unblock) && ART.tanjiro_selfless) || ART[c.id];   // until his unblockable Hinokami lands
 const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${artOf(c)?`<img src="${artOf(c)}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
@@ -213,7 +213,7 @@ function codexSheet(){
     ${c.helper?'':statCells(c)}
     <div class="sig"><div class="sname">${esc(c.sig.name)}${c.helper?'':` <span class="muted">· special, cooldown ${c.sig.cd}</span>`}</div>${esc(c.sig.desc)}</div>
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
-    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.</span></div>`:''}
+    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span></div>`:''}
     ${c.basic?`<div class="pas"><b>${esc(c.basic.name)}</b> (instead of Attack): ${esc(c.basic.desc)}</div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
@@ -602,7 +602,7 @@ function vSheet(){
     ${statCells(c)}
     <div class="sig"><div class="sname">${esc(c.sig.name)} <span class="muted">· special, cooldown ${c.sig.cd}</span></div>${esc(c.sig.desc)}</div>
     ${c.selfless?`<div class="pas"><b>Then: ${esc(SELFLESS.name)}</b>: ${esc(SELFLESS.desc)}${selflessOpen()?'':' <span class="muted">🔒 Unlocks when you win Destructive Death in the story.</span>'}</div>`:''}
-    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.</span></div>`:''}
+    ${c.sig2?`<div class="pas"><b>Then: ${esc(c.sig2.name)}</b>: ${esc(c.sig2.desc)} <span class="muted">After it, back to ${esc(c.sig.name)}: the two take turns.${sig2Open(c)?'':` 🔒 Unlocks when you win ${esc((STAGES.find(s=>s.id===c.sig2.lock)||{}).title||'its story battle')}.`}</span></div>`:''}
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splits?splitTree(c):''}
@@ -703,18 +703,19 @@ function stage(line){
 }
 // Special-move cut-in: the fighter's art slides across a slanted band with the move's name and their line,
 // from the left for the team on the left of the stage, from the right for everyone else
-function cutin(u, clip){
+function cutin(u, clip, line){
+  const sg=sigOfLine(u,line);   // the special this beat is for, not the one now waiting
   const style=styleOf(u,'special'), right=u.p!==leftSide();
   return `<div class="cutin sty sty-${style}${right?' right':''}${clip?' hasclip':''}" style="--tc:${pc(u.p)}" aria-hidden="true">
     ${clip?clipVideo(clip)+'<span class="cbars"></span><span class="lines"></span><span class="cflash"></span>':'<span class="lines"></span>'}
     <div class="band"><span class="cimg">${ART[u.id]?`<img src="${ART[u.id]}" alt="">`:`<span class="ck">${u.g}</span>`}</span>
-      <div class="ctext"><span class="cwho" style="color:${pc(u.p)}">${esc(u.name)}</span><span class="cmove">${esc(u.sig.name)}</span>${u.sig.quote?`<span class="cquote">“${esc(u.sig.quote)}”</span>`:''}</div></div>
+      <div class="ctext"><span class="cwho" style="color:${pc(u.p)}">${esc(u.name)}</span><span class="cmove">${esc(sg.name)}</span>${(sg.quote||BYID[u.id].sig.quote)?`<span class="cquote">“${esc(sg.quote||BYID[u.id].sig.quote)}”</span>`:''}</div></div>
     <span class="ckanji">${STYLE_KANJI[style]||'技'}</span></div>`;
 }
 // A move clip: muted, plays once inline (app.js keeps the same element across redraws of the beat, using data-k)
 const clipWho = c => c.who || findU(c.uid);   // a fighter, or a helper's stand-in
 const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[clipWho(c).id]?` poster="${ART[clipWho(c).id]}"`:''} muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
-const CLIP_KANJI = {regen:'再', heal:'癒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
+const CLIP_KANJI = {regen:'再', heal:'癒', poison:'毒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
 // A beat with a move clip that isn't a special (regen, heal, guard, knockout…): the clip with who and what over it
 function clipBeat(c, line){
   const u=clipWho(c);
@@ -787,7 +788,7 @@ function vResult(){
     <div class="reswide${done?' done':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
     ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
       :k&&cur.fx==='say'&&findU(cur.by)?`<div class="now saybeat" aria-live="polite" style="--tc:${pc(findU(cur.by).p)}">${seal(findU(cur.by),'stg')}<div><span class="sayn">${esc(findU(cur.by).name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>`
-      :k&&cur.fx==='special'&&findU(cur.by)?`<div class="now cut${clip?' clip':''}" aria-live="polite">${cutin(findU(cur.by),clip)}<span class="sr">${fmtLog(cur.t)}</span></div>`
+      :k&&cur.fx==='special'&&findU(cur.by)?`<div class="now cut${clip?' clip':''}" aria-live="polite">${cutin(findU(cur.by),clip,cur)}<span class="sr">${fmtLog(cur.t)}</span></div>`
       :k&&clip?`<div class="now clipbeat${bigHit(cur)?' big':''}" aria-live="polite">${clipBeat(clip,cur)}</div>`
       :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}

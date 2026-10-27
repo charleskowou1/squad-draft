@@ -105,6 +105,7 @@ TIPS
 
 kiriya.jpg               Kiriya Ubuyashiki (story finale only; until it's added he shows the 産 seal)
 
+rengoku_smile.jpg        Rengoku's last smile (cropped from scenes/rengoku-heart.jpg): his picture on every card once Set Your Heart Ablaze is won
 tanjiro_selfless.jpg     Mark Tanjiro while he's in the Selfless State (his portrait switches to it; also his Destructive Death awakening line)
 
 Story scene pictures go in img/scenes/ (jpg, png or webp), named after the slot:

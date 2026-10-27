@@ -292,9 +292,13 @@ const foes = p => enemiesOf(p).flatMap(q=>alive(q));
 // Your fighters and (2v2) your partner's: who ally moves (heals, hides, shields, training) can target
 const friends = p => players().filter(q=>sameSide(p,q)).flatMap(q=>alive(q));
 
+// The special a "Name: Special!" log line was for (line.sig = its id; none = the card's first special)
+function sigOfLine(u, line){ const c=BYID[u.id]||{}, id=line&&line.sig; return !id ? c.sig||u.sig : id==='selfless' ? SELFLESS : c.sig2&&c.sig2.id===id ? c.sig2 : u.sig; }
 // Mark Tanjiro's Selfless State is open once Destructive Death is won (story.js decides; simulations always have it)
 const selflessOpen = () => !!S.unlockAll || typeof selflessUnlocked!=='function' || selflessUnlocked();
 const canSelfless = u => BYID[u.id] && BYID[u.id].selfless && !u.selflessUsed && selflessOpen();
+// A second special with a story lock (sig2.lock = the battle that reveals it) joins the cycle once that battle is won
+const sig2Open = card => !!card.sig2 && (!card.sig2.lock || !!S.unlockAll || typeof storyReached!=='function' || storyReached(card.sig2.lock));
 /* ---------- move planning ---------- */
 const isAllyMove = (u,pl) => (pl.type==='special' && u.sig.kind==='ally') || pl.type==='save';   // save: Tanjiro's Selfless State
 // Free-for-all (3–4 players): a special that hits "every enemy" hits every fighter on the team you aim at, so you pick a target
@@ -575,7 +579,7 @@ function special(u,pl){
   }
   u.cd = s.cd + 1;
   if(u.sk==='tanjiro' && canSelfless(u)) u.sig=SELFLESS;   // after Hinokami Kagura, the next special ready is the Selfless State
-  const card=BYID[u.id]; if(card.sig2) u.sig = s.id===card.sig2.id ? card.sig : card.sig2;   // second specials alternate with the first
+  const card=BYID[u.id]; if(sig2Open(card)) u.sig = s.id===card.sig2.id ? card.sig : card.sig2;   // second specials alternate with the first
   // story chain (stage.chain, e.g. Senior Brother): after this fighter's first special, a cutscene, then the second one at once
   const ch=S.mode==='story' && S.chain; if(ch && !S.chainDone && u.p===0 && u.fam===ch.id && !s.id && card.sig2) S.chainPending=u.uid;
 }

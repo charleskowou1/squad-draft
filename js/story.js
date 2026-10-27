@@ -311,9 +311,10 @@ const STAGES = [
       ['inosuke',"Wake up, Monjiro! Who's gonna be my rival?!"],
       ['zenitsu',"Nezuko's waiting for you! Come home!"]]},
 ];
-// Mark Tanjiro's Selfless State (engine.js) opens once Destructive Death is won, and inside that battle and the ones after it
-function selflessUnlocked(){ const i=STAGES.findIndex(s=>s.id==='akaza');
-  return loadStory().cleared.includes('akaza') || (S.mode==='story' && S.stage>=i); }
+// Story-locked abilities open once their battle is won, and inside that battle and the ones after it:
+// Mark Tanjiro's Selfless State (Destructive Death), Zenitsu's Seventh Form (Senior Brother)
+function storyReached(id){ const i=STAGES.findIndex(s=>s.id===id); return loadStory().cleared.includes(id) || (S.mode==='story' && S.stage>=i); }
+const selflessUnlocked = () => storyReached('akaza');
 // Story progress. CK reset everyone to 0 on Oct 26, 2026 (new key; the old 'squad-draft-story' is deleted on load).
 // From here on progress is kept: don't change this key again unless CK asks for another reset.
 const STORY_KEY = 'squad-draft-story-v2';   // {cleared:[ids], stars:{id: best stars 1–3}}

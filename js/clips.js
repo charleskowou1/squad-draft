@@ -7,8 +7,9 @@
    No DOM here: app.js picks the clip for each playback step (clipStep) and views.js draws S.play.clip. */
 const CLIPS = {
   doma: {
-    special: 'https://media.tenor.com/klOFR0UsOUYAAAPo/douma-douma-kimetsu-no-yaiba.mp4',   // Frozen Lotus (fan)
+    special: 'https://media.giphy.com/media/6r4H65jNdyZGk18xNl/giphy.mp4',                    // Frozen Lotus (CK, Giphy; was a Tenor fan clip)
     regen:   'https://media.tenor.com/-sCN02pzMS8AAAPo/douma-demon-slayer.mp4',              // face healing
+    poison:  'https://media.giphy.com/media/NuhxMSbSUqnNQfQBsA/giphy.mp4',                    // poisoned (Shinobu's wisteria)
   },
   giyu: {
     special: 'https://media.tenor.com/xHYvGutUP_kAAAPo/giyuu-tamioka.mp4',                   // Dead Calm
@@ -49,10 +50,10 @@ const CLIPS = {
 // A clip's sound plays instead of the usual effect for that moment.
 const CLIP_SOUNDS = {};
 // What each moment is called (shown on the clip box)
-const CLIP_ACTS = {use:'Back pocket', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
+const CLIP_ACTS = {use:'Back pocket', poison:'Poisoned', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
 // Moments that repeat every round (attacks, guarding, regenerating) show their clip at most once every few rounds
 // per fighter, so long matches don't drag. Specials and one-off moments always play.
-const CLIP_REPEAT = ['attack','defend','regen'], CLIP_GAP = 3;
+const CLIP_REPEAT = ['attack','defend','regen','poison'], CLIP_GAP = 3;
 
 const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && src[BYID[u.id].fam])) || null;
 // The moment a log line shows and whose it is: {act, u}
@@ -67,6 +68,7 @@ function clipMoment(line){
     case 'ko': return has(by,'ko') ? {act:'ko', u:by} : {act:'fall', u:on};
     case 'revive': return {act:'revive', u:on||by};
     case 'spawn': return {act:'split', u:on};
+    case 'poison': return on ? {act:'poison', u:on} : null;   // poisoned, or poison eating away (Doma and Shinobu's wisteria)
     case 'hit': return line.move==='attack' ? {act:'attack', u:by} : null;
   }
   return null;
