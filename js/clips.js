@@ -33,13 +33,19 @@ const CLIPS = {
   obanai:       {special: 'https://media.tenor.com/3jBPI8_vMfcAAAPo/obanai-obanai-iguro.mp4'},     // Serpent Breathing
   genya:        {special: 'https://media.tenor.com/YXctE3HEatcAAAPo/demon-slayer.mp4'},            // Genya's special
   sabito:       {special: 'https://media.tenor.com/S98rvMkpd9kAAAPo/sabito.mp4'},                  // Spirit Training
+  // back-pocket helpers: `use` plays when the helper is used (start of the round)
+  chachamaru:   {use: 'https://media.tenor.com/_WSjCdYJ3QoAAAPo/chachamaru-kimetsu-no-yaiba.mp4'},
+  crow:         {use: 'https://media.tenor.com/Rec9bEkDErUAAAPo/kasugai.mp4'},
+  mice:         {use: 'https://media.tenor.com/-t9whuidwBwAAAPo/ninju-shino-buff-mice.mp4'},
+  hotaru:       {use: 'https://media.tenor.com/1Z2gMbfksGgAAAPo/haganezuka-kimetsu-no-yaiba.mp4'},
+  kiriya:       {use: 'https://media.tenor.com/pNNAQOoa9zsAAAPo/kiriya-infinity-castle.mp4'},
   kagaya:       {special: 'https://media.tenor.com/cZnt_1BjaggAAAPo/ubuyashiki-kimetsu-no-yaiba.mp4'},   // Final Resolve
 };
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.
 const CLIP_SOUNDS = {};
 // What each moment is called (shown on the clip box)
-const CLIP_ACTS = {special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
+const CLIP_ACTS = {use:'Back pocket', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
 // Moments that repeat every round (attacks, guarding, regenerating) show their clip at most once every few rounds
 // per fighter, so long matches don't drag. Specials and one-off moments always play.
 const CLIP_REPEAT = ['attack','defend','regen'], CLIP_GAP = 3;
@@ -47,6 +53,8 @@ const CLIP_REPEAT = ['attack','defend','regen'], CLIP_GAP = 3;
 const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && src[BYID[u.id].fam])) || null;
 // The moment a log line shows and whose it is: {act, u}
 function clipMoment(line){
+  // a back-pocket helper isn't on the battlefield: it gets a stand-in with its card id, name and owner
+  if(line.helper) return {act:'use', u:{uid:`h-${line.hp}-${line.helper}`, id:line.helper, sk:line.helper, name:BYID[line.helper].short, p:line.hp, helper:true}};
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), has=(u,a)=>!!(clipSet(CLIPS,u)||{})[a];
   switch(line.fx){
     case 'special': return {act:'special', u:by};
@@ -66,7 +74,7 @@ function clipStep(line){
   const src=(clipSet(CLIPS,m.u)||{})[m.act]; if(!src) return null;
   const seen=S.clipSeen=S.clipSeen||{}, key=m.u.uid+':'+m.act;
   if(CLIP_REPEAT.includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
-  return {src, act:m.act, uid:m.u.uid, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
+  return {src, act:m.act, uid:m.u.uid, who:m.u.helper?m.u:null, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
 }
 // Downloaded copies (app.js fills this), so a clip starts instantly and isn't fetched again
 const CLIP_BLOB = {};

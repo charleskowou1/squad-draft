@@ -269,14 +269,20 @@ function loadStory(){ try{ return JSON.parse(localStorage.getItem(STORY_KEY))||{
 function starGoals(st){ const g=st.stars||{standing:1};
   return ['Win', g.hp2?`Win with your team above ${g.hp2}% health`:`Win with ${g.standing}+ fighters standing`,
     g.rounds?`Win within ${g.rounds} rounds`:`Finish with your team above ${g.health}% health`]; }
-function starsEarned(st){
-  if(S.winner!==0) return 0; const g=st.stars||{standing:1}, mine=S.teams[0].filter(u=>!u.spawn);
+// The three star goals are separate (one star each): which ones the battle just finished met
+function goalsMet(st){
+  if(S.winner!==0) return [false,false,false]; const g=st.stars||{standing:1}, mine=S.teams[0].filter(u=>!u.spawn);
   const up=mine.filter(u=>u.alive).length, hp=mine.reduce((a,u)=>a+Math.max(0,u.hp),0)/mine.reduce((a,u)=>a+u.max,0)*100;
-  return 1 + ((g.hp2 ? hp>=g.hp2 : up>=g.standing)?1:0) + ((g.rounds ? S.round<=g.rounds && !S.survived : hp>=g.health) ? 1 : 0);
+  return [true, g.hp2 ? hp>=g.hp2 : up>=g.standing, g.rounds ? S.round<=g.rounds && !S.survived : hp>=g.health];
 }
-const stageStars = id => (loadStory().stars||{})[id]||0;
+const starsEarned = st => goalsMet(st).filter(Boolean).length;
+// Goals met in any win of this battle (they add up across replays). Saves from before Oct 26, 2026 only kept a count:
+// those count as the first goals.
+function goalsGot(id){ const s=loadStory(), g=(s.goals||{})[id], n=(s.stars||{})[id]||0; return [0,1,2].map(k=>!!(g&&g[k]) || (!g && k<n)); }
+const stageStars = id => goalsGot(id).filter(Boolean).length;
 const totalStars = () => STAGES.reduce((a,st)=>a+stageStars(st.id),0);
-function saveStars(id,n){ const s=loadStory(); s.stars=s.stars||{}; if(n>(s.stars[id]||0)) s.stars[id]=n; try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
+function saveStars(id,met){ const had=goalsGot(id), s=loadStory(); s.goals=s.goals||{}; s.stars=s.stars||{};
+  s.goals[id]=had.map((x,k)=>x||!!met[k]); s.stars[id]=s.goals[id].filter(Boolean).length; try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
 const storyWon = () => loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length;
 function saveStoryClear(id){ const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
 const stageCleared = i => loadStory().cleared.includes(STAGES[i].id);
@@ -348,8 +354,8 @@ function beginStage(){
   // Draft replay: every character within the points except the ones you're fighting (any version of them), from your
   // unlocked characters plus the battle's own squad (CK, Oct 26, 2026; it used to be Corps and allies only)
   const fams=new Set(st.mine.map(id=>BYID[id].fam)), foes=new Set(st.enemy.map(id=>BYID[id].fam));
-  S.pool=ROSTER.filter(c=>!c.spawn && c.cost<=S.budget && !foes.has(c.fam) && (isUnlocked(c.id) || fams.has(c.fam))).map(c=>c.id)
-    .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
+  S.pool=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=S.budget && !foes.has(c.fam) && (isUnlocked(c.id) || fams.has(c.fam))).map(c=>c.id)
+    .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
 }
 
 /* ---------- unlocks ----------

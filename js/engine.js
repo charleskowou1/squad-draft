@@ -12,8 +12,8 @@ const budget = () => S.budget || DEFAULT_BUDGET;
 //            (one 9–10 point card alone against two or three cheap ones was a coin flip decided by matchups).
 //  strong  = favour stronger characters: pricier characters come up more, Mark versions beat base versions 2 to 1
 const DEALS = {
-  10: {size:10, maxCost:6},
-  20: {size:10, maxCost:20},
+  10: {size:12, maxCost:6},    // 12 dealt since Oct 26, 2026 (was 10; CK)
+  20: {size:12, maxCost:20},
   30: {size:14, maxCost:30, strong:true},
 };
 const deal = () => DEALS[budget()] || DEALS[DEFAULT_BUDGET];
@@ -118,10 +118,14 @@ function takeWeighted(list, w){
   const i=Math.max(0, list.findIndex(x=>(r-=w(x))<0));
   return list.splice(i,1)[0];
 }
-// Deal random characters (10, or 14 in 30-point games), one version each (base OR Mark OR old/young Yoriichi). Always at least 3 cheap (≤4) picks.
+// Deal random characters (12, or 14 in 30-point games), one version each (base OR Mark OR old/young Yoriichi). Always at least 3 cheap (≤4) picks.
 // Split-off forms (Hantengu's emotions) are never dealt, nor is anything over maxCardCost().
 // The back-pocket helpers are offered in every draft, on top of the characters dealt
 const HELPERS = ROSTER.filter(c=>c.helper).map(c=>c.id);
+// Each draft offers 3 of the back-pocket helpers, picked at random (CK, Oct 26, 2026: there are 5 now). rand: a seeded
+// generator for drafts that must be the same everywhere (the daily challenge).
+const HELPERS_DEALT = 3;
+function dealHelpers(rand=Math.random){ const left=HELPERS.slice(), out=[]; while(out.length<HELPERS_DEALT && left.length) out.push(left.splice(Math.floor(rand()*left.length),1)[0]); return out; }
 const isHelper = id => !!BYID[id].helper;
 const fighterIds = p => S.picks[p].filter(id=>!isHelper(id));
 function buildPool(){
@@ -129,14 +133,14 @@ function buildPool(){
   const open = c => S.unlockAll || typeof isUnlocked!=='function' || isUnlocked(c.id);
   const cards=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=maxCardCost() && open(c)), fams=[...new Set(cards.map(c=>c.fam))];
   // "All" pool: every character and every version (still one version per character per draft, via famTaken)
-  if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(HELPERS);
+  if(S.poolType==='all') return cards.map(c=>c.id).sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers());
   for(let tries=0;tries<200;tries++){
     const left=fams.slice(), f=[];
     while(f.length<poolSize()) f.push(takeWeighted(left, x=>familyOdds(x,cards)));
     const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), versionOdds).id);
-    if(ids.filter(id=>BYID[id].cost<=4).length>=3+(nPlayers()-2)*2) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost).concat(HELPERS);
+    if(ids.filter(id=>BYID[id].cost<=4).length>=3+(nPlayers()-2)*2) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost).concat(dealHelpers());
   }
-  return cards.slice(0,poolSize()).map(c=>c.id).concat(HELPERS);
+  return cards.slice(0,poolSize()).map(c=>c.id).concat(dealHelpers());
 }
 // first = the player who won the spin and picks first (0 or 1)
 function newDraft(first=0){
@@ -461,6 +465,10 @@ function hit(a,t,base,o={}){
   L(`${a.name} hits ${t.name} ${lost(t,Math.min(d,before))}${note}.`,'',fx('hit',a,t));
   if(o.sun && t.demon && t.regen && !t.sunproof){ t.regen=0; t.sunburn=true; L(`${t.name} is burned by the sun. No more regeneration.`,'h',fx('burn',a,t)); }
   fall(t,a);
+  // Kiriya's Ambush Orders: each enemy that hits the trapped fighter this round takes AMBUSH_DMG back (once each)
+  if(t.ambush && a.alive && !sameSide(a.p,t.p) && !t.ambush.hit.includes(a.uid)){ t.ambush.hit.push(a.uid);
+    let ad=AMBUSH_DMG; if(a.cap){ ad=Math.min(ad, Math.max(0, a.cap-a.taken)); a.taken+=ad; }
+    a.hp=Math.max(0,a.hp-ad); L(`Ambush! Kiriya's trap around ${t.name} catches ${a.name} ${lost(a,ad)}.`,'k',fx('hit',null,a)); fall(a,null); }
   if(o.counter!==false && S.sib[t.p] && a.alive && (t.fam==='tanjiro'||t.fam==='nezuko')){
     const partner = S.teams[t.p].find(u=>u.alive && u!==t && (u.fam==='tanjiro'||u.fam==='nezuko'));
     if(partner && !(a.cap && a.taken>=a.cap)){ let cd=3; if(a.cap){ cd=Math.min(cd,a.cap-a.taken); a.taken+=cd; } a.hp=Math.max(0,a.hp-cd); L(`${partner.name} counters ${a.name} ${lost(a,cd)} to protect ${t.fam==='tanjiro'?'her brother':'his sister'}.`,'h',fx('hit',partner,a)); fall(a,partner); }
@@ -546,7 +554,7 @@ function aimedTeam(u,pl){ const t=findU(pl.t), q=t && !sameSide(t.p,u.p) && aliv
 // A back-pocket helper's effect, at the start of the round it's used. It then leaves the back pocket.
 function useHelper(p, id){
   S.helpers[p]=S.helpers[p].filter(h=>h!==id);
-  const team=alive(p), tag={fx:id==='chachamaru'?'heal':id==='mice'?'buff':'special', by:null, on:null, helper:id};
+  const team=alive(p), tag={fx:id==='chachamaru'?'heal':id==='mice'?'buff':'special', by:null, on:null, helper:id, hp:p};   // hp: whose helper (for its clip)
   if(id==='chachamaru'){   // the most hurt fighter (lowest health %) heals half of their current HP
     const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
     if(u){ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; L(`Chachamaru delivers Tamayo's medicine to ${u.name} ${gained(u,h)}.`,'h',{...tag, on:u.uid}); }
@@ -558,6 +566,10 @@ function useHelper(p, id){
     else L(`Hotaru has nothing to sharpen and storms off.`,'x',tag);
   }
   if(id==='crow') L(`${S.names[p]}'s Kasugai Crow scouted the enemy's moves.`,'x',tag);
+  if(id==='kiriya'){   // the fighter picked on the move screen (S.plans[p].ambush), or the most hurt one
+    const pick=findU((S.plans[p]||{}).ambush), u=pick && pick.alive && pick.p===p ? pick : team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
+    if(u){ u.ambush={hit:[]}; L(`Kiriya gives his orders. A trap is set somewhere on ${S.names[p]}'s side.`,'x',tag); }
+  }
 }
 // Computer back-pocket choices for this round
 function cpuHelpers(p){
@@ -568,6 +580,8 @@ function cpuHelpers(p){
     if(have.includes('mice') && S.round>=2 && team.length>=2) use.push('mice');
     if(have.includes('crow') && S.round>=2) use.push('crow');
     if(have.includes('hotaru') && team.some(u=>u.cd>=2)) use.push('hotaru');
+    // Kiriya: trap the fighter most likely to be attacked (the most hurt one) once someone is in danger
+    if(have.includes('kiriya') && S.round>=2 && team.some(u=>u.hp<=u.max*.6)){ use.push('kiriya'); S.plans[p].ambush=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0].uid; }
   }
   S.helperPlan[p]=use;
 }
@@ -662,7 +676,7 @@ function resolve(){
     if(sun && u.alive && u.demon && !u.sunproof){ const d=Math.ceil(u.max*SUN_BURN); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u); }
     if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !u.sunproof)){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
     if(u.cd>0) u.cd--;
-    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false;
+    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false; u.ambush=null;
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
   twinsRise(); aloneCheck(); storyBeats();

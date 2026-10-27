@@ -372,6 +372,13 @@ function pocketDraft(p){
         <span><b>${esc(c.short)}</b><small>${owner>=0?nm(owner):esc(c.sig.tag)}</small></span></button>`; }).join('')}</div></section>`;
 }
 // Move screen: your helper (if not used yet) as a small toggle next to "Lock in moves"
+// Kiriya's Ambush Orders: once he's switched on, pick the fighter to set the trap around (default: the most hurt)
+function ambushPick(p){
+  if(S.scouting || !(S.helperPlan[p]||[]).includes('kiriya')) return '';
+  const team=alive(p), pick=(S.plans[p]||{}).ambush, cur=team.find(u=>u.uid===pick) || team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
+  return `<div class="ambushpick"><span class="tlabel">Kiriya's trap goes around</span><div class="tgs">${team.map(u=>`<button class="tg ally${u===cur?' on':''}" data-a="ambush" data-v="${u.uid}">${seal(u,'sm')}${esc(u.name)}<span>${pct(u)}%</span></button>`).join('')}</div>
+    <p class="hint">Every enemy that attacks them this round takes ${AMBUSH_DMG} damage back. They won't see where it is.</p></div>`;
+}
 function pocketChip(p){
   const id=S.helpers&&S.helpers[p]&&S.helpers[p][0]; if(!id || S.scouting) return '';
   const c=BYID[id], on=(S.helperPlan[p]||[]).includes(id);
@@ -657,7 +664,7 @@ function vPlan(){
       ${partnersOf(p).filter(q=>alive(q).length).map(q=>teamBlock(q,`${nm(q)} · your partner`,e=>!e.alive?{hidden:true}:{},true)).join('')}</div>
     ${picking&&aimsTeam(ou)&&opl.type==='special'?`<p class="hint aimhint">${esc(ou.sig.name.split(':')[0])} hits every fighter on the team you aim at.</p>`:''}
     <section class="side"><div class="sidehead"><span class="tname" style="color:${pc(p)}">Your team</span>${S.lastPlans&&S.lastPlans[p]?'<button class="btn ghost small" data-a="repeat">↻ Repeat</button>':''}</div>
-      ${S.scouting?crowReport(p):''}<div class="fighters">${alive(p).map(u=>fighter(u,u.uid===open)).join('')}</div></section></div>
+      ${S.scouting?crowReport(p):''}<div class="fighters">${alive(p).map(u=>fighter(u,u.uid===open)).join('')}</div>${ambushPick(p)}</section></div>
     ${actionbar(`${pocketChip(p)}<button class="btn team" data-a="lockMoves" ${ready?'':'disabled'} style="--bc:${pc(p)}">${ready?'Lock in moves':`${mine.filter(unitReady).length} of ${plural(mine.length,'fighter')} ready`}</button>`)}`;
 }
 
@@ -696,14 +703,15 @@ function cutin(u, clip){
     <span class="ckanji">${STYLE_KANJI[style]||'技'}</span></div>`;
 }
 // A move clip: muted, plays once inline (app.js keeps the same element across redraws of the beat, using data-k)
-const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[findU(c.uid).id]?` poster="${ART[findU(c.uid).id]}"`:''} muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
+const clipWho = c => c.who || findU(c.uid);   // a fighter, or a helper's stand-in
+const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[clipWho(c).id]?` poster="${ART[clipWho(c).id]}"`:''} muted playsinline autoplay preload="auto" disablepictureinpicture></video>`;
 const CLIP_KANJI = {regen:'再', heal:'癒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
 // A beat with a move clip that isn't a special (regen, heal, guard, knockout…): the clip with who and what over it
 function clipBeat(c, line){
-  const u=findU(c.uid);
+  const u=clipWho(c);
   const style=styleOf(u,c.act==='attack'?'attack':'special');
   return `<div class="clipbox act-${c.act}${u.p!==leftSide()?' right':''}" style="--tc:${pc(u.p)}">${clipVideo(c)}<span class="cbars"></span><span class="cflash"></span>
-    <span class="cstamp sty sty-${style}">${CLIP_KANJI[c.act]||STYLE_KANJI[style]||'技'}</span>
+    <span class="cstamp sty sty-${style}">${u.helper?BYID[u.id].g:CLIP_KANJI[c.act]||STYLE_KANJI[style]||'技'}</span>
     <span class="cliptag"><b style="color:${pc(u.p)}">${esc(u.name)}</b>${CLIP_ACTS[c.act]?`<i>${CLIP_ACTS[c.act]}</i>`:''}</span></div><span>${fmtLog(line.t)}</span>`;
 }
 // One beat for a special that hits several enemies: the attacker strikes once, every target recoils together with
@@ -750,7 +758,7 @@ const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<di
 function vResult(){
   const done=!S.play||S.play.done, steps=S.play&&S.play.steps;
   const [from,to]=done?[S.log.length-1,S.log.length-1]:steps[S.play.k], k=to, cur=S.log[to], prev=S.log[Math.max(0,from-1)];
-  const lines=S.log.slice(from,to+1), group=to>from, clip=!done&&!group&&S.play.clip&&findU(S.play.clip.uid)?S.play.clip:null;
+  const lines=S.log.slice(from,to+1), group=to>from, clip=!done&&!group&&S.play.clip&&clipWho(S.play.clip)?S.play.clip:null;
   // the fighter acting: the line's attacker, or the one whose name starts it
   const actor=done?null:(cur.by&&findU(lines[0].by))||allUnits().filter(u=>cur.t.startsWith(u.name)).sort((a,b)=>b.name.length-a.name.length)[0];
   const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
@@ -827,7 +835,7 @@ function stageDetail(st,i,clear){
     ${tw||st.boosts?`<span class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</span>`:''}
     <span class="sseals">${st.mine.map(id=>seal(BYID[id],'sm')).join('')}<span class="svs">vs</span>${st.enemy.map(id=>seal(BYID[id],'sm')).join('')}</span>
     ${unl.length&&!clear?`<span class="unlpreview"><small>Win to unlock</small>${unl.map(id=>`<span>${seal(BYID[id],'sm')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</span>`:''}
-    ${clear?`<div class="goals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${k<n?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>`:''}
+    ${clear?`<div class="goals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${goalsGot(st.id)[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>`:''}
     <span class="sbtns"><button class="btn small" data-a="stage" data-v="${i}">${clear?'Play again':i===nextStage()?'Continue':'Play'}</button>${clear?`<button class="btn ghost small" data-a="stagedraft" data-v="${i}">Draft replay · ${stageBudget(st)} pts</button>`:''}</span></div>`;
 }
 // End credits after the finale: rolls up the screen (tap Skip to jump to the end); the buttons stay at the bottom
@@ -863,8 +871,8 @@ function vScene(){
   if(S.sceneUnlock){   // after the ending scene: what this win unlocked
     return `<div class="scene arc-${st.arc} vscard unlockcard" data-a="scenenext"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="unlocktitle"><span class="eyebrow">Battle won</span>${starRow(S.starsGot||1)}
-        <div class="goals">${starGoals(st).map((g,k)=>`<span class="${k<(S.starsGot||1)?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>
-        ${(S.starsGot||0)>(S.starsBest||0)&&S.starsBest?'<span class="muted">New best!</span>':''}
+        <div class="goals">${starGoals(st).map((g,k)=>`<span class="${(S.goalsNow||[])[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>
+        ${stageStars(st.id)>(S.starsBest||0)&&S.starsBest?`<span class="muted">New star! ${stageStars(st.id)} of 3 for this battle.</span>`:''}
         ${S.newUnlocks&&S.newUnlocks.length?'<b>You have unlocked</b>':''}</div>
       ${(()=>{ const all=S.newUnlocks||[], at=Math.min(S.unlockAt||0, all.length-1), id=all[at]; if(!id) return '';   // one at a time: tap for the next
         return `<div class="ulist one"><span class="ucard big" key="${id}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].name)}</b><small>${esc(BYID[id].type)}</small></span></div>
@@ -878,7 +886,7 @@ function vScene(){
     return `<div class="scene arc-${st.arc} vscard"><span class="lbox t" aria-hidden="true"></span>${fx}<span class="scenebg" aria-hidden="true">${ARCS[st.arc].g}</span>${head}
       <div class="vsrow l">${mine}</div><div class="vsmid"><span>VS</span></div><div class="vsrow r">${row(st.enemy)}</div>
       ${tw||st.boosts?`<div class="stags">${tw?`<span class="stwist">${esc(tw)}</span>`:''}${(st.boosts||[]).map(b=>`<span class="stwist ${b.side?'foe':'ally'}">${esc(b.label)}</span>`).join('')}</div>`:''}
-      ${stageCleared(S.stage)?`<div class="goals vsgoals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${k<stageStars(st.id)?'got':''}">${'★'.repeat(k+1)} ${esc(g)}</span>`).join('')}</div>`:''}
+      ${stageCleared(S.stage)?`<div class="goals vsgoals"><span class="tlabel">Star chase</span>${starGoals(st).map((g,k)=>`<span class="${goalsGot(st.id)[k]?'got':''}">★ ${esc(g)}</span>`).join('')}</div>`:''}
       <button class="btn big" data-a="sceneskip">Fight</button><span class="lbox b" aria-hidden="true"></span></div>`;
   }
   const shown=sceneLines(), [who,text,opt={}]=shown[S.sceneAt], c=who&&BYID[who], side=!c?'n':S.sceneFinale?(S.sceneAt%2?'r':'l'):sceneSide(st,who), pic=opt.img&&SCENE_ART[opt.img];

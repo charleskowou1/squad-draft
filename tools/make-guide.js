@@ -11,8 +11,8 @@ function winRates(n){ const st={};
     while(S.phase!=='over'){ cpuBothSides(); resolve(); if(S.phase==='result') S.round++; }
     t.forEach((team,p)=>team.forEach(id=>{ st[id]=st[id]||[0,0]; st[id][0]++; if(S.winner===p) st[id][1]++; })); }
   return st; }
-function data(){ return {ROSTER, BYID, STAGES, LEVELS, MICE_PWR, ARCS, twistText}; }`);
-const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR, ARCS, twistText } = g.data();
+function data(){ return {ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, ARCS, twistText}; }`);
+const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, ARCS, twistText } = g.data();
 const T = []; const out = s => T.push(s); const hr = t => out('\n' + '='.repeat(78) + '\n' + t + '\n' + '='.repeat(78));
 const PRIO = { 3: 'acts first (priority 3)', 2: 'acts very early (priority 2)', 1: 'acts early (priority 1)' };
 
@@ -56,7 +56,7 @@ out(`- Budget: 10, 20 (default) or 30 points per side (set per mode on the main 
   Once one side locks, the other keeps picking until they lock or can't afford anything.
 - Each character has versions (base, Mark ✦, or Yoriichi prime/age 85, Tengen/Retired Tengen, Muzan/Final Form).
   Only ONE version of a character can be drafted per match, by either side. Taking Giyu rules out Giyu ✦ for everyone.
-- POOL (Settings): "Random" (default) deals 10 characters (14 at 30 points), always at least 3 costing 4 or less;
+- POOL (Settings): "Random" (default) deals 12 characters (14 at 30 points), always at least 3 costing 4 or less;
   "All" offers every character. Re-deal is allowed before the first pick (Random pool only).
 - 10-point games only deal cards costing 6 or less. 30-point games favour pricier characters and Mark versions.
 - Rarity: Yoriichi is dealt in about 1 draft in 8 (prime about 1 in 23); Final-Form Muzan about 1 in 10.
@@ -128,7 +128,7 @@ hr('5. EVERY CHARACTER');
 out(`Order: most expensive first. Line 2 = cost | HP | PWR | SPD | DEF | regen per round. Hantengu's split forms are listed last; they can't be drafted.`);
 // extra tags not already in the card's type line
 const tags = c => [c.legend&&'Legend', c.mark&&'Mark ✦', c.hashira&&'Hashira', c.upper&&'Upper Moon', c.demon&&!c.upper&&'Demon', c.spawn&&'split form (not draftable)'].filter(t=>t && !c.type.includes(t.replace(' ✦',''))).join(', ');
-const fighters = ROSTER.filter(c => !c.helper && !c.cameo).slice().sort((a,b)=> (a.spawn?1:0)-(b.spawn?1:0) || b.cost-a.cost || a.name.localeCompare(b.name));
+const fighters = ROSTER.filter(c => !c.helper).slice().sort((a,b)=> (a.spawn?1:0)-(b.spawn?1:0) || b.cost-a.cost || a.name.localeCompare(b.name));
 for (const c of fighters) {
   const s = c.sig, prio = PRIO[s.prio] ? ` · ${PRIO[s.prio]}` : '';
   out(`\n${c.name}  [id: ${c.id}]  — ${c.type}${tags(c)?' · '+tags(c):''}
@@ -144,15 +144,18 @@ out(`- Yoriichi (prime, 18 pts) or Yoriichi Age 85 (17). Prime is the strongest 
   faster special, higher cost. They also count for "Marks spread" with another Mark.`);
 
 hr('7. BACK-POCKET HELPERS (1 pt, max one per player, no fighter slot, never on the battlefield)');
-out(`Drafted from a separate row at the bottom of the draft. In battle, tap the helper chip next to "Lock in moves" on the
+out(`Each draft offers 3 of the 5 helpers, chosen at random. Drafted from a separate row at the bottom of the draft. In battle, tap the helper chip next to "Lock in moves" on the
 round you want; it acts first that round and is then gone.
 - Chachamaru (Tamayo's cat): your most hurt fighter (lowest health %) heals half of their CURRENT HP (50% → 75%).
 - Kasugai Crow: after both sides lock in, you see the enemy's planned moves (and helper) and may change yours.
   Vs computer, the computer's crow switches any of its fighters you're about to knock out to Defend.
 - Muscle Mice (Tengen's mice): every fighter on your team gets +${MICE_PWR} PWR for that round only.
 - Hotaru Haganezuka (swordsmith): your fighter with the longest wait for their special gets it ready for next round.
+- Kiriya Ubuyashiki (Ambush Orders): pick one of your fighters; that round every enemy that attacks them takes ${AMBUSH_DMG}
+  damage back (once per attacker). The other side only learns where the trap was when it springs. Best on the
+  fighter the enemy most wants to finish (usually your most hurt one).
 Helper strength in simulated realistic matches (side with the helper vs without; 50% = no effect):
-Chachamaru ~62%, Muscle Mice ~55%, Kasugai Crow ~54% (a thinking human gets more from the Crow).`);
+Chachamaru ~61%, Kiriya ~59%, Hotaru ~58%, Muscle Mice ~54%, Kasugai Crow ~54% (a thinking human gets more from the Crow).`);
 
 hr('8. MODES AND SETTINGS');
 out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but sloppy), Hard (goes for knockouts, spreads
@@ -201,7 +204,7 @@ out(`- Points efficiency matters more than raw power: what fits exactly into the
 
 hr('11. WORKED EXAMPLES');
 out(`EXAMPLE DRAFT (20 points, Random pool). Dealt: Doma 11, Giyu 8, Rengoku 7, Tanjiro 5, Nezuko 4, Zenitsu 4,
-Inosuke 4, Kanao 4, Murata 2, Hand Demon 2, plus the four helpers.
+Inosuke 4, Kanao 4, Murata 2, Hand Demon 2 (12 are dealt now; this example shows 10), plus 3 of the helpers.
   Pick 1  A: Doma (11)            A has 9 left
   Pick 2  B: Tanjiro (5)          B has 15 left
   Pick 3  B: Nezuko (4)           B has 11 left   → Siblings (Tanjiro + Nezuko) on B

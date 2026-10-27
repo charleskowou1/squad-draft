@@ -175,13 +175,9 @@ add({id:'murata',name:'Murata',short:'Murata',g:'村',type:'Water · rank and fi
   passive:'Somehow Survives: the first hit that would knock him out leaves him at 1 HP instead.',
   sig:{name:'Water Surface Slash',desc:'Strike for PWR+2.',cd:2,kind:'single'}});
 
-// Kiriya Ubuyashiki only appears in the story's finale (scene-only: spawn keeps him out of drafts, the Codex and records)
-add({id:'kiriya',spawn:true,cameo:true,name:'Kiriya Ubuyashiki',short:'Kiriya',g:'産',type:'Last head of the Ubuyashiki family',cost:0,hp:1,pow:0,spd:0,def:0,
-  sig:{name:'—',desc:'Appears only in the story finale.',cd:9,kind:'self'}});
-
 // Back-pocket helpers: 1 pt each, not fighters. They sit in your "back pocket" (no fighter slot, can't attack or be
 // attacked); you choose a round to use each one, it acts first that round, then it leaves. Effects live in useHelper().
-const MICE_PWR = 2;
+const MICE_PWR = 2, AMBUSH_DMG = 5;   // Kiriya's trap: 5 → side with him wins ~59% (6 was 60%, 4 was 57%)
 add({id:'chachamaru',name:'Chachamaru',short:'Chachamaru',g:'猫',type:"Tamayo's cat · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Medicine Delivery',desc:'Your most hurt fighter heals half of their current health (50% becomes 75%).',kind:'helper'}});
 add({id:'crow',name:'Kasugai Crow',short:'Kasugai Crow',g:'烏',type:'Messenger crow · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
@@ -190,6 +186,9 @@ add({id:'mice',name:'Muscle Mice',short:'Muscle Mice',g:'鼠',type:"Tengen's mic
   sig:{name:'Flex!',desc:`Every fighter on your team gets +${MICE_PWR} PWR for this round.`,kind:'helper'}});
 add({id:'hotaru',name:'Hotaru Haganezuka',short:'Hotaru',g:'鋼',type:'Swordsmith · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Reforged Blade',desc:'Your fighter with the longest wait for their special gets it ready for next round.',kind:'helper'}});
+// Kiriya (also speaks in the story finale): a trap on one of your fighters for one round
+add({id:'kiriya',name:'Kiriya Ubuyashiki',short:'Kiriya',g:'産',type:'Corps commander · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Ambush Orders',desc:`Pick one of your fighters. This round, every enemy that attacks them takes ${AMBUSH_DMG} damage back.`,kind:'helper'}});
 
 // A few words shown under each fighter's Special button, like "hit one enemy" under Attack
 const SPECIAL_TAGS = {
@@ -206,7 +205,7 @@ const SPECIAL_TAGS = {
   tanjiro:'big hit, ignores DEF', nezuko:'hit all enemies', zenitsu:'first, double hit', inosuke:'2 random hits',
   kanao:'early strong hit', genya:'heal + PWR up', tamayo:'heal an ally', yushiro:'hide an ally',
   sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'Hashira awaken Marks', murata:'strong hit',
-  chachamaru:'most hurt heals ½', crow:'see enemy moves', mice:`team +${MICE_PWR} PWR, 1 round`,
+  chachamaru:'most hurt heals ½', crow:'see enemy moves', kiriya:`attackers take ${AMBUSH_DMG}`, mice:`team +${MICE_PWR} PWR, 1 round`,
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
 // One short line each fighter says when their special fires (shown on the fight stage)
@@ -226,7 +225,7 @@ const SPECIAL_QUOTES = {
   shinobu:'Shall we be friends? No? Then poison.', tanjiro:'Dance of the Fire God!', nezuko:'Mmph!', zenitsu:'Thunder Breathing, First Form.',
   inosuke:'Beast Breathing! Charge!', kanao:'I decide for myself now.', genya:'Give me your strength, demon.', tamayo:'Hold still. This will help.',
   yushiro:'Lady Tamayo, look at me!', sabito:'Again. Swing again.', urokodaki:'Your judgment is too slow.', kagaya:'My children, thank you.',
-  murata:'Why am I always here?!', chachamaru:'Mrrow.', crow:'Caw! Caw! Report!', mice:'*flexes*',
+  murata:'Why am I always here?!', chachamaru:'Mrrow.', crow:'Caw! Caw! Report!', kiriya:'Everything is going according to plan.', mice:'*flexes*',
 };
 ROSTER.forEach(c=>{ c.sig.quote = SPECIAL_QUOTES[c.sk]; });
 

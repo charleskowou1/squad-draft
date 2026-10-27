@@ -36,8 +36,8 @@ function dailyDraft(ch, open){
   Object.assign(S,{mode:'daily', n:2, duo:false, maxTeam:MAXTEAM, bansOn:false, banning:false, bans:[], daily:ch, budget:ch.budget, level:ch.level,
     phase:'draft', first:0, lastPicker:null, history:[], k:0, sel:null, picks:[ch.goal.type==='keep'?[ch.goal.id]:[], ch.enemy.slice()], locked:[false,true], showTheirs:false});
   const enemyFams=new Set(ch.enemy.map(id=>BYID[id].fam));
-  S.pool=ROSTER.filter(c=>!c.spawn && c.cost<=ch.budget && open(c) && !enemyFams.has(c.fam)).map(c=>c.id)
-    .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name));
+  S.pool=ROSTER.filter(c=>!c.spawn && !c.helper && c.cost<=ch.budget && open(c) && !enemyFams.has(c.fam)).map(c=>c.id)
+    .sort((a,b)=>BYID[b].cost-BYID[a].cost || BYID[a].name.localeCompare(BYID[b].name)).concat(dealHelpers(seededRng('helpers '+ch.day)));   // the day's 3 helpers, the same for everyone
 }
 // One test of the challenge: a strong computer drafts from the starting characters, then both sides fight
 const starterCard = c => typeof lockable!=='function' || !lockable(c);

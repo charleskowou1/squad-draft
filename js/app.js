@@ -119,7 +119,7 @@ function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 // A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
 function storyWon_(){
   const st=STAGES[S.stage], id=st.id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
-  S.starsGot=starsEarned(st); S.starsBest=stageStars(id); saveStars(id,S.starsGot);
+  S.goalsNow=goalsMet(st); S.starsGot=S.goalsNow.filter(Boolean).length; S.starsBest=stageStars(id); saveStars(id,S.goalsNow);
   Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
 }
 // After the ending scene: the stars earned (and any unlocks), then the results screen
@@ -224,6 +224,7 @@ const ACTIONS = {
   lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
   helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
+  ambush(v){ S.plans[S.planFor].ambush=v; },   // Kiriya's trap: which of your fighters it goes around
   rescout(){ if(isOnline()){ S.scouting=true; S.planFor=S.me; newPlanTurn(); const f=alive(S.me).find(u=>!u.stun); if(f) S.focus=f.uid; return; } S.scouting=true; S.planFor=S.scoutP; S.phase='plan'; S.passScout=false; newPlanTurn(); const f=alive(S.planFor).find(u=>!u.stun); if(f) S.focus=f.uid; },   // open the first fighter to change
   keepmoves(){ if(isOnline()) return onlineKeepMoves(); nextScoutOrFight(); },
   focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; },

@@ -1268,3 +1268,7 @@ body.dawn .dawnsky{display:block}
 .credits .cfallen{color:var(--ink-2);line-height:1.9;margin:10px auto 0;max-width:420px}
 .credits .cthanks{margin:56px 0 0;font-family:var(--display);font-size:1.6rem;color:var(--gold)}
 @media (prefers-reduced-motion: reduce){.credits .roll{animation:none}}
+
+/* Kiriya's Ambush Orders: pick the fighter the trap goes around (under your fighters on the move screen) */
+.ambushpick{margin:12px 0 0;padding:10px 12px;border-radius:12px;border:1px dashed var(--gold);background:rgba(214,165,77,.06)}
+.ambushpick .tgs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
