@@ -1251,7 +1251,7 @@ body.dawn .dawnsky{display:block}
 
 /* End credits (story finale): the roll rises slowly; tapping it (or the roll ending) settles it in place */
 .credits{position:relative;min-height:calc(100vh - 160px);overflow:hidden;text-align:center;cursor:pointer}
-.credits .roll{padding:40px 16px 60px;animation:creditroll 42s linear both}
+.credits .roll{padding:40px 16px 60px;animation:creditroll 20s linear both}   /* 42 s felt too slow (CK) */
 .credits .roll.done{animation:none}
 @keyframes creditroll{from{transform:translateY(70vh)}to{transform:translateY(0)}}
 .credits .ckanji{display:inline-grid;place-items:center;width:84px;height:84px;border-radius:18px;background:var(--accent);color:#fff;font-family:var(--display);font-size:3rem;box-shadow:0 10px 30px rgba(224,87,59,.35)}
@@ -1293,3 +1293,10 @@ body.placebg::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:
 .lore{margin:8px 0 2px;padding:10px 12px;border-left:3px solid var(--gold);border-radius:4px 10px 10px 4px;background:rgba(214,165,77,.07)}
 .lore q{display:block;font-family:var(--display);font-size:1.05rem;color:var(--fg);quotes:"“" "”"}
 .lore p{margin:4px 0 0;color:var(--ink-2);font-size:.88rem;line-height:1.45}
+
+.credits .cseals.fallen .gl.lg{filter:grayscale(.65) brightness(.9)}
+.credits .cseals.fallen small{max-width:84px;text-align:center;line-height:1.25}
+/* A Mark awakening in a story cutscene shakes the screen (CK) */
+.scene.awakening{animation:awakeshake .6s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes awakeshake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
+@media (prefers-reduced-motion: reduce){.scene.awakening{animation:none}}

@@ -182,7 +182,7 @@ const ACTIONS = {
   ojoinopen(){ S.names[0]=myName(); S.joinOpen=!S.joinOpen; S.onlineMsg=''; setTimeout(()=>{ const el=document.getElementById('ocode'); if(el) el.focus(); }); },
   ostart(){ if(iAmHost() && hostStartMatch()) toSpin(); },
   // open a card's detail (from the grid or from a name in a pool note); any card in the pool can be viewed
-  sel(v){ if(S.mode==='cpu' && turn()!==0) return; loadGlobalStats();
+  sel(v){ if(S.mode==='cpu' && turn()!==0) return;
     if(S.pool.includes(v) || ((S.mode==='daily'||S.mode==='story') && S.picks[1].includes(v))) S.sel=v; },   // the set enemy team can be studied
   unsel(){ S.sel=null; S.info=null; S.settings=false; S.codexSel=null; },
   settings(){ S.settings=true; },
@@ -204,7 +204,7 @@ const ACTIONS = {
   copyround(){ const ml=S.matchLog||[]; if(ml.length) copyText(roundText(ml[ml.length-1])); },
   copylog(){ copyText(battleLogText()); },
   tipok(v){ try{ const t=JSON.parse(localStorage.getItem(TIPS_KEY))||[]; t.push(v); localStorage.setItem(TIPS_KEY,JSON.stringify([...new Set(t)])); }catch(e){} },
-  codex(){ keepNames(); loadGlobalStats(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
+  codex(){ keepNames(); S.phase='codex'; S.codexSel=null; window.scrollTo(0,0); },
   codexf(v){ S.codexF=v; },
   codexsel(v){ S.codexSel=v; },
   daily(){ keepNames(); clearTimeout(S._t); S.play=null; S.final=false; startDaily(); window.scrollTo(0,0); },
@@ -605,7 +605,7 @@ installInfo();
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 // today's challenge takes a moment to build (it runs test battles), so it fills in just after the menu appears
 setTimeout(()=>{ dailyChallenge(); if(S.phase==='setup') render(); }, 60);
-setTimeout(()=>{ watchGames(); loadGlobalStats(); }, 200);   // own-pace games on the home screen; everyone's stats for the cards   // own-pace games on the home screen: whose turn it is
+setTimeout(watchGames, 200);   // own-pace games on the home screen   // own-pace games on the home screen: whose turn it is
 render();
 findArt(); findScenePics(); findPlaces();
 // Offline support and home-screen install (only works when served over http/https, not from a local file)

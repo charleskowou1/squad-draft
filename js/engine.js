@@ -462,7 +462,9 @@ function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.
   // Shinobu's Wisteria Body: the demon who knocks her out devours her and is poisoned. Not Akaza: he never eats women.
   if(t.fam==='shinobu' && a && a.alive && a.demon && a.fam!=='akaza'){ a.devoured=5; L(`${a.name} devours Shinobu, but her body is full of wisteria poison. ${a.name} will lose ${lost(a,5)} every round.`,'h',fx('poison',null,a)); }
   if(t.splits) split(t);
-  if(t.merge) merge(t); }
+  if(t.merge) merge(t);
+  // story: allies who arrive the moment this fighter falls (Petals of Futility: Kanao and Inosuke when Shinobu falls)
+  ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.after===t.id && !r.came && t.p===0) arrive(r); }); }
 // Hantengu's forms: a fallen form is replaced by the forms it splits into. They join the team at full health and act from next round.
 // Hantengu's emotions: when the last form with this merge falls, they merge into that form (Zohakuten). Acts from next round.
 function merge(t){
@@ -834,7 +836,7 @@ const sidesUp = () => [...new Set(standing().map(sideOf))];
 function placings(){ const out=(S.outOrder||[]).slice().reverse(); return S.winner>=0 ? [[S.winner], ...out] : out; }
 // story: allies who join your team at the start of a given round (they arrive at the end of the round before)
 function reinforcements(){
-  ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.round!==S.round+1) return;
-    const u=mkUnit(r.id,0); S.teams[0].push(u);
-    L(`${u.name} arrives to fight alongside ${S.names[0]}!`,'h',{spawn:[u.uid], ...fx('spawn',null,u)}); });
+  ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.round===S.round+1 && !r.came) arrive(r); });
 }
+function arrive(r){ r.came=true; const u=mkUnit(r.id,0); S.teams[0].push(u);
+  L(`${u.name} arrives to fight alongside ${S.names[0]}!`,'h',{spawn:[u.uid], ...fx('spawn',null,u)}); }

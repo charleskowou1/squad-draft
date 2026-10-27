@@ -191,17 +191,17 @@ function vCodex(){
   return `${topbar('Codex', 'Every character')}
     <p class="muted">${open} of ${total} unlocked. Win story battles to unlock the rest. Tap a card to read it.</p>
     ${seg('codexf',f,CODEX_GROUPS)}
-    <div class="grid codex">${cards.map(c=>{ const lock=!isUnlocked(c.id), rec=loadRecords()[c.id];
+    <div class="grid codex">${cards.map(c=>{ const lock=!isUnlocked(c.id);
       return `<button class="card ${glyphCls(c)}${lock?' locked':''}" data-a="codexsel" data-v="${c.id}">
         <span class="cart">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
         <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>${lock?'<span class="lockbadge">🔒</span>':''}
         <span class="cbody"><span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>${c.helper?`<span class="ct">${esc(c.sig.tag)}</span>`:statCells(c)}</span>
-        ${rec?`<span class="crec">${Math.round(rec[1]/rec[0]*100)}% · ${plural(rec[0],'game')}</span>`:''}</button>`; }).join('')}</div>`;
+</button>`; }).join('')}</div>`;
 }
 // A card's full entry in the Codex
 function codexSheet(){
   const c=BYID[S.codexSel]; if(!c) return '';
-  const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean), rec=loadRecords()[c.id], ui=unlockStage(c.id), lock=!isUnlocked(c.id);
+  const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean), ui=unlockStage(c.id), lock=!isUnlocked(c.id);
   const notes=c.helper?[]:allNotesFor(c.id);
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in ${glyphCls(c)}" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
@@ -219,8 +219,6 @@ function codexSheet(){
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.helper?'<div class="pas">Back-pocket helper: doesn\'t fight or take a fighter slot. Use it once, on the round you choose.</div>':''}
     ${c.splits?splitTree(c):''}
-    <div class="recline">${rec?`On this phone: won <b>${rec[1]} of ${plural(rec[0],'game')}</b> (${Math.round(rec[1]/rec[0]*100)}%)`:'Not played on this phone yet'}</div>
-    <div class="recline">${globalLine(c.id)}</div>
     ${notes.length?`<div class="mnotes"><div class="tlabel">Synergies and matchups</div>${notes.map(n=>`<div class="note"><div class="nh"><span class="nk ${n.kind}">${n.kind==='team'?'Same team':'Opponents'}</span></div><div class="nt">${esc(n.title)}</div><div class="nx">${esc(n.text)}</div></div>`).join('')}</div>`:''}
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button></div>
   </div></div>`;
@@ -526,12 +524,6 @@ function saveTab(){
 }
 // Stats (a tab in Settings): wins per player name and per-character records, on this phone.
 // Only Local, Online and Quickplay games count: not Story (preset, boosted fights) or Practice (curated matches).
-// Everyone's games (shared stats from Firebase): one line for a card
-function globalLine(id){
-  if(!GLOBAL_STATS) return `Everyone: <span class="muted">${S.globalErr?'not available right now':'loading…'}</span>`;
-  const g=globalOf(id), pick=g.d>=10 ? ` · picked <b>${Math.round(g.r/g.d*100)}%</b> of the times it’s dealt` : '';
-  return g.p>=GLOBAL_MIN ? `Everyone: wins <b>${Math.round(g.w/g.p*100)}%</b> of ${plural(g.p,'game')}${pick}` : `Everyone: ${g.p?`only ${plural(g.p,'game')} so far`:'not played yet'}${pick}`;
-}
 function globalPanel(){
   if(!GLOBAL_STATS) return `<div class="setgroup"><div class="tlabel">Everyone’s games</div><div class="muted">${S.globalErr?'Not available right now.':'Loading…'}</div></div>`;
   const rows=ROSTER.filter(c=>!c.spawn).map(c=>({c, ...globalOf(c.id)})).filter(x=>x.p>=GLOBAL_MIN).sort((a,b)=>b.w/b.p-a.w/a.p), n=GLOBAL_STATS.games||0;
@@ -602,7 +594,6 @@ function vSheet(){
   </div></div>`;
   const pas=[c.passive, c.mark?MARK_PASSIVE:''].filter(Boolean);
   const notes=notesForCard(c.id, p);   // only partners this player could afford alongside this card
-  const rec=loadRecords()[c.id];
   return `<div class="scrim" data-a="unsel"></div><div class="modal"><div class="in ${glyphCls(c)}" role="dialog" aria-modal="true" aria-label="${esc(c.name)}">
     <button class="x" data-a="unsel" aria-label="Close">×</button>
     ${banner(c)}
@@ -615,8 +606,6 @@ function vSheet(){
     ${c.regen?`<div class="pas">Regenerates ${c.regen} HP every round.</div>`:''}
     ${pas.map(x=>`<div class="pas">${esc(x)}</div>`).join('')}
     ${c.splits?splitTree(c):''}
-    <div class="recline">${rec?`On this phone: won <b>${rec[1]} of ${plural(rec[0],'game')}</b> (${Math.round(rec[1]/rec[0]*100)}%)`:'Not played on this phone yet'}</div>
-    <div class="recline">${globalLine(c.id)}</div>
     ${notes.length?`<div class="mnotes"><div class="tlabel">Notes for ${esc(c.short)} in this deal</div>${notes.map(n=>noteHTML(n,c.id)).join('')}</div>`:''}
     <div class="row"><button class="btn ghost" data-a="unsel">Close</button>${ok?`<button class="btn team${S.banning?' banbtn':''}" data-a="confirmPick" style="--bc:${pc(p)}">${verbBtn} ${esc(c.short)}</button>`:''}</div>
   </div></div>`;
@@ -821,19 +810,23 @@ function mvpPanel(){
 }
 // A character from each arc, faded into its chapter card on the story map
 const ARC_ART = {prologue:['sabito'], asakusa:['tamayo'], tsuzumi:['kyogai'], natagumo:['rui'], mugen:['rengoku'], district:['tengen'],
-  swordsmith:['mitsuri'], castle:['nakime'], flashback:['yoriichi'], dawn:['muzan_final']};
+  swordsmith:['muichiro_mark'], castle:['nakime'], flashback:['yoriichi'], dawn:['muzan_final']};
+// Arcs that come back as several chapters (CK): the art for each part, in order
+const CHAPTER_ART = {castle:['nakime','akaza','kokushibo'], flashback:['kanae','yoriichi_old','yoriichi']};
 // Story map: a winding path through the arcs. Each battle is a node with its stars; tap one to open its details
 // (squads, twist, star goals, Play / Draft replay). It opens on the next battle to play.
 const starRow = (n, of=3) => `<span class="stars" aria-label="${n} of ${of} stars">${Array.from({length:of},(_,i)=>`<i class="${i<n?'on':''}">★</i>`).join('')}</span>`;
 function vStory(){
-  const won=storyWon(), stars=totalStars(), next=nextStage(); let arc='', html='';
+  const won=storyWon(), stars=totalStars(), next=nextStage(); let arc='', html='', start=0; const parts={};
   STAGES.forEach((st,i)=>{
-    if(st.arc!==arc){ if(arc) html+='</div></section>'; arc=st.arc;
-      const mine=STAGES.map((x,k)=>[x,k]).filter(([x])=>x.arc===st.arc), wonHere=mine.filter(([x,k])=>stageCleared(k)).length;
-      const current=mine.some(([x,k])=>k===next), art=(ARC_ART[st.arc]||[]).filter(id=>ART[id]);
+    if(st.arc!==arc){ if(arc) html+='</div></section>'; arc=st.arc; start=i;
+      let end=i; while(end+1<STAGES.length && STAGES[end+1].arc===arc) end++;   // this chapter: a run of battles in one arc
+      const part=parts[arc]=(parts[arc]||0)+1, many=STAGES.filter((x,k)=>x.arc===arc && k>0 && STAGES[k-1].arc!==arc).length+(STAGES[0].arc===arc?1:0)>1;
+      const mine=STAGES.map((x,k)=>[x,k]).filter(([x,k])=>k>=i && k<=end), wonHere=mine.filter(([x,k])=>stageCleared(k)).length;
+      const pick=CHAPTER_ART[arc]&&CHAPTER_ART[arc][part-1], current=mine.some(([x,k])=>k===next), art=(pick?[pick]:ARC_ART[st.arc]||[]).filter(id=>ART[id]);
       html+=`<section class="chap arc-${st.arc}${current?' current':''}${wonHere===mine.length?' done':''}">
         ${art.length?`<span class="chapart" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}
-        <div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}</b>
+        <div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}${many?` · Part ${part}`:''}</b>
           <span class="chapprog">${wonHere===mine.length?'✓ Complete':current?'Now playing':`${wonHere} of ${mine.length} won`}</span></div><div class="chaprows">`; }
     const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, unl=STAGE_UNLOCKS[st.id]||[];
     html+=`<div class="srow${clear?' clear':''}${open?'':' locked'}${sel?' sel':''}${st.arc==='flashback'?' flash':''}">
@@ -869,7 +862,8 @@ function vCredits(){
       <p class="cline">Inspired by <b>Amelia Gray</b></p>
       <div class="cblock"><div class="eyebrow">They lived to see the sun</div>
         <div class="cseals">${people.map(id=>`<span>${seal(BYID[id],'lg')}<small>${esc(BYID[id].short)}</small></span>`).join('')}</div></div>
-      <div class="cblock"><div class="eyebrow">In memory of</div><p class="cfallen">${FINALE_FALLEN.map(esc).join(' · ')}</p></div>
+      <div class="cblock"><div class="eyebrow">In memory of</div>
+        <div class="cseals fallen">${FINALE_FALLEN.filter(id=>BYID[id]).map(id=>`<span>${seal(BYID[id],'lg')}<small>${esc(BYID[id].name)}</small></span>`).join('')}</div></div>
       <div class="cblock"><p class="muted">A fan game made with love. Demon Slayer: Kimetsu no Yaiba is the work of Koyoharu Gotouge.</p></div>
       <p class="cthanks">Thank you for playing.</p>
     </div></div>

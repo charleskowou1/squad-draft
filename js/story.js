@@ -209,27 +209,19 @@ const STAGES = [
     scene:[['doma','What a beautiful Hashira. Your breathing smells of flowers. Shall I save you from your suffering?'],
       ['kanae','I wish demons and humans could get along. But you… you’ve eaten too many people.'],
       ['kanae','Flower Breathing. I only need to last until the sky turns light.']]},
-  {id:'doma1', arc:'castle', title:'Wisteria', place:'Infinity Castle, the lotus pond', foe:'Doma', mine:['shinobu'], enemy:['doma'], level:'hard',
-    stars:{standing:1, hp2:10, health:20},
-    beats:[{when:'low', id:'shinobu', at:.5, text:'Just a little longer. The poison is working.'}],
-    outro:[['shinobu','Kanao… finish it. I’m counting on you.'],['','Doma swallows Shinobu whole. The wisteria inside her starts to work.']],
-    boosts:[{side:0, hp:1.2, label:"Shinobu's resolve: +20% HP"}],   // +40% was a free win; at +20% she must Defend when hurt (Oct 27, 2026)
-    twist:{survive:3},
-    blurb:'Part 1. Shinobu alone against the demon who killed her sister.',
+  // Wisteria and Petals of Futility in one (CK, Oct 27, 2026): Shinobu alone first; the moment she falls (Doma devours
+  // her and her wisteria poison starts eating him, 5 HP a round) Kanao and Inosuke arrive. Kept the id doma2.
+  {id:'doma2', arc:'castle', title:'Petals of Futility', place:'Infinity Castle, the lotus pond', foe:'Doma', mine:['shinobu'], enemy:['doma'], level:'hard',
+    stars:{standing:2, rounds:8},
+    twist:{reinforce:[{id:'kanao', after:'shinobu', round:5},{id:'inosuke', after:'shinobu', round:5}]},
+    beats:[{when:'low', id:'shinobu', at:.5, text:'Just a little longer. The poison is working.'}, {when:'ko', id:'shinobu', who:'doma', text:'Delicious! …Hm? Something is wrong with my body.'},
+      {when:'low', id:'doma', at:.4, text:'My body is… melting? How interesting!'}],
+    outro:[['doma','So this is what it feels like… to be in love?'],['kanao','Sister… Kanae… it’s over.'],['inosuke','…Mom.']],
+    boosts:[{side:0, only:['shinobu'], hp:1.2, label:"Shinobu's resolve: +20% HP"}, {side:1, hp:1.3, label:'Doma: +30% HP'}],
+    blurb:'Shinobu against the demon who killed her sister. When she falls, Kanao and Inosuke finish it.',
     scene:[['doma',"A Kocho! You smell like the girl I ate. Your sister, wasn't she?"],
       ['shinobu',"Shall we be friends? No? Then hold still while I poison you."],
-      ['','She only has to last. Every round Doma fights her, her poison goes deeper.']]},
-  {id:'doma2', arc:'castle', title:'Petals of Futility', place:'Infinity Castle, the lotus pond', foe:'Doma', mine:['kanao','inosuke'], enemy:['doma'], level:'hard',
-    stars:{standing:2, rounds:3},
-    beats:[{when:'low', id:'doma', at:.5, text:'My body is… melting? How interesting!'}],
-    outro:[['doma','So this is what it feels like… to be in love?'],['kanao','Sister… Kanae… it’s over.'],['inosuke','…Mom.']],
-    boosts:[{side:1, hp:1.5, label:'Doma: +50% HP'}],
-    start:{doma:{hp:.6, devoured:5}},
-    blurb:"Part 2. Doma already ate Shinobu, and her body was full of poison.",
-    scene:[['doma','Hm? My body… what did she do to me?'],
-      ['kanao',"She made herself the poison. Now I decide for myself."],
-      ['inosuke',"Let's finish him, Kanao! Beast Breathing!"],
-      ['','Doma starts at 60% health and loses 5 HP every round.']]},
+      ['shinobu','Kanao… if I fall, it’s up to you. Every drop of me is wisteria.']]},
   {id:'kaigaku', arc:'castle', title:'Senior Brother', place:'Infinity Castle', foe:'Kaigaku', mine:['zenitsu'], enemy:['kaigaku'], level:'normal',
     stars:{standing:1, hp2:50, rounds:2},
     beats:[{when:'low', id:'zenitsu', at:.5, text:'Grandpa… I won’t lose to him.'}],
@@ -362,7 +354,7 @@ function twistText(st){
   const t=st.twist||{}, out=[];
   if(t.survive) out.push(`Survive ${t.survive} rounds`);
   if(t.protect) out.push(`Protect ${BYID[t.protect].short}: lose if they fall`);
-  if(t.reinforce) out.push(...t.reinforce.map(r=>`${BYID[r.id].short} arrives in round ${r.round}`));
+  if(t.reinforce) out.push(...t.reinforce.map(r=>r.after ? `${BYID[r.id].short} arrives when ${BYID[r.after].short} falls (or in round ${r.round})` : `${BYID[r.id].short} arrives in round ${r.round}`));
   if(st.start) out.push('Part 2: '+Object.keys(st.start).map(id=>`${BYID[id].short} starts hurt`).join(', '));
   (st.phases||[]).forEach(ph=>out.push(`Boss: ${BYID[ph.id].short} powers up at ${Math.round(ph.at*100)}%`));
   return out.join(' · ');
@@ -371,7 +363,7 @@ function twistText(st){
 // Start a stage: the scene first, then the battle with the preset squad (or the draft, when replaying with draft)
 function startStage(i, draft=false){
   const st=STAGES[i];
-  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, chain:st.chain||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist||null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
+  Object.assign(S,{stage:i, storyDraft:draft, phase:'scene', sceneAt:0, sceneVs:false, sceneMid:false, sceneOutro:false, showTheirs:false, awaken:st.awaken||null, chain:st.chain||null, n:2, maxTeam:MAXTEAM, budget:stageBudget(st), twist:st.twist?JSON.parse(JSON.stringify(st.twist)):null, startState:st.start||null, boosts:st.boosts||null, phases:st.phases||null, beats:st.beats||null,
     first:0, lastPicker:null, history:[], k:0, sel:null});
   S.names=[playerName()||'Player 1', st.foe];   // this phone's player name (Settings)
 }
@@ -401,7 +393,7 @@ const FINALE = [
   ['tanjiro','Mother. Father. Everyone. We did it. The sun is shining… and we’re home.'],
 ];
 const FINALE_SURVIVORS = ['tanjiro','nezuko','zenitsu','inosuke','kanao','giyu','sanemi','kiriya','urokodaki','tengen_retired','murata','yushiro'];
-const FINALE_FALLEN = ['Kagaya Ubuyashiki','Kyojuro Rengoku','Shinobu Kocho','Mitsuri Kanroji','Obanai Iguro','Muichiro Tokito','Gyomei Himejima','Genya Shinazugawa','Kanae Kocho','Sabito','Tamayo'];
+const FINALE_FALLEN = ['kagaya','rengoku','shinobu','mitsuri','obanai','muichiro','gyomei','genya','kanae','sabito','tamayo'];
 const sceneLines = () => S.sceneFinale ? FINALE : S.sceneMid ? S.midScene||[] : S.sceneOutro ? STAGES[S.stage].outro : STAGES[S.stage].scene;
 // Every scene picture any stage asks for (app.js looks for the files at startup)
 const scenePics = () => [...new Set(STAGES.flatMap(st=>[...(st.scene||[]), ...(st.outro||[]), ...(st.awaken||[]).flatMap(a=>a.lines||[])])
@@ -431,7 +423,7 @@ function beginStage(){
 const STARTER_DEMONS = ['nezuko','tamayo','yushiro','hand','swamp'];
 const lockable = c => !c.helper && !c.spawn && ((c.demon && !STARTER_DEMONS.includes(c.id)) || c.mark || c.legend || c.id!==c.fam || ['typezero','kagaya','kanae'].includes(c.id));
 // Extra unlocks that never fight in a story battle themselves, tied to the battle where they belong in canon
-const UNLOCK_EXTRAS = {district:['tengen_retired'], estate:['kagaya'], kokushibo:['sanemi_mark','gyomei_mark']};
+const UNLOCK_EXTRAS = {estate:['kagaya'], kokushibo:['sanemi_mark','gyomei_mark']};
 // Cards that unlock at a later battle than their first appearance (Doma: when Kanao and Inosuke finish him, not when he beats Shinobu)
 const UNLOCK_AT = {doma:'doma2', muzan:'flash_muzan'};   // Muzan first fights at the Estate but unlocks late (CK)
 // stage id → the card ids winning it unlocks (each card is unlocked by the first battle it appears in)

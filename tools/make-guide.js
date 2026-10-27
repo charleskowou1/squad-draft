@@ -187,8 +187,10 @@ out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but slop
 - Mid-battle awakenings: some fighters awaken during the fight (Tanjiro and Nezuko in Two as One, Muichiro, Mitsuri,
   Giyu, Tanjiro in Destructive Death, Sanemi and Gyomei). A short cutscene plays between rounds and they become the
   stronger card on their awakening line, with their special ready.
-- Story tips: in the survival battles with one fighter (Wisteria: Shinobu, The Flower Hashira: Kanae) attacking every
-  round loses; Defend whenever she's under half health and she lasts. In Senior Brother, open with Thunderclap and
+- Story tips: in The Flower Hashira (Kanae holding Doma until dawn) attacking every round loses; Defend whenever
+  she's under half health and she lasts. In Petals of Futility, Shinobu fights Doma alone first: poison him early.
+  When she falls he devours her and her wisteria poison eats him every round, and Kanao and Inosuke arrive at once
+  (or in round 5 if she's still standing) to finish him. In Senior Brother, open with Thunderclap and
   Flash: Kaigaku mocks it and Seventh Form is ready straight after, back to back. The Ubuyashiki Estate is a 7-round
   hold against a huge Muzan whose whips hit everyone through DEF: spread out the damage, Defend the low ones, and
   let Tamayo's medicine (it cuts his regeneration) work. Helpers are in some battles' squads (Muscle Mice in Two as
