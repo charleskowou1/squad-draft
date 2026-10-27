@@ -233,8 +233,8 @@ const ACTIONS = {
     S.scoutQueue=players().filter(p=>alive(p).length && S.helperPlan[p].includes('crow'));   // each crow owner gets a private report
     nextScoutOrFight();
   },
-  skip(){ clearTimeout(S._t); S.play.done=true; storyEnd(); },
-  next(){ if(isAsync()) return asyncWatched(); if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
+  skip(){ clearTimeout(S._t); S.play.done=true; if(!storyEnd()) storyMid(); },   // skipping still plays a Mark awakening's cutscene
+  next(){ if(storyMid()) return; if(isAsync()) return asyncWatched(); if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
   finish(){ if(isAsync()) setGame(S.asyncCode,{seen:{m:S.matchNo, r:S.roundId}}); if(isOnline()){ S.asyncWatching=false; S.localOver=true; return window.scrollTo(0,0); } S.play=null;
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
     S.phase='over'; window.scrollTo(0,0); },
