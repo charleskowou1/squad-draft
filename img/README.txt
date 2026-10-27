@@ -107,4 +107,5 @@ Story scene pictures go in img/scenes/ (jpg, png or webp), named after the slot:
   scenes/sabito-smile.jpg    The Boulder ending: Sabito's "You cut it" line
   scenes/akaza-sunrise.jpg   Set Your Heart Ablaze ending: Akaza trying to flee the sunrise
   scenes/rengoku-heart.jpg   Set Your Heart Ablaze ending: Rengoku's "set your heart ablaze"
+  scenes/tanjiro-yelling.jpg Set Your Heart Ablaze ending: Tanjiro shouting after Akaza as he runs from the sun
 A line without its picture shows the character portraits instead.
