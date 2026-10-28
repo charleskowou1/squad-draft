@@ -295,6 +295,16 @@ const ACTIONS = {
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
     S.phase='over'; window.scrollTo(0,0); },
 };
+// Opening splash: "a Kwow Media Productions game" with its sting, then the home screen (CK). Phones only allow sound
+// inside a tap, so it waits for one ("Tap to start"); shown once each time the game is opened. ?nosplash skips it.
+(function splash(){
+  const el=document.getElementById('splash'); if(!el) return;
+  if(/nosplash/.test(location.search) || navigator.webdriver){ el.remove(); return; }
+  let gone=false;
+  const go=()=>{ if(gone) return; gone=true; unlockSound(); sfx('intro'); el.classList.add('go');
+    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(), 700); }, quickMotion()?300:2400); };
+  el.addEventListener('click', go); el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') go(); });
+})();
 // Wake audio on any touch or key, not only button taps (phones only allow it inside a tap; see unlockSound)
 ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, unlockSound, {passive:true}));
 // coming back to the game after switching apps or locking the phone: try to wake audio straight away too

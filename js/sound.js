@@ -64,6 +64,11 @@ function steel(at, vol){ const j=.94+Math.random()*.12;
 function shing(at, vol){ steel(at, vol); }   // older callers: now the short steel scrape, not a ring
 function taikoHit(at, vol=.4, out=SFX_OUT){ tone('sine',95,48,.45,vol,at,out); hiss('lowpass',600,90,.18,vol*.45,at,out); }
 const SFX = {
+  // the opening sting (Kwow Media Productions): a taiko hit, a quick koto run up the miyako scale, then a second hit
+  // under a bright chime that rings out
+  intro(){ const t0=AC.currentTime; taikoHit(0,.55); tone('sine',73.4,55,1.4,.22,0);
+    [62,63,67,69,70,74,75,79].forEach((m,i)=>pluck(midiHz(m), t0+.14+i*.065, 1, .17, SFX_OUT));
+    taikoHit(.72,.5); [1174.7,1760,2349.3].forEach((f,i)=>tone('sine',f,f*.998,2.4,.1-.025*i,.72)); hiss('highpass',6000,9500,1.3,.05,.72); },
   // attacks (timed with the lunge): a soft blade whoosh, a short metallic "shing", then a light impact
   slash(){ swoosh(.12,.12,.2); steel(.3,.06); hiss('highpass',1800,500,.07,.08,.31); tone('sine',150,60,.12,.14,.31); },
   bighit(){ swoosh(.1,.15,.24); steel(.3,.08); hiss('highpass',1600,400,.09,.1,.31); tone('sine',110,40,.3,.3,.32); hiss('lowpass',500,80,.25,.12,.32); },

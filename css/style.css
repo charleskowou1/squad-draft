@@ -1504,3 +1504,24 @@ body.tvmode .guess{padding-top:20px}
 .quitask{text-align:center;display:flex;flex-direction:column;gap:10px}
 .quitask h2{margin:0;font-family:var(--display)}
 .quitask .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* Opening splash (index.html #splash): "a Kwow Media Productions game", tap to start, the sting, then it fades out */
+.splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;cursor:pointer;
+  background:radial-gradient(90% 70% at 50% 45%,#2a211b,#0e0c0a 75%);color:var(--fg);-webkit-user-select:none;user-select:none;transition:opacity .7s ease}
+.splash.out{opacity:0;pointer-events:none}
+.sp-in{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;animation:fade 1s ease-out both}
+.sp-seal{display:flex;align-items:center;justify-content:center;width:64px;height:64px;margin-bottom:14px;border-radius:12px;background:var(--accent);color:#fff;
+  font-family:var(--display);font-size:2.4rem;transform:rotate(-4deg);box-shadow:0 10px 30px rgba(224,87,59,.35)}
+.sp-a,.sp-game{font-family:var(--display);font-style:italic;font-size:1.15rem;color:var(--ink-2);letter-spacing:.08em}
+.sp-name{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,7vw,3.4rem);line-height:1.1;color:var(--gold);letter-spacing:.04em;padding:0 16px}
+.sp-line{display:block;width:min(420px,70vw);height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);transform:scaleX(0)}
+.sp-tap{font-size:.85rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);animation:dotpulse 1.8s ease-in-out infinite}
+/* after the tap: a slash of light under the name, the name flares, the seal stamps */
+.splash.go .sp-tap{visibility:hidden}
+.splash.go .sp-line{animation:spslash .5s .62s cubic-bezier(.2,.8,.2,1) forwards}
+.splash.go .sp-name{animation:spflare 1.4s .7s ease-out both}
+.splash.go .sp-seal{animation:spstamp .45s .05s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes spslash{to{transform:scaleX(1)}}
+@keyframes spflare{0%{text-shadow:none}30%{text-shadow:0 0 28px rgba(214,165,77,.9),0 0 60px rgba(224,87,59,.5);transform:scale(1.04)}100%{text-shadow:0 0 12px rgba(214,165,77,.25);transform:none}}
+@keyframes spstamp{0%{transform:rotate(-4deg) scale(1.6);opacity:.4}100%{transform:rotate(-4deg) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.splash *{animation:none!important}.splash.go .sp-line{transform:none}}
