@@ -4,3 +4,5 @@ CLAUDE.md
 img/IMG_*
 img/* [0-9]*
 Slayer-Squad-Guide.txt
+tools/node_modules/
+tools/package-lock.json

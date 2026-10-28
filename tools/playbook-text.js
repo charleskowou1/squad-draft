@@ -1,0 +1,386 @@
+// The Roster Playbook's hand-written text (tools/make-playbook.js builds the Word file). Keep it in step with the cards: a
+// changed special, cost or synergy needs its lines here updated. Numbers (win rates, partners, matchups) are
+// computed by the builder; never type them in here, they would go stale. Groups set the sections and their order.
+module.exports = {
+groups: [
+ ['The main crew', 'Tanjiro, Nezuko and the friends they fight beside.', ['tanjiro','tanjiro_mark','tanjiro_demon','nezuko','nezuko_awakened','zenitsu','inosuke','kanao','genya']],
+ ['The Hashira', 'Two Hashira on a team get +1 PWR each; Kagaya gives them +1 DEF; Marks recharge faster and two Marks give +1 SPD.', ['giyu','giyu_mark','rengoku','tengen','tengen_retired','shinobu','kanae','mitsuri','mitsuri_mark','muichiro','muichiro_mark','obanai','obanai_mark','sanemi','sanemi_mark','gyomei','gyomei_mark']],
+ ['Allies and legends', 'Trainers, healers, the Corps Master and the strongest swordsman who ever lived.', ['yoriichi','yoriichi_old','urokodaki','sabito','murata','typezero','tamayo','yushiro','kagaya']],
+ ['Lesser demons', 'Cheap demons. Most are best as the second card next to a big one.', ['hand','swamp','susamaru','yahaba','kyogai','rui','enmu']],
+ ['Upper Moons and Muzan', 'Two Upper Moons on a team get +1 regeneration; Muzan with another demon gives the demons +1 PWR. From round 10 the sun burns every demon and stops their regeneration.', ['kaigaku','daki','gyutaro','gyokko','hantengu','nakime','akaza','doma','kokushibo','muzan','muzan_final']],
+],
+cards: {
+ tanjiro: {
+  win: ['Cheap ignore-DEF damage: Hinokami Kagura (PWR+5, ignores DEF) is one of the best 5-pt specials against high-DEF Hashira and Upper Moons.',
+        'Pair him with Nezuko (Siblings counterattack), Zenitsu + Inosuke (Kamaboko Squad: +2 SPD to the whole team) or Urokodaki (+1 DEF).',
+        'With Yoriichi on the team he gets +2 PWR (Sun Lineage).'],
+  beat: ['He is only 28 HP: two solid hits on the round his special is recharging take him out.',
+         'Kill him first and you break whichever synergy he was holding up (Siblings, Kamaboko).'] },
+ tanjiro_mark: {
+  win: ['After his first Hinokami Kagura he gets the Selfless State once (after you\'ve won the story battle Destructive Death): nothing can hit him until Hinokami is ready again, and the next Hinokami can\'t be blocked by anything.',
+        'In the state, use Save on a teammate who is about to fall, and only Attack when you need the damage (attacking reveals him).',
+        'A strong 30-pt card: a Mark, so with another Mark the team gets +1 SPD.'],
+  beat: ['Hit him hard before his first Hinokami lands: the Selfless State only opens after it.',
+         'While he is in the state, ignore him and kill his teammates; he can only Save one of them per state.',
+         'Count the rounds: when his Hinokami comes back it can\'t be blocked, so Defend or hide your weakest fighter that round.'] },
+ tanjiro_demon: {
+  win: ['17 pts, 54 HP, regenerates and the sun doesn\'t stop it (sun-proof). Rampage hits every enemy for PWR−4, ignoring DEF.',
+        'At 20 pts he leaves 3 pts: Tamayo, Yushiro, Swamp Demon or Kyogai are his best partners.',
+        'Keeps every Tanjiro synergy (Nezuko, Kamaboko, Sun Lineage).'],
+  beat: ['Old Yoriichi beats him most of the time: Legends cap the damage they take.',
+         'Kill his cheap partner first so he is alone, then stall with Defend on his Rampage rounds.',
+         'His one weakness is a short bench: stuns (Rui, Kyogai, Gyokko) waste his whole turn.'] },
+ nezuko: {
+  win: ['Exploding Blood hits every enemy for 5, ignoring DEF: best against teams of many low-DEF fighters.',
+        'With Tanjiro: Siblings, they counterattack when the other is hit.',
+        'Weak on her own: take her for the pair, not alone.'],
+  beat: ['Low HP; she drops fast. Kill her before Tanjiro to stop the Siblings counter.',
+         'She is a demon: from round 10 the sun burns her.'] },
+ nezuko_awakened: {
+  win: ['Exploding Blood doubles to 10 to every enemy, ignoring DEF, and cures her team\'s poison: great against Gyutaro, Shinobu and Doma.',
+        'She can\'t Defend (berserk), so always have her attacking or using her special.',
+        'A strong 9-pt card at both budgets.'],
+  beat: ['She can never Defend: focus her and every hit lands in full.',
+         'Doma beats her most often in the sim.',
+         'She\'s a demon: drag the game to sunrise and she burns.'] },
+ zenitsu: {
+  win: ['Always moves first, so Thunderclap and Flash (PWR×2) finishes a hurt enemy before it acts.',
+        'After story battle Senior Brother his second special, Seventh Form (PWR×3, ignores DEF), alternates with it.',
+        'Against Kaigaku he gets +2 PWR. Part of Kamaboko Squad with Tanjiro and Inosuke. Much better at 30 pts.'],
+  beat: ['26 HP: one big hit or two small ones drop him. He has no Defend tricks.',
+         'He strikes first but only once: Defend the target he\'s likely to finish.'] },
+ inosuke: {
+  win: ['Fang Frenzy throws two strikes of PWR−1 at random enemies: good for chip damage and finishing low fighters.',
+        'Muscle Mice\'s +2 PWR counts on both strikes.',
+        'Best inside Kamaboko Squad (+2 SPD to the whole team).'],
+  beat: ['His special picks targets at random: you can\'t predict it, but it\'s weak against high DEF.',
+         'Low DEF: any steady attacker wears him down.'] },
+ kanao: {
+  win: ['Moves early with Equinoctial Vermilion Eye (PWR+4): a reliable finisher.',
+        'With Kanae on the team she gets +1 PWR (Kanae\'s student).',
+        'Stronger at 30 pts than at 20, where her points are better spent elsewhere.'],
+  beat: ['24 HP: an easy knockout target.',
+         'Her special acts early but hits one target; Defend whoever she can finish.'] },
+ genya: {
+  win: ['Demon Consumption heals 8 and gives +2 PWR for the rest of the match: use it early, then he scales every round.',
+        'A good long-game fighter; he gets better each time his special comes back.'],
+  beat: ['Kill him before he stacks PWR: the longer he lives, the harder he hits.',
+         'Burst him on the round he uses his special (he isn\'t attacking).'] },
+ giyu: {
+  win: ['Dead Calm moves first and makes your whole team take no damage that round: use it on the round you expect their big special.',
+        'With Urokodaki he gets +1 DEF; with another Hashira, +1 PWR. Best at 30 pts.'],
+  beat: ['Watch his cooldown: Dead Calm is ready every few rounds. Hold your big special until it\'s recharging.',
+         'Poison and Shinobu\'s wisteria still tick on a Dead Calm round; only hits are stopped.'] },
+ giyu_mark: {
+  win: ['Same Dead Calm, recharges a round faster, with Mark stats. Among the best cards at 30 pts.',
+        'Pair him with Rengoku: one shields, the other hits hard.'],
+  beat: ['Bait Dead Calm with a cheap special, then fire your real one the next round.',
+         'Gyutaro\'s poison and steady pressure beat him most often at 20 pts.'] },
+ rengoku: {
+  win: ['Flame Tiger (PWR+4), then Ninth Form: Rengoku (PWR+10, ignores DEF) the next time: the second one is a finisher, save it for the big target.',
+        'Pair him with Giyu ✦: Dead Calm keeps him alive until Ninth Form is ready.'],
+  beat: ['Track which special is next: his Ninth Form is the dangerous one. Defend or hide its likely target.',
+         'Hantengu and Doma beat him most often (multiple bodies, regeneration).'] },
+ tengen: {
+  win: ['Constant Resounding Slashes hits every enemy for PWR−2: steady damage on wide teams.',
+        'SPD 10: acts before most of the roster.'],
+  beat: ['Area damage is spread thin: one high-HP, high-DEF fighter shrugs it off.',
+         'Gyutaro beats him one-on-one (canon).'] },
+ tengen_retired: {
+  win: ['4 pts, Bodyguard moves first and makes an ally count as Defending: protect your carry on the round they\'ll focus it.',
+        'Not a Hashira, so no Hashira bonuses.'],
+  beat: ['He does little damage: leave him for last and kill whoever he protects on his cooldown rounds.'] },
+ shinobu: {
+  win: ['Wisteria Poison: 6 a round to demons (3 to humans) for 3 rounds; with Kanae, 4 rounds.',
+        'Her passive: a demon that knocks her out loses 5 HP every round for the rest of the match (not Akaza). Being targeted is fine.',
+        'The sim\'s best partner: Kokushibo. She punishes demon-heavy teams.'],
+  beat: ['Use humans to knock her out, or Akaza (he won\'t devour her).',
+         'Tamayo cures poison; Awakened Nezuko burns it off her whole team.',
+         'Hantengu\'s split forms make her poison waste turns.'] },
+ kanae: {
+  win: ['Crimson Hanagoromo: PWR+3 and your most hurt fighter heals 4: damage plus sustain.',
+        'With Shinobu: poison lasts 4 rounds (Kocho Sisters). With Kanao: Kanao +1 PWR.'],
+  beat: ['Average HP and DEF: focus her and the healing stops.',
+         'Doma is her nightmare in the story for a reason: big area damage overwhelms the heal.'] },
+ mitsuri: {
+  win: ['Catlove Shower hits every enemy for PWR−3: best against many fragile fighters.',
+        'Weak at 20 pts: her Mark version is the better pick.'],
+  beat: ['Her area damage is small per target: stack DEF and ignore her until the end.'] },
+ mitsuri_mark: {
+  win: ['Same area special with Mark stats; better at 30 pts.'],
+  beat: ['Gyutaro, Doma and Hantengu handle her best: regeneration undoes spread damage.'] },
+ muichiro: {
+  win: ['Obscuring Clouds moves early: he vanishes (attacks miss him) and strikes for PWR+2. Damage and safety in one move.',
+        'With Yoriichi Type Zero he gets +1 PWR. Strong at 30 pts.'],
+  beat: ['On his special round he can\'t be hit: Defend that round and hit him the next.',
+         'Low DEF: steady attacks between his specials drop him.'] },
+ muichiro_mark: {
+  win: ['Mark version: the mist comes back a round sooner.'],
+  beat: ['Akaza and Hantengu beat him most often at 20 pts; on his special round, don\'t waste hits on him.'] },
+ obanai: {
+  win: ['Twin-Headed Reptile: PWR+4 and Defend does nothing against it. Perfect for finishing a turtling enemy.'],
+  beat: ['He\'s fragile: hit him first. His special is single-target, so hiding (Yushiro) or Dead Calm still stops it.'] },
+ obanai_mark: {
+  win: ['Mark version of the guard-breaker; a better pick at 20 pts than the base.'],
+  beat: ['Hantengu\'s many bodies waste his single-target special.'] },
+ sanemi: {
+  win: ['Black Wind Mountain Mist hits your target and one other for full PWR: two big hits per special.',
+        '7 pts, 38 HP, 12 PWR: one of the best value Hashira.'],
+  beat: ['No defensive tricks: trade hits with something tankier.'] },
+ sanemi_mark: {
+  win: ['Mark version: 46 HP, 16 PWR. Strong at 20 pts, weaker at 30 where the Legends and Marks crowd him out.'],
+  beat: ['At 30 pts both Yoriichis and Giyu ✦ beat him easily.'] },
+ gyomei: {
+  win: ['Volcanic Rock: 9 damage to every enemy, ignoring DEF. One of the best 8-pt cards.',
+        'Fixed damage means it\'s great against high-DEF teams.'],
+  beat: ['SPD 8: he acts late. Hit him hard before his rocks land, or Defend your fragile fighters on his special rounds.'] },
+ gyomei_mark: {
+  win: ['Volcanic Rock does 11 to every enemy. Pair him with Giyu: Giyu shields, Gyomei grinds.'],
+  beat: ['Hantengu, Doma and Kaigaku beat him most at 20 pts. At 30, Old Yoriichi.'] },
+ yoriichi: {
+  win: ['The strongest card in the game. Strikes twice every Attack and never takes more than 18 damage a round.',
+        'Sun Breathing hits every enemy for PWR, ignoring DEF, and demons it hits lose their regeneration for good.',
+        'Against him, Muzan loses 3 PWR and 2 SPD and Kokushibo loses 1 DEF. With Tanjiro: Tanjiro +2 PWR.'],
+  beat: ['Honestly: ban him if bans are on, or take him when he\'s dealt.',
+         'Make him waste turns: Nakime\'s Castle Shift sends him away for a round, Yahaba\'s arrows make his hits miss, Rui and Gyokko stun him.',
+         'He takes at most 18 a round, so many small hits are wasted: kill his teammates first and outlast him.'] },
+ yoriichi_old: {
+  win: ['Strikes twice, takes at most 12 a round (even harder to wear down than prime). The Last Strike: PWR+10, ignores DEF.',
+        'At 20 pts he leaves 3 pts: Swamp Demon, Kyogai or Tamayo.'],
+  beat: ['Lowest DEF of the giants (5): steady hits land, but only 12 a round.',
+         'Kaigaku did well against him in the sim: stuns and splash damage.',
+         'Kill his cheap partner, then stall.'] },
+ urokodaki: {
+  win: ['Mentor: Tanjiro, Giyu and Sabito get +1 DEF. Water Wheel: PWR+3.',
+        'Better at 30 pts, where his pupils are around.'],
+  beat: ['On his own he\'s an average 4-pt fighter: kill him to take the +1 DEF off his pupils.'] },
+ sabito: {
+  win: ['Spirit Training: an ally (or himself) gets +2 PWR for the rest of the match. Use it round 1 on your best attacker.',
+        'Counts as Urokodaki\'s pupil (+1 DEF).'],
+  beat: ['Kill the fighter he trained, or him before he trains twice.'] },
+ murata: {
+  win: ['2 pts and survives his first knockout at 1 HP: a cheap body that soaks a whole special.',
+        'Great filler when 2 pts are left.'],
+  beat: ['Hit him twice. Don\'t waste a big special on him.'] },
+ typezero: {
+  win: ['Strikes three times every Attack (PWR 4 each): great with Muscle Mice (+2 on every strike).',
+        'Training Drill: an ally gets +2 SPD for the match. With Muichiro: Muichiro +1 PWR.'],
+  beat: ['Three small hits are weak against high DEF: armour beats him.'] },
+ tamayo: {
+  win: ['Healing Blood Art: heal an ally (or herself) 10 and cure poison.',
+        'Against Muzan she cuts his regeneration by 2. With Yushiro: Yushiro +2 PWR.',
+        'The perfect 3-pt partner for a 17-pt giant (Old Yoriichi or Demon King Tanjiro).'],
+  beat: ['She\'s the healer: kill her first, before she undoes your damage.',
+         'She\'s a demon: the sun burns her from round 10.'] },
+ yushiro: {
+  win: ['Concealment Talisman moves first: hide an ally (or himself) so attacks miss them this round. Hide whoever their big special is aimed at.',
+        'With Tamayo he gets +2 PWR.'],
+  beat: ['Area specials still hit hidden fighters\' teammates; spread damage on his special rounds.',
+         'Kill him first and their carry has no hiding place.'] },
+ kagaya: {
+  win: ['Never attacks. Words of Resolve heals every ally 2. Final Resolve: he knocks himself out and every Hashira on the team with a Mark card awakens it (Giyu, Gyomei, Sanemi, Muichiro, Mitsuri, Obanai).',
+        'Corps Master: Hashira get +1 DEF. With two Mark-able Hashira on the team he is at his best.',
+        'Fire Final Resolve early, before they can kill him.'],
+  beat: ['Kill him before his special: if an enemy knocks him out first, nobody awakens.',
+         'He has 14 HP and SPD 5: one hit in round 1 usually does it.'] },
+ hand: {
+  win: ['2 pts, Grasping Arms PWR+3: cheap filler next to a big card.'],
+  beat: ['14 HP: anything kills him. Don\'t spend a special on him.'] },
+ swamp: {
+  win: ['3 pts. Swamp Dive moves early: he sinks out of reach (can\'t be hit) and strikes PWR+1.',
+        'The best partner for a 17-pt giant at 20 pts, especially Old Yoriichi.'],
+  beat: ['On his dive round he can\'t be hit; hit him the round after.'] },
+ susamaru: {
+  win: ['Temari Barrage: your target and one more enemy for PWR−1.',
+        'With Yahaba her hits ignore Defend (Temari & Arrows). Good 3-pt filler.'],
+  beat: ['Low HP; kill her first to break Temari & Arrows.'] },
+ yahaba: {
+  win: ['Vector Arrows moves first and makes every hit one enemy throws this round miss: point it at their biggest attacker on their big round.',
+        'Even works on Yoriichi.'],
+  beat: ['It only blanks one fighter: spread your damage across several attackers that round.'] },
+ kyogai: {
+  win: ['Drum Room Spin stuns the target next round. Stun their best fighter the round before its special is ready.',
+        'A great 3-pt partner for a giant.'],
+  beat: ['Low HP: kill him first. A stun lasts one round; Defend the stunned fighter\'s teammates.'] },
+ rui: {
+  win: ['Cutting Thread Cage: PWR damage and the target is stunned next round.',
+        'With Muzan the demons get +1 PWR (Muzan\'s Blood).'],
+  beat: ['24 HP: an early knockout stops the stuns.'] },
+ enmu: {
+  win: ['Forced Sleep: every enemy has to wait 2 more rounds for their special. Use it right after their specials come back.'],
+  beat: ['He does little damage: kill him first, then your specials come back on time.'] },
+ kaigaku: {
+  win: ['Black Thunder: PWR+3 and a second random enemy takes 4.',
+        'Best with Hantengu or Kokushibo (two Upper Moons: +1 regen).'],
+  beat: ['Zenitsu gets +2 PWR against him. He\'s fragile for an Upper Moon.'] },
+ daki: {
+  win: ['Obi Sashes hit every enemy for PWR−3.',
+        'With Gyutaro: Two as One (Gyutaro +2 PWR, and each gets back up once at 30% if the other is still standing). Take both or neither.'],
+  beat: ['Knock both siblings out in the same round and neither gets back up.',
+         'Awakened Nezuko and Giyu ✦ beat her best; Tengen beats her one-on-one.'] },
+ gyutaro: {
+  win: ['Flying Blood Sickles: 4 to every enemy and poison 2 a round for 2 rounds.',
+        'With Daki (Two as One) he gets +2 PWR and they each rise once. Akaza is a good partner too (two Upper Moons).'],
+  beat: ['Same as Daki: finish both in one round. Tamayo and Awakened Nezuko cure the poison.'] },
+ gyokko: {
+  win: ['Water Prison Pot: PWR−2 ignoring DEF, and the target can\'t act next round. Trap their carry.',
+        'Best with Hantengu (two Upper Moons: +1 regen).'],
+  beat: ['Average stats for an Upper Moon: focus him early.'] },
+ hantengu: {
+  win: ['When he falls, four emotions appear at once (Sekido, Karaku, Aizetsu, Urogi). When the last one falls they merge into Zohakuten. He\'s many bodies for 9 pts.',
+        'Cowering Hide moves first: attacks miss him and he heals 6.',
+        'Doma is his best partner.'],
+  beat: ['Area specials (Gyomei, Tengen, Mitsuri, Yoriichi) hit all the emotions at once.',
+         'Save big single-target specials for Zohakuten at the end.',
+         'Yoriichi beats him at 30 pts.'] },
+ nakime: {
+  win: ['No Attack: Biwa Strum makes the enemy she picks act last this round. Castle Shift (moves first) sends an enemy away: it can\'t act or be hit that round.',
+        'Use Castle Shift on their giant on the round its special is ready. If she\'s alone on her team she flees.'],
+  beat: ['She deals no damage: kill her teammates and she flees.',
+         'Prime Yoriichi beats her every time in the sim.'] },
+ akaza: {
+  win: ['Compass Needle (PWR+6), then Annihilation Type (every enemy PWR−4, ignoring DEF). Fast and regenerates.',
+        'Best with Doma (two Upper Moons). He never devours Shinobu.'],
+  beat: ['Rengoku and Hantengu trade well with him. The sun stops his regeneration from round 10.',
+         'At 30 pts both Yoriichis and Giyu ✦ beat him.'] },
+ doma: {
+  win: ['Frozen Lotus: every enemy takes PWR−4, ignoring DEF, and he regenerates 3 a round.',
+        'Best with Hantengu or Akaza. Shinobu\'s wisteria is his danger: don\'t knock her out with him.'],
+  beat: ['Let Shinobu fall to Doma: he then loses 5 HP every round.',
+         'Giyu ✦ beats him at 20 pts; Yoriichi wipes him at 30 (his regen goes away for good).'] },
+ kokushibo: {
+  win: ['Moon Breathing: every enemy PWR−4, ignoring DEF. 15 pts, big stats.',
+        'Against Yoriichi he loses 1 DEF. A good partner in the sim: Shinobu.'],
+  beat: ['Yoriichi beats him almost every time.',
+         'Yahaba\'s arrows and the Hand Demon did surprisingly well against him at 20 pts: blank his turn, then wear him down.',
+         'He\'s a demon: drag it to sunrise.'] },
+ muzan: {
+  win: ['Blood Whips: every enemy PWR−7, ignoring DEF, and he heals 2 per enemy hit. With any other demon: +1 PWR to his demons (Muzan\'s Blood).',
+        'He\'s the weakest of the giants, especially at 30 pts: give him demon partners for Muzan\'s Blood and keep Tamayo and Shinobu off the enemy team.'],
+  beat: ['Yoriichi, Old Yoriichi and Mark Tanjiro beat him almost every time.',
+         'Tamayo cuts his regeneration by 2; Shinobu\'s wisteria ruins him if he knocks her out.',
+         'He\'s 16 pts: kill his cheap partner and he\'s alone.'] },
+ muzan_final: {
+  win: ['Seven Hearts: the first time he falls he gets back up with 20%. Thorned Flesh Whips: every enemy PWR−6, ignoring DEF, heals 3 per enemy hit.',
+        'Better at 30 pts than at 20.'],
+  beat: ['Plan to kill him twice: save a big special for after he gets back up.',
+         'Yoriichi and Mark Tanjiro beat him almost every time; the sun stops his healing from round 10.'] },
+},
+helpers: {
+ chachamaru: { what: 'Your most hurt fighter heals half of their current health (50% becomes 75%).',
+  win: ['It heals half of what\'s LEFT, so use it on a big fighter around half health, not one at 5%.', 'Best on a high-HP carry (Yoriichi, a giant demon) the round before they\'re focused.'],
+  beat: ['Burst one fighter down in a single round rather than chipping: the heal can\'t save a fighter that drops in one round.'] },
+ crow: { what: 'After both sides lock in, you see the enemy\'s moves and can change yours before the round plays.',
+  win: ['Use it on the round their big special is ready: switch the target to Defend, or hide it.', 'Also good for dodging Dead Calm rounds: if Giyu is calming, don\'t waste your special.'],
+  beat: ['It only sees, it can\'t stop anything: pick moves that hurt whatever they change to (area damage, ignore-DEF).'] },
+ mice: { what: 'Every fighter on your team gets +2 PWR for this round.',
+  win: ['Use it on the round your whole team attacks or fires specials.', 'Multi-hit fighters get the most: Yoriichi (2 strikes), Type Zero (3), Inosuke (2).'],
+  beat: ['It lasts one round. You can\'t see it coming, so on a round they\'re likely to all-in, Defend your weakest fighter.'] },
+ hotaru: { what: 'At the end of the round, your fighter with the longest wait for their special has it cut to 1 round.',
+  win: ['Use it on the same round your best special fires: it comes back the round after next instead of in 3-4 rounds.', 'Works in round 1. Best with a giant\'s area special (Yoriichi, Kokushibo, Gyomei).'],
+  beat: ['Expect their big special again two rounds after it fires: Defend or hide that round.'] },
+ kiriya: { what: 'Pick one of your fighters: this round, every enemy that attacks them takes 5 damage back.',
+  win: ['Put the trap on the fighter they\'re most likely to focus: your hurt carry, or the one their special can finish.', 'Best against teams with many attackers (each attacker takes 5 once).'],
+  beat: ['The trap is hidden until it springs. Use area or poison damage on rounds it might be up, and finish low enemies with one big hit instead of several small ones.'] },
+},
+};
+
+// ---------- the deeper layer: fundamentals, and each card's role, drafting advice and round-by-round plan ----------
+module.exports.fundamentals = [
+ ['Drafting', [
+  ['Spend the budget, not the stars. ', 'One point too many is a whole fighter you can\'t afford. Plan the last 2-4 points before you take a big card: a 17-pt giant at 20 points leaves exactly one 3-pt partner.'],
+  ['Snake order. ', 'Picks go A, B, B, A, A, B… The second picker takes two in a row: if the first pick is a giant, answer with its rival plus a partner.'],
+  ['Every 9+ card comes with a rival ', 'within 3 points (except Muzan and the Yoriichis, who are never each other\'s rival). If you take the giant, expect the other side to take its rival.'],
+  ['Synergies are worth a card. ', 'Two Hashira (+1 PWR each), two Upper Moons (+1 regen), Gyutaro + Daki, Tamayo + Yushiro, the Kamaboko trio: a weaker card with a synergy often beats a stronger card without one.'],
+  ['Read the pool notes. ', 'They list every synergy and counter still possible with the cards dealt, and grey out the ones nobody can afford any more.'],
+  ['Take a helper with your last point. ', 'Three are offered each draft; one per player. Even the weakest is worth a spare point.']]],
+ ['Choosing moves', [
+  ['Speed decides who acts first. ', 'Higher SPD goes first; some specials always go first (Dead Calm, Castle Shift, Zenitsu\'s Thunderclap). A fighter that dies before acting does nothing that round.'],
+  ['Defend halves damage. ', 'Defend the fighter their special will hit, or a fighter at low health the round before your healer or Dead Calm is back.'],
+  ['Ignore-DEF beats armour. ', 'Against high-DEF Hashira and Upper Moons, Hinokami Kagura, Volcanic Rock and the giants\' area specials do full damage; small normal hits are halved or worse.'],
+  ['Focus fire. ', 'A team at 50% health on every fighter still hits with every fighter. Knock one out at a time, starting with whoever deals the most damage or heals.'],
+  ['Track cooldowns. ', 'Tap any picture to see when an enemy special is ready (a gold Special ready tag shows it on the move screen). Defend or hide on the round it comes back.'],
+  ['Repeat saves time, not thinking. ', '↻ Repeat copies last round\'s moves; recharging specials turn into Attack.']]],
+ ['The sun', [
+  ['From round 10 the sun rises. ', 'Every demon (except sun-proof Demon King Tanjiro) burns 10% of its max HP, then 15%, 20%, 25%… and stops regenerating. The sky starts glowing from round 7.'],
+  ['Slayers: play for time. ', 'Against a demon team that out-damages you, Defend and heal to drag it past round 10.'],
+  ['Demons: win early. ', 'A demon team should go all-in before round 10; after that every round costs it more.']]],
+ ['Helpers', [
+  ['Use them on the round that decides the fight: ', 'Chachamaru before a focused fighter drops, the Crow on their big-special round, the Mice on your all-in round, Hotaru on the round your best special fires, Kiriya on the fighter they\'ll focus.']]],
+];
+
+// Squads to try (tested in the simulation against computer drafts at the same budget; the builder adds the win rate)
+module.exports.squads = [
+ [10, 'Siblings', ['tanjiro','nezuko'], 'Tanjiro and Nezuko counter-hit whenever the other is struck. Add a helper with the last point.'],
+ [10, 'Lightning and fangs', ['zenitsu','inosuke','murata'], 'Zenitsu finishes, Inosuke chips, Murata soaks a hit.'],
+ [10, 'Kocho sisters', ['shinobu','kanae'], 'Poison that lasts 4 rounds, and Kanae heals the most hurt.'],
+ [10, 'Doctor and guardian', ['tamayo','yushiro','inosuke'], 'Tamayo heals, Yushiro (+2 PWR with her) hides, Inosuke deals damage.'],
+ [20, 'The old legend', ['yoriichi_old','swamp'], 'Old Yoriichi takes at most 12 a round; the Swamp Demon dives out of reach.'],
+ [20, 'Demon King and doctor', ['tanjiro_demon','tamayo'], 'Rampage every few rounds; Tamayo keeps him topped up.'],
+ [20, 'Upper Moon pair', ['doma','hantengu'], 'Two Upper Moons (+1 regen); Hantengu splits into four when he falls.'],
+ [20, 'Moon and wisteria', ['kokushibo','shinobu'], 'Kokushibo\'s Moon Breathing plus poison, and Shinobu punishes any demon that kills her.'],
+ [20, 'Pillars', ['giyu','gyomei','urokodaki'], 'Two Hashira (+1 PWR), Giyu\'s Dead Calm, Gyomei\'s rocks, Urokodaki\'s +1 DEF for Giyu.'],
+ [20, 'Kamaboko and sister', ['tanjiro','zenitsu','inosuke','nezuko'], 'Kamaboko Squad (+2 SPD) and Siblings in one team.'],
+ [20, 'Entertainment District', ['gyutaro','daki','kyogai','hand'], 'Two as One (they rise once each) plus two cheap demons.'],
+ [30, 'Sun and calm', ['yoriichi','giyu_mark','murata'], 'The strongest card, with Dead Calm to cover the rounds he can\'t.'],
+ [30, 'Awakened Hashira', ['giyu_mark','gyomei_mark','kagaya','sabito','murata'], 'Two Marks (+1 SPD), two Hashira (+1 PWR), Kagaya\'s +1 DEF.'],
+ [30, 'Upper Moons One and Two', ['kokushibo','doma','rui'], 'Two Upper Moons (+1 regen), two area specials, and a stun.'],
+ [30, 'Marked siblings', ['tanjiro_mark','nezuko_awakened','zenitsu','inosuke','murata','kagaya'], 'Kamaboko and Siblings with the Mark and Awakened versions.'],
+ [30, 'Demon King of the night', ['muzan','gyutaro','daki'], 'Muzan\'s Blood (+1 PWR to his demons) and Two as One.'],
+];
+
+module.exports.depth = {
+ tanjiro: { role: 'Single-target burst (ignores DEF)', draft: ['A 5-pt core for any slayer team; best when you can also afford Nezuko (4) or the Kamaboko pair (8).'], plan: ['Rounds 1-2: Hinokami on their highest-DEF fighter.', 'While it recharges, Attack or Defend if he\'s focused; fire it again the round it\'s back.'] },
+ tanjiro_mark: { role: 'Burst, then untouchable support', draft: ['9 pts: strong at 30 points beside another Mark (+1 SPD).'], plan: ['Fire Hinokami early to open the Selfless State.', 'In the state: Save the teammate about to fall; Attack only to finish someone (it reveals him).', 'When Hinokami is back, it can\'t be blocked: aim it at their best fighter.'] },
+ tanjiro_demon: { role: 'Giant: area damage that ignores DEF, sun-proof regeneration', draft: ['17 pts: at 20 points pair him with a 3-pt healer or diver; at 30 he leaves room for a full support line.'], plan: ['Rampage whenever ready; Attack the weakest enemy in between.', 'Late game is his: the sun doesn\'t stop his regeneration.'] },
+ nezuko: { role: 'Area chip damage (ignores DEF)', draft: ['4 pts, but only worth it next to Tanjiro (Siblings).'], plan: ['Exploding Blood on round 1 against wide teams; then Attack.', 'Keep her alive: she\'s the counter-hit half of Siblings.'] },
+ nezuko_awakened: { role: 'Berserk area damage, poison cure', draft: ['9 pts; a strong second card at 20 and a core card at 30. Great against poison teams.'], plan: ['Exploding Blood every time it\'s ready; she can\'t Defend, so never waste her turn.', 'Save it for the round after Gyutaro or Shinobu poisons your team.'] },
+ zenitsu: { role: 'Fast finisher', draft: ['4 pts; better at 30 points and inside the Kamaboko trio.'], plan: ['Hold Thunderclap for a fighter he can finish: he moves first, so it lands before they act.', 'Seventh Form (once unlocked) for the big hit on their tank.'] },
+ inosuke: { role: 'Random multi-hit chip damage', draft: ['4 pts; part of Kamaboko; good with Muscle Mice.'], plan: ['Fang Frenzy when several enemies are low: random strikes are best when any hit can finish.'] },
+ kanao: { role: 'Early finisher', draft: ['4 pts; take her with Kanae (+1 PWR) or as filler at 30 points.'], plan: ['Her special moves early: use it to finish a hurt fighter before it acts.'] },
+ genya: { role: 'Scaling attacker', draft: ['4 pts; best in long games and at 30 points.'], plan: ['Demon Consumption in round 1 or 2 (+2 PWR for good, heal 8), then Attack every round.', 'Use it again whenever it\'s back: the PWR keeps stacking.'] },
+ giyu: { role: 'Team shield (Dead Calm)', draft: ['8 pts; one of the best cards at 30 points. Pair with another Hashira and Urokodaki.'], plan: ['Save Dead Calm for the round their big special is ready (check its Special ready tag).', 'Otherwise Attack; he has solid damage.'] },
+ giyu_mark: { role: 'Team shield with Mark stats', draft: ['10 pts; a top pick at 30 points, with Rengoku or Gyomei.'], plan: ['Same as Giyu, but Dead Calm comes back a round sooner: you can cover two of their big rounds out of three.'] },
+ rengoku: { role: 'Two-step burst (Flame Tiger, then Ninth Form)', draft: ['7 pts; pair with Giyu for protection.'], plan: ['Flame Tiger first (PWR+4), Attack while it recharges.', 'Ninth Form (PWR+10, ignores DEF) on their biggest threat.'] },
+ tengen: { role: 'Fast area damage', draft: ['6 pts; good against wide teams of cheap cards.'], plan: ['Constant Resounding Slashes on round 1 and whenever it\'s back; he\'s fast, so it lands early.'] },
+ tengen_retired: { role: 'Bodyguard (support)', draft: ['4 pts; worth it to protect a single big carry.'], plan: ['Bodyguard your carry on the round they\'ll focus it; Attack otherwise.'] },
+ shinobu: { role: 'Poison and anti-demon deterrent', draft: ['5 pts; take her against demon-heavy pools; best with Kanae.'], plan: ['Poison their regenerating demon on round 1.', 'Let her be the target: a demon that knocks her out keeps losing 5 HP a round.'] },
+ kanae: { role: 'Damage plus a small heal', draft: ['5 pts; with Shinobu or Kanao.'], plan: ['Crimson Hanagoromo whenever ready: the heal goes to your most hurt fighter automatically.'] },
+ mitsuri: { role: 'Area chip damage', draft: ['5 pts; mostly a filler. Prefer her Mark version.'], plan: ['Catlove Shower on wide teams; Attack single targets otherwise.'] },
+ mitsuri_mark: { role: 'Area chip damage (Mark)', draft: ['8 pts; better at 30 points.'], plan: ['Area special on rounds 1, 3, 5…; Attack in between.'] },
+ muichiro: { role: 'Evasive attacker', draft: ['6 pts; strong at 30 points and with Type Zero.'], plan: ['Use Obscuring Clouds on the round you expect him to be focused: he dodges and still deals damage.'] },
+ muichiro_mark: { role: 'Evasive attacker (Mark)', draft: ['10 pts; a mid pick, weaker than the other 10-pt Marks.'], plan: ['Mist every other round; Attack in between.'] },
+ obanai: { role: 'Guard-breaker', draft: ['5 pts; take him against Defend-heavy players.'], plan: ['Twin-Headed Reptile on a fighter you expect to Defend: it goes straight through.'] },
+ obanai_mark: { role: 'Guard-breaker (Mark)', draft: ['8 pts; good at 20 points beside a second Hashira.'], plan: ['Same as Obanai, more often.'] },
+ sanemi: { role: 'Double hit', draft: ['7 pts; great value in any Hashira team.'], plan: ['Black Wind Mountain Mist when two enemies can be hit hard: aim at the stronger one.'] },
+ sanemi_mark: { role: 'Double hit (Mark)', draft: ['11 pts; take him at 20 points, think twice at 30.'], plan: ['Same as Sanemi, with bigger numbers.'] },
+ gyomei: { role: 'Area damage that ignores DEF', draft: ['8 pts; one of the best 8-pt cards.'], plan: ['Volcanic Rock every time it\'s ready; Attack between.', 'He\'s slow: Defend him on the round their fast burst comes.'] },
+ gyomei_mark: { role: 'Area damage that ignores DEF (Mark)', draft: ['12 pts; with Giyu at 20, a core at 30.'], plan: ['Volcanic Rock comes back a round sooner: 11 to every enemy every other round.'] },
+ yoriichi: { role: 'Giant: double strikes, damage cap, area special', draft: ['18 pts: take him whenever he\'s dealt. At 20 points he leaves 2 pts (Murata or Kagaya).'], plan: ['Sun Breathing first (demons lose regeneration for good), then Attack twice a round.', 'He can\'t take more than 18 a round: let him soak, protect his partner.'] },
+ yoriichi_old: { role: 'Giant: double strikes, tight damage cap', draft: ['17 pts: at 20 points add a 3-pt partner (Swamp Demon, Kyogai, Tamayo).'], plan: ['The Last Strike (PWR+10, ignores DEF) on their giant; Attack twice otherwise.', 'He takes at most 12 a round, so he wins long fights.'] },
+ urokodaki: { role: 'Support (DEF for pupils)', draft: ['4 pts; only with Tanjiro, Giyu or Sabito.'], plan: ['Water Wheel when ready; he\'s a solid hitter for 4.'] },
+ sabito: { role: 'Support (permanent +2 PWR)', draft: ['4 pts; train your biggest attacker.'], plan: ['Round 1: Spirit Training on your best attacker (or one with multiple strikes).', 'Train a second fighter when it\'s back.'] },
+ murata: { role: 'Filler and decoy', draft: ['2 pts: the cheapest way to fill a budget.'], plan: ['Attack every round; he survives the first knockout, so he soaks one big hit.'] },
+ typezero: { role: 'Multi-hit and SPD support', draft: ['4 pts; with Muichiro or Muscle Mice.'], plan: ['Training Drill on a slow carry (Gyomei, a giant) in round 1, then triple-strike Attacks.'] },
+ tamayo: { role: 'Healer and Muzan counter', draft: ['3 pts: the best partner for a 17-pt giant at 20 points; with Yushiro otherwise.'], plan: ['Heal your carry when it\'s around half; cure poison when it lands.', 'Against Muzan she also cuts his regeneration just by being there.'] },
+ yushiro: { role: 'Protector (hide an ally)', draft: ['3 pts; with Tamayo (+2 PWR) or next to a giant.'], plan: ['Hide the fighter their big special is aimed at; it moves first, so it always lands in time.'] },
+ kagaya: { role: 'Support: heals, Mark awakening', draft: ['2 pts; only with Mark-able Hashira (Giyu, Gyomei, Sanemi, Muichiro, Mitsuri, Obanai).'], plan: ['Round 1 or 2: Final Resolve, before they can kill him.', 'Without Mark-able Hashira, Words of Resolve heals your team 2 a round.'] },
+ hand: { role: 'Filler', draft: ['2 pts; filler next to a giant.'], plan: ['Grasping Arms when ready; he\'s a body that soaks a hit.'] },
+ swamp: { role: 'Evasive filler', draft: ['3 pts: the top partner for a 17-pt giant.'], plan: ['Swamp Dive on the round he\'d be focused; Attack otherwise.'] },
+ susamaru: { role: 'Double-target chip', draft: ['3 pts; with Yahaba for Temari & Arrows.'], plan: ['Temari Barrage whenever ready: two targets for one turn.'] },
+ yahaba: { role: 'Control (blanks an attacker)', draft: ['4 pts; take him against a single giant.'], plan: ['Vector Arrows on their giant on its big round: every hit it throws misses.'] },
+ kyogai: { role: 'Control (stun)', draft: ['3 pts; a top partner for a giant.'], plan: ['Stun their best fighter the round before its special is ready, so it loses that turn.'] },
+ rui: { role: 'Damage plus stun', draft: ['4 pts; with Muzan (Muzan\'s Blood).'], plan: ['Cutting Thread Cage on the fighter about to fire its special.'] },
+ enmu: { role: 'Control (delays every special)', draft: ['4 pts; take him against special-heavy teams.'], plan: ['Forced Sleep the round after their specials come back: every one waits 2 more rounds.'] },
+ kaigaku: { role: 'Damage plus splash', draft: ['5 pts; with another Upper Moon.'], plan: ['Black Thunder on the biggest target; the splash finishes low fighters.'] },
+ daki: { role: 'Area chip, half of Two as One', draft: ['6 pts; only take her with Gyutaro.'], plan: ['Obi Sashes when ready; keep her alive while Gyutaro stands so she can rise.'] },
+ gyutaro: { role: 'Area poison, half of Two as One', draft: ['8 pts; with Daki (14 for the pair).'], plan: ['Blood Sickles on round 1 to poison everyone, then Attack the weakest.'] },
+ gyokko: { role: 'Control (trap) plus damage', draft: ['6 pts; with another Upper Moon.'], plan: ['Trap their carry the round before its special is ready.'] },
+ hantengu: { role: 'Many lives (splits, then merges)', draft: ['9 pts; with another Upper Moon (Doma is his best partner).'], plan: ['Cowering Hide when he\'s focused: attacks miss and he heals.', 'When he splits, the four emotions act next round; Zohakuten closes it out.'] },
+ nakime: { role: 'Control (send away, act last)', draft: ['4 pts; never alone, and best against a single giant.'], plan: ['Castle Shift their giant on its special round; Biwa Strum their fastest fighter otherwise.'] },
+ akaza: { role: 'Fast burst, then area damage', draft: ['9 pts; with Doma or Gyutaro.'], plan: ['Compass Needle for the single big hit, then Annihilation Type when several enemies are low.', 'Win before round 10: the sun ends his regeneration.'] },
+ doma: { role: 'Area damage that ignores DEF, regeneration', draft: ['11 pts; with Hantengu or Akaza at 20.'], plan: ['Frozen Lotus every time it\'s ready; regen keeps him up between.', 'Never be the one to knock Shinobu out.'] },
+ kokushibo: { role: 'Giant: area damage that ignores DEF', draft: ['15 pts; strong at 30, mid at 20. Avoid when Yoriichi is in the pool.'], plan: ['Moon Breathing every time it\'s ready; Attack the weakest in between.'] },
+ muzan: { role: 'Giant: area damage, heals per hit', draft: ['16 pts; only with demon partners, and not when Tamayo, Shinobu or Mark Tanjiro are in the pool.'], plan: ['Blood Whips on wide teams: he heals 2 per enemy hit.', 'Win before the sun.'] },
+ muzan_final: { role: 'Giant: two lives, area damage', draft: ['18 pts; better at 30 than 20.'], plan: ['Thorned Flesh Whips whenever ready; he comes back once at 20%, so trade freely early.'] },
+};
