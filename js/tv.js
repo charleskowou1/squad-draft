@@ -1,18 +1,44 @@
 /* ================= TV MODE =================
-   A laptop (HDMI or AirPlay to the TV) runs the game on the big screen; a phone joins its 4-letter code as a
-   controller. Story mode first (and anything else you play against the computer). Nothing here runs unless TV mode
-   or controller mode is switched on, so the normal phone game is untouched.
+   A laptop (HDMI or AirPlay to the TV) runs the game on the big screen; phones join its 4-letter code as
+   controllers. One phone: story mode and Quickplay against the computer. Two phones: a 2-player match where each
+   phone is a player's private move screen. Nothing here runs unless TV mode or controller mode is switched on, so
+   the normal phone game is untouched.
    - TV (S.tv): body.tvmode (big layout); creates rooms/<CODE> (the online rooms path, already allowed by the
-     database rules) with tv/state = what the controller needs, and reads tv/acts (the controller's locked moves).
-     The laptop stays fully playable with the mouse; the phone is optional.
-   - Controller (S.ctl): mirrors tv/state; shows the move screen while the TV waits for moves, otherwise
-     "Watch the TV". Picks stay on the phone until Lock in moves sends them. No music on the phone. */
+     database rules) with tv/state = what the controllers need, reads tv/acts (taps sent from the phones) and
+     tv/phones (who is connected). The first two phones get seats 0 and 1 (S.tv.seats, by phone id) and keep them
+     through a reconnect. The laptop stays playable with the mouse.
+   - Controller (S.ctl): mirrors tv/state; shows its own move / draft / crow screen when the TV waits for it,
+     otherwise "Watch the TV". Picks stay on the phone until Lock in moves sends them. No music on the phone.
+     The screen is kept awake, and a phone that reloads rejoins the same TV by itself. */
 const TV = { offs:[], last:null };
 const isTV = () => !!S.tv;
 const isCtl = () => !!S.ctl;
-VIEWS.ctlwatch = () => vCtlWatch();   // the phone's "Watch the TV" screen
-// What the controller needs from the TV's game (its own picks stay on the phone, so plans/helperPlan aren't sent)
-const TV_FIELDS = SHARED.filter(k=>k!=='plans' && k!=='helperPlan').concat(['mode','stage','storyDraft','twist','phases','boosts','place','beats','said','maxTeam','level','helpers']);
+if(typeof VIEWS!=='undefined') VIEWS.ctlwatch = () => vCtlWatch();   // the phone's "Watch the TV" screen
+// What the controllers need from the TV's game (each phone's own picks stay on it, so plans/helperPlan aren't sent)
+const TV_FIELDS = SHARED.filter(k=>k!=='plans' && k!=='helperPlan').concat(['mode','stage','storyDraft','twist','phases','boosts','place','beats','said','maxTeam','level','helpers','tvDuo']);
+// This phone's id (keeps its seat at the TV after a reconnect)
+const PHONE_ID = (()=>{ try{ let v=localStorage.getItem('squad-draft-phone'); if(!v){ v=Math.random().toString(36).slice(2,10); localStorage.setItem('squad-draft-phone',v); } return v; }catch(e){ return Math.random().toString(36).slice(2,10); } })();
+// Presence is kept per page load (PHONE_ID~SESSION), so a reloading phone's old entry, removed by the server a
+// moment later, can't remove the new one
+const SESSION = Math.random().toString(36).slice(2,8);
+const CTL_KEY = 'squad-draft-ctl';   // {code, at}: the TV this phone is controlling, for rejoining after a reload
+
+// Keep the screen on (the TV laptop and the controller phones): asked again when the page comes back or on a tap,
+// since the browser drops it whenever the page is hidden
+const WAKE = {lock:null, want:false};
+async function keepAwake(on){
+  WAKE.want=on;
+  try{
+    if(on && !WAKE.lock && navigator.wakeLock && !document.hidden){ WAKE.lock=await navigator.wakeLock.request('screen'); WAKE.lock.addEventListener('release',()=>{ WAKE.lock=null; }); }
+    if(!on && WAKE.lock){ const l=WAKE.lock; WAKE.lock=null; l.release(); }
+  }catch(e){ WAKE.lock=null; }
+}
+if(typeof document!=='undefined'){
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && WAKE.want) keepAwake(true); });
+  document.addEventListener('pointerdown', ()=>{ if(WAKE.want && !WAKE.lock) keepAwake(true); }, {passive:true});
+}
+// Run f each time the connection to Firebase comes up (presence has to be set again after every drop)
+function onConnected(db, f){ const r=db.ref('.info/connected'), g=s=>{ if(s.val()) f(); }; r.on('value',g); TV.offs.push(()=>r.off('value',g)); }
 
 /* ---------- the TV (laptop) side ---------- */
 async function tvStart(){
@@ -21,51 +47,86 @@ async function tvStart(){
     const db=await firebaseReady(); let code=null;
     for(let i=0;i<8 && !code;i++){ const c=newRoomCode(), r=await db.ref('rooms/'+c).transaction(v=>v?undefined:{created:Date.now(), host:{name:'TV', on:true}, hostSeat:0, tv:{on:true}}); if(r.committed) code=c; }
     if(!code) throw new Error('Could not make a code. Try again.');
-    const room=db.ref('rooms/'+code); room.child('host/on').onDisconnect().set(false);
-    S.tv={code, phone:false}; S.tvMsg=''; TV.last=null; document.body.classList.add('tvmode');
+    const room=db.ref('rooms/'+code);
+    onConnected(db, ()=>{ room.child('host/on').onDisconnect().set(false); room.child('host/on').set(true); });
+    S.tv={code, phones:{}, seats:[]}; S.tvMsg=''; TV.last=null; document.body.classList.add('tvmode');
     const f=s=>{ const m=s.val(); s.ref.remove(); tvAct(m); }; room.child('tv/acts').on('child_added',f); TV.offs.push(()=>room.child('tv/acts').off('child_added',f));
-    TV.room=room; ACTIONS.storymap(); render();
+    const g=s=>tvPhones(s.val()||{}); room.child('tv/phones').on('value',g); TV.offs.push(()=>room.child('tv/phones').off('value',g));
+    TV.room=room; keepAwake(true); ACTIONS.storymap(); render();
   }catch(e){ S.tvMsg=netError(e); render(); }
 }
 function tvStop(){
   TV.offs.forEach(f=>f()); TV.offs=[]; if(TV.room) TV.room.child('host/on').set(false); TV.room=null; TV.last=null;
-  S.tv=null; document.body.classList.remove('tvmode');
+  S.tv=null; document.body.classList.remove('tvmode'); keepAwake(false);
 }
-// A message from the phone: it's here, or its moves for this round
+// The connected phones changed: a new phone takes a free seat (or, between matches, the seat of a phone that's gone)
+function tvPhones(raw){
+  if(!isTV()) return;
+  const t=S.tv, ph={}; Object.entries(raw).forEach(([k,v])=>{ ph[k.split('~')[0]]=v; }); t.phones=ph;
+  Object.keys(ph).forEach(id=>{ if(t.seats.includes(id)) return;
+    if(t.seats.length<2) t.seats.push(id);
+    else { const free=t.seats.findIndex(s=>!ph[s]); if(free>=0 && !S.tvDuo) t.seats[free]=id; } });   // mid-match a seat waits for its own phone
+  render();
+}
+const tvSeatOn = q => !!(S.tv && S.tv.seats[q] && S.tv.phones[S.tv.seats[q]]);
+const tvSeatName = q => { const p=S.tv && S.tv.seats[q] && S.tv.phones[S.tv.seats[q]]; return p && p.name || ''; };
+const tvPhonesOn = () => !S.tv ? 0 : S.tv.seats.filter((id,q)=>tvSeatOn(q)).length;
+const tvAnyPhone = () => tvPhonesOn()>0;
+// Who picks moves on a phone: player 1 against the computer, both players in a 2-player TV match
+const tvChooser = q => S.tvDuo ? q<2 && alive(q).length>0 : q===0 && vsCpu();
+const tvLocked = q => !!(S.tvLocked && S.tvLocked[q]===S.round);
+// A message from a phone (m.from = its id): Continue, a choice, a draft pick, or its moves for this round
 function tvAct(m){
   if(!m || !isTV()) return;
-  if(m.a==='hello'){ S.tv.phone=true; render(); return; }
+  const seat = m.from ? S.tv.seats.indexOf(m.from) : 0;   // older phones (no id) are player 1
+  if(m.a==='hello'){ render(); return; }
   if(m.a==='next'){ tvContinue(); render(); return; }
   if(m.a==='choose'){ tvChoose(m.key); render(); return; }
   if(m.a==='stage'){ const i=m.i|0; if(m.draft ? stageCleared(i) : stageUnlocked(i)){ ACTIONS[m.draft?'stagedraft':'stage'](i); } render(); return; }
-  if(m.a==='pick' && S.phase==='draft' && turn()===0 && (S.mode==='cpu'||S.mode==='story')){ S.sel=m.id; ACTIONS.confirmPick(); render(); return; }
-  if(m.a==='lockteam' && S.phase==='draft' && turn()===0){ ACTIONS.lock(); render(); return; }
+  if(seat<0) return;   // a third phone only watches
+  const myDraft = S.phase==='draft' && turn()===seat && (S.tvDuo ? seat<2 : seat===0 && (S.mode==='cpu'||S.mode==='story'));
+  if(m.a==='pick' && myDraft){ S.sel=m.id; ACTIONS.confirmPick(); render(); return; }
+  if(m.a==='lockteam' && myDraft){ ACTIONS.lock(); render(); return; }
   if(m.a==='undo' && S.phase==='draft'){ ACTIONS.undo(); render(); return; }
   if(m.a==='redeal' && S.phase==='draft'){ ACTIONS.redeal(); render(); return; }
-  if(m.a==='moves' && S.phase==='plan' && m.round===S.round && vsCpu()){
-    S.plans[0]=m.plans||{}; S.helperPlan[0]=(m.helperPlan||[]).filter(h=>(S.helpers[0]||[]).includes(h));
-    ACTIONS.lockMoves(); render();
+  if(m.a==='keep' && S.phase==='scout' && S.scoutP===seat){ ACTIONS.keepmoves(); render(); return; }
+  if(m.a==='moves' && m.round===S.round && tvChooser(seat)){
+    const plans=m.plans||{}, helpers=(m.helperPlan||[]).filter(h=>(S.helpers[seat]||[]).includes(h));
+    if(m.scout){ if(S.phase==='scout' && S.scoutP===seat){ S.plans[seat]=plans; S.lastPlans[seat]=JSON.parse(JSON.stringify(plans)); nextScoutOrFight(); render(); } return; }   // re-planned after the crow
+    if(S.phase!=='plan' || tvLocked(seat)) return;
+    S.plans[seat]=plans; S.helperPlan[seat]=helpers;
+    if(S.tvDuo) tvSeatLock(seat); else { S.planFor=0; ACTIONS.lockMoves(); }
+    render();
   }
+}
+// 2-player TV match: a player's moves are in (from their phone, or picked on the laptop); when everyone still
+// fighting has locked in, each crow owner gets their report on their own phone, then the round plays
+function tvSeatLock(q){
+  S.tvLocked=S.tvLocked||{}; S.tvLocked[q]=S.round; S.tvMouse=null;
+  S.lastPlans[q]=JSON.parse(JSON.stringify(S.plans[q]||{}));
+  if(players().some(p=>tvChooser(p) && !tvLocked(p))) return;
+  S.scoutQueue=players().filter(p=>alive(p).length && S.helperPlan[p].includes('crow'));
+  nextScoutOrFight();
 }
 // The phone's Continue button: press whatever the TV's main button is right now
 function tvNextLabel(){
   if(S.phase==='scene') return S.sceneVs ? 'Fight' : 'Next';
   if(S.phase==='result') return !S.play || !S.play.done ? 'Skip' : S.final ? 'See who won' : 'Next round';
-  if(S.phase==='scout') return 'Keep my moves';
   if(S.phase==='spin') return !S.spin ? 'Spin the wheel' : S.spin.state==='done' ? 'Start the draft' : null;
-  return null;
+  return null;   // the crow report's Keep / Change are only on its owner's phone
 }
 function tvContinue(){
   const l=tvNextLabel(); if(!l) return;
   if(S.phase==='scene') return S.sceneVs ? ACTIONS.sceneskip() : ACTIONS.scenenext();
-  if(S.phase==='scout') return ACTIONS.keepmoves();
   if(S.phase==='spin') return !S.spin ? ACTIONS.spin() : ACTIONS.toDraft();
   if(l==='Skip') return ACTIONS.skip();
   return S.final ? ACTIONS.finish() : ACTIONS.next();
 }
 // Choices for the phone on screens with no single main button (home, end of a battle, credits)
 function tvChoices(view){
-  if(view==='setup' || view==='modeset' || view==='codex') return [['story','Story mode'],['quickplay','Quickplay vs the computer']];
+  const duo=tvPhonesOn()>=2 ? [['duo',`2 players: ${tvSeatName(0)||'Player 1'} vs ${tvSeatName(1)||'Player 2'}`]] : [];
+  if(view==='setup' || view==='modeset' || view==='codex') return [...duo, ['story','Story mode'],['quickplay','Quickplay vs the computer']];
+  if(view==='story') return duo.length ? duo : null;   // TV mode opens on the story map: two phones can start a match from there
   if(view==='credits') return [['map','Story map'],['home','Home']];
   if(view==='over'){
     if(S.mode==='story'){ const won=S.winner===0, last=S.stage===STAGES.length-1;
@@ -77,29 +138,166 @@ function tvChoices(view){
 function tvChoose(key){
   if(key==='story' || key==='map') return ACTIONS.storymap();
   if(key==='quickplay'){ ACTIONS.mode('cpu'); S.names[0]=playerName()||S.names[0]||'Player 1'; return startDraft(); }
+  if(key==='duo') return tvDuoStart();
   if(key==='finale' && S.mode==='story') return ACTIONS.finale();
   if(key==='nextstage' && S.mode==='story') return ACTIONS.stage(S.stage+1);
   if(key==='retry' && S.mode==='story') return ACTIONS[S.storyDraft?'stagedraft':'stage'](S.stage);
   if(key==='rematch') return ACTIONS.rematch();
   if(key==='home') return ACTIONS.home();
 }
+// 2 players on the TV: a Local match for two (the laptop's Local settings: points, pool, bans…) where each phone
+// picks its own moves in secret, so there's no passing the phone
+function tvDuoStart(){
+  if(tvPhonesOn()<2) return;
+  ACTIONS.mode('local'); S.n=2; S.duo=false; S.tvDuo=true; S.tvLocked={};
+  S.names=[tvSeatName(0)||'Player 1', tvSeatName(1)||'Player 2'];
+  toSpin();
+}
 // The story map for the phone: every battle with whether it's open, won, and its stars
 const tvStoryList = () => STAGES.map((st,i)=>({i, title:st.title, arc:ARCS[st.arc].title, open:stageUnlocked(i), won:stageCleared(i), stars:stageStars(st.id)}));
-// After every redraw on the TV: send the controller the current game (only when it changed)
+// What the phone at seat q should show
+function tvSeatView(q, view){
+  if(S.phase==='plan' && tvChooser(q) && !tvLocked(q) && !(S.tvMouse===S.round && S.planFor===q)) return 'plan';
+  if(S.phase==='scout' && S.scoutP===q && tvChooser(q)) return 'scout';
+  if(view==='draft' && turn()===q && (S.tvDuo ? q<2 : q===0 && (S.mode==='cpu'||S.mode==='story'))) return 'draft';
+  return 'watch';
+}
+// After every redraw on the TV: send the controllers the current game (only when it changed)
 function tvPublish(view){
   if(!isTV() || !TV.room) return;
-  const mine = view==='draft' && (S.mode==='cpu'||S.mode==='story') && turn()===0;   // the player's own draft pick
-  const o={view: view==='plan' && vsCpu() ? 'plan' : mine ? 'draft' : 'watch', next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view};
+  const o={views:[0,1].map(q=>tvSeatView(q,view)), seats:S.tv.seats, next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view, wait:tvWaiting()};
   TV_FIELDS.forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; });
+  // the crow's owner sees the other side's moves (never the owner's own, so the other phone learns nothing new)
+  if(S.phase==='scout' && S.plans){ o.scoutPlans=S.plans.map((p,q)=>q===S.scoutP?{}:p); o.scoutHelpers=S.helperPlan.map((h,q)=>q===S.scoutP?[]:h); }
   const j=JSON.stringify(o); if(j===TV.last) return; TV.last=j; TV.room.child('tv/state').set(j);
 }
-// The corner badge on the TV: the code for the phone, and whether it's connected
+// Who the TV is waiting on, in words ('' when it isn't waiting on a phone)
+function tvWaiting(){
+  if(!isTV() || !S.teams && S.phase!=='draft') return '';
+  const who=q=>esc(S.names[q]||`Player ${q+1}`), off=q=>!tvSeatOn(q);
+  if(!S.tvDuo && !tvAnyPhone()) return '';
+  if(S.phase==='plan'){ const w=players().filter(q=>tvChooser(q) && !tvLocked(q)); if(!w.length) return '';
+    const done=S.tvDuo ? players().filter(q=>tvChooser(q) && tvLocked(q)).map(q=>`${who(q)} ✓`) : [];
+    return [...done, ...w.map(q=>off(q)?`${who(q)}’s phone is reconnecting…`:`Waiting for ${who(q)}’s moves`)].join(' · '); }
+  if(S.phase==='scout' && S.scoutP>=0) return `${who(S.scoutP)}’s Kasugai Crow is scouting…`;
+  if(S.phase==='draft'){ const q=turn(); if(!S.tvDuo && q!==0) return ''; return off(q)?`${who(q)}’s phone is reconnecting…`:`${who(q)} is picking on the phone`; }
+  return '';
+}
+// Fill the screen: the TV layout is designed 1250 × 780 and zoomed to fit the window (laptop or TV, any size)
+function tvFit(){
+  if(!isTV()){ document.body.style.removeProperty('--tvz'); return; }
+  const z=Math.max(1, Math.min(innerWidth/1250, innerHeight/780));
+  document.body.style.setProperty('--tvz', z.toFixed(3));
+}
+if(typeof addEventListener!=='undefined') addEventListener('resize', ()=>{ if(isTV()) tvFit(); });
+// Full screen hides the browser and window bars (press Esc to leave)
+function tvFullscreen(){ const d=document, el=d.documentElement;
+  if(d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen||d.webkitExitFullscreen).call(d);
+  else (el.requestFullscreen||el.webkitRequestFullscreen).call(el); }
+// The corner badge on the TV: the code, each seat's phone (✓, or ⟳ while it reconnects), and who it's waiting on
 function tvBadge(){
   let b=document.getElementById('tvbadge');
+  tvFit();
+  // cutscenes and the credits fill the whole screen on the TV, edge to edge
+  document.body.classList.toggle('tvscene', isTV() && ['scene','credits'].includes(S.phase));
   if(!isTV()){ if(b) b.remove(); return; }
   if(!b){ b=document.createElement('div'); b.id='tvbadge'; document.body.appendChild(b); }
-  b.innerHTML=`<span class="tvk">📺</span><span>Phone controller code <b>${esc(S.tv.code)}</b>${S.tv.phone?' · <i>connected ✓</i>':''}</span><button class="btn ghost small" data-a="tvexit">Exit TV mode</button>`;
+  const t=S.tv, on=tvAnyPhone(), full=document.fullscreenElement||document.webkitFullscreenElement;
+  const seats=t.seats.map((id,q)=>`<span class="tvseat${tvSeatOn(q)?'':' off'}" style="--tc:${pc(q)}">${esc(tvSeatName(q)||(S.tvDuo&&S.names[q])||'Phone')} ${tvSeatOn(q)?'✓':'⟳'}</span>`).join('');
+  const wait=S.phase==='draft' ? tvWaiting() : '';   // the move board shows its own
+  b.innerHTML=`<span class="tvk">📺</span><span>${on?'':'Phone controller code '}<b>${esc(t.code)}</b></span>${seats}${wait?`<span class="tvwait">${wait}</span>`:''}<button class="btn ghost small" data-a="tvfull">${full?'Exit full screen':'Full screen'}</button><button class="btn ghost small" data-a="tvexit">${on?'Exit TV':'Exit TV mode'}</button>`;
 }
+
+/* ---------- the TV battle board ----------
+   On the TV a 2-team battle is one board: the opponent's cards across the top, yours across the bottom. While
+   moves are being chosen it shows who the TV is waiting on; in playback the attacker's card flies across the board
+   into its target, the target recoils with the damage, and knocked-out cards fall. Specials, move clips and lines
+   play over the board. Card positions come from the card size (fixed per board), so nothing is measured. */
+const BOARD = {gap:18, card:186, band:112, rowGap:14, width:1190};
+const tvBoardOK = () => isTV() && !!S.teams && nPlayers()===2;
+// the move screen is a waiting board while a phone picks (unless the laptop chose to pick this round)
+const tvBoardWait = () => tvBoardOK() && ['plan','scout'].includes(S.phase) && !S.scouting && S.tvMouse!==S.round && (S.tvDuo || tvAnyPhone());
+if(typeof VIEWS!=='undefined'){
+  const base={plan:VIEWS.plan, scout:VIEWS.scout, result:VIEWS.result};
+  VIEWS.plan = () => tvBoardWait() ? vTvBoard(null) : base.plan();
+  VIEWS.scout = () => tvBoardWait() ? vTvBoard(null) : base.scout();
+  VIEWS.result = () => tvBoardOK() && S.play && !S.play.done ? vTvBoard(playBeat()) : base.result();
+}
+const amtOf = l => l.t.match(/\[([+-])(\d+%)\]/)||[];
+const popHTML = l => { const a=amtOf(l); return a[1] ? `<span class="apop ${a[1]==='-'?'dmg':'gain'}">${a[1]==='-'?'−':'+'}${a[2]}</span>` : l.fx==='miss' ? '<span class="apop">miss</span>' : l.fx==='block' ? '<span class="apop">blocked</span>' : ''; };
+const ROW_STEP = BOARD.card + BOARD.band + 2*BOARD.rowGap;   // top row to bottom row
+// What each fighter does in this beat: {cls, dx, dy, fx} by uid
+function boardRoles(b, pos){
+  const roles=new Map(), add=(u,cls,fx='',o={})=>{ if(!u) return; const r=roles.get(u.uid)||{cls:'',fx:''}; roles.set(u.uid, Object.assign(r, o, {cls:r.cls+' '+cls, fx:r.fx+fx})); };
+  // the attacker flies dist of the way to `to` (a position on the board)
+  const fly=(u,to,dist)=>{ const a=pos.get(u.uid); if(a && to) add(u,'fly','',{dx:Math.round((to.x-a.x)*dist), dy:Math.round((to.ri-a.ri)*ROW_STEP*dist)}); };
+  const struck=(l,style)=>{ const t=findU(l.on); if(!t) return;
+    const mark=l.fx==='miss'?'避':l.fx==='block'?'防':STYLE_KANJI[style]||'斬';
+    add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+`<span class="amark">${mark}</span>`+popHTML(l)); };
+  const first=b.lines[0], by=first.by&&findU(first.by), type=first.fx||'';
+  b.lines.forEach(l=>{ if(l.ko) add(findU(l.ko),'kod'); });
+  if(b.group && by){   // a special that hits a whole team: the attacker dives at the middle of that row
+    const style=styleOf(by,'special'), t=findU((b.lines.find(l=>l.on)||{}).on);
+    if(t && pos.get(t.uid)) fly(by, {x:0, ri:pos.get(t.uid).ri}, .7);
+    b.lines.filter(l=>GROUP_FX.includes(l.fx)).forEach(l=>struck(l,style));
+    return roles;
+  }
+  if(type==='ko') return roles;   // "X falls!": the hit already landed last beat, so the card just topples
+  const on=first.on&&findU(first.on), duo=by&&on&&by!==on;
+  const style=by && ['hit','ko','burn','special','miss','block'].includes(type) ? styleOf(by, first.move) : null;
+  const glow=(u,t)=>add(u, 'fx-'+(t||'none'), `<span class="amark">${FX_MARK[t]||''}</span>`+popHTML(first));
+  if(duo && on.p!==by.p){   // at an enemy: fly into them
+    fly(by, pos.get(on.uid), .8);
+    if(['hit','ko','burn','miss','block'].includes(type)) struck(first, style); else glow(on, type);
+  } else if(duo){ fly(by, pos.get(on.uid), .35); glow(on, type||'buff'); }   // helping a teammate: a short hop, and they glow
+  else if(on||by) glow(on||by, type);
+  return roles;
+}
+function vTvBoard(b){
+  const me=leftSide(), foe=enemiesOf(me)[0], playing=!!b;
+  const rowU=[foe, me].map(p=>playing ? S.teams[p].filter(u=>!b.moment(u).hidden) : S.teams[p]);
+  const n=Math.max(1, ...rowU.map(r=>r.length)), W=Math.min(BOARD.card, Math.floor((BOARD.width-BOARD.gap*(n-1))/n));
+  const pos=new Map(); rowU.forEach((r,ri)=>r.forEach((u,i)=>pos.set(u.uid, {ri, x:(i-(r.length-1)/2)*(W+BOARD.gap)})));
+  const beat=playing && b.k>0, cur=b&&b.cur, first=b&&b.lines[0], by=first&&first.by&&findU(first.by);
+  // beats that play over the board: the round intro, a special's cut-in, a move clip, a fighter's line
+  const over = !playing ? '' : !beat ? `<div class="now intro"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`
+    : b.group ? ''
+    : cur.fx==='special' && by ? `<div class="now cut${b.clip?' clip':''}">${cutin(by,b.clip,cur)}</div>`
+    : b.clip ? `<div class="now clipbeat">${clipBeat(b.clip,cur)}</div>`
+    : cur.fx==='say' && by ? `<div class="now saybeat" style="--tc:${pc(by.p)}">${seal(by,'stg')}<div><span class="sayn">${esc(by.name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>` : '';
+  const roles = beat && !over ? boardRoles(b, pos) : new Map();
+  const card=u=>{
+    const o=playing?b.moment(u):{}, hp=o.hp===undefined?u.hp:o.hp;
+    // a fighter hit down to 0 stays standing at 0% this beat; it falls on its own "falls!" beat (flash 'ko')
+    const up=o.hp===undefined ? u.alive : hp>0 || (o.from>0 && o.flash!=='ko');
+    const h=hp>0?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from)), r=roles.get(u.uid)||{cls:'',fx:''};
+    const state = r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
+    const back = beat && !over && !b.involved.has(u.uid) && !r.cls && !state ? ' back' : '';
+    return `<div class="acard${state}${r.cls}${back}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">
+      <div class="aart">${artOf(u)?`<img src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
+      <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
+      ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}</div>`; };
+  const big = beat && !over && b.lines.some(bigHit), kos = beat && !over && b.lines.some(l=>l.fx==='ko'||l.ko);
+  const wait=tvWaiting(), goal=S.mode==='story'&&STAGES[S.stage]?twistText(STAGES[S.stage]):'';
+  const band = !playing ? `<div class="await"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${wait||'Choose your moves'}</b>${goal?`<small>${esc(goal)}</small>`:''}</div>`
+    : over ? '' : `<div class="aline ${cur.c||''}">${first.helper?stage(first):''}<span>${b.group?groupSummary(b.lines):fmtLog(cur.t)}</span></div>`;
+  // the laptop can still pick: for player 1 against the computer, or for a player whose phone has dropped out
+  const offSeat = S.tvDuo ? players().find(q=>tvChooser(q) && !tvLocked(q) && !tvSeatOn(q)) : undefined;
+  const mouse = S.phase!=='plan' ? '' : S.tvDuo ? (offSeat!==undefined ? `<button class="btn ghost" data-a="tvmouse" data-v="${offSeat}">Choose ${esc(S.names[offSeat])}’s moves here</button>` : '')
+    : '<button class="btn ghost" data-a="tvmouse" data-v="0">Choose on this screen</button>';
+  const heading = playing ? [`Round ${S.round}${b.total?` · ${b.step} of ${b.total}`:''}`, 'The clash'] : [`Round ${S.round}`, S.phase==='scout' ? 'The crow is back' : 'Choose your moves'];
+  return `${topbar(heading[0], heading[1], false)}
+    ${strengthBar(me, playing?u=>b.cur.hp[u.uid]:undefined, playing?u=>b.prev.hp[u.uid]:undefined)}
+    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}" style="--w:${W}px">
+      <div class="arow top">${rowU[0].map(card).join('')}</div>
+      <div class="aband">${band}</div>
+      <div class="arow bot">${rowU[1].map(card).join('')}</div>
+      ${over?`<div class="aover" aria-live="polite">${over}</div>`:''}
+    </div>
+    ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : mouse ? actionbar(mouse) : ''}`;
+}
+// The laptop picks this round's moves itself (player 1 against the computer, or a player whose phone dropped out)
+function tvMouse(q){ S.tvMouse=S.round; S.planFor=+q||0; S.focus=null; }
 
 /* ---------- the phone (controller) side ---------- */
 async function ctlJoin(code){
@@ -107,32 +305,58 @@ async function ctlJoin(code){
   try{
     const db=await firebaseReady(), room=db.ref('rooms/'+code);
     const keep={vol:S.vol, speed:S.speed, vibeOn:S.vibeOn, clipsOn:S.clipsOn, install:S.install};
-    S=Object.assign({phase:'setup', mode:'story', names:[playerName()||'Player 1','Computer']}, keep, {ctl:{code}, onlineMsg:'', ctlView:'watch', ctlLocked:0, me:0, planFor:0, plans:[{},{}], helperPlan:[[],[]], lastPlans:[null,null]});
+    S=Object.assign({phase:'setup', mode:'story', names:[playerName()||'Player 1','Computer']}, keep, {ctl:{code}, onlineMsg:'', ctlView:'watch', ctlLocked:0, ctlSeat:-1, me:0, planFor:0, plans:[{},{}], helperPlan:[[],[]], lastPlans:[null,null]});
+    TV.room=room;
+    // here at the TV: the phone's name under its id, removed by the server if the phone drops off
+    const me=room.child('tv/phones/'+PHONE_ID+'~'+SESSION);
+    onConnected(db, ()=>{ me.onDisconnect().remove(); me.set({name:playerName()||'Player', at:Date.now()}); });
     const f=s=>{ const v=s.val(); if(v) ctlState(v); }; room.child('tv/state').on('value',f); TV.offs.push(()=>room.child('tv/state').off('value',f));
-    TV.room=room; room.child('tv/acts').push({a:'hello'}); music(null); render();
+    const g=s=>{ S.tvGone=s.val()===false; render(); }; room.child('host/on').on('value',g); TV.offs.push(()=>room.child('host/on').off('value',g));
+    try{ localStorage.setItem(CTL_KEY, JSON.stringify({code, at:Date.now()})); }catch(e){}
+    keepAwake(true); music(null); render();
   }catch(e){ S.onlineMsg=netError(e); render(); }
 }
-function ctlStop(){ TV.offs.forEach(f=>f()); TV.offs=[]; TV.room=null; S.ctl=null; }
+function ctlStop(){
+  if(TV.room) TV.room.child('tv/phones/'+PHONE_ID+'~'+SESSION).remove();
+  TV.offs.forEach(f=>f()); TV.offs=[]; TV.room=null; S.ctl=null; keepAwake(false);
+  try{ localStorage.removeItem(CTL_KEY); }catch(e){}
+}
 // The TV's game arrived: mirror it; a new round starts with a clean set of picks on the phone
 function ctlState(json){
-  const o=JSON.parse(json), newRound=o.round!==S.round || o.stage!==S.stage;
-  Object.assign(S,o); S.me=0; S.planFor=0; S.ctlView=o.view;
-  if(newRound || !S.plans){ S.plans=players().map(()=>({})); S.helperPlan=players().map(()=>[]); S.focus=null; }
+  const o=JSON.parse(json), newRound=o.round!==S.round || o.stage!==S.stage || o.phase==='draft';
+  const seat=(o.seats||[]).indexOf(PHONE_ID);
+  Object.assign(S,o); S.ctlSeat=seat; S.me=S.planFor=Math.max(0,seat);
+  S.ctlView = seat>=0 && o.views ? o.views[seat] : 'watch';
+  if(newRound || !S.plans){ S.plans=players().map(()=>({})); S.helperPlan=players().map(()=>[]); S.focus=null; S.scouting=false; }
+  if(o.scoutPlans) players().forEach(q=>{ if(q!==S.me){ S.plans[q]=o.scoutPlans[q]||{}; S.helperPlan[q]=(o.scoutHelpers||[])[q]||[]; } });
+  else S.scouting=false;
+  try{ const c=JSON.parse(localStorage.getItem(CTL_KEY)||'null'); if(c && Date.now()-c.at>60e3) localStorage.setItem(CTL_KEY, JSON.stringify({code:S.ctl.code, at:Date.now()})); }catch(e){}
   render();
 }
 // The Continue button: tell the TV to press its main button
-function ctlNext(){ if(TV.room) TV.room.child('tv/acts').push({a:'next'}); }
-// Lock in on the phone: send the picks to the TV, then watch
+function ctlNext(){ ctlSend({a:'next'}); }
+// Lock in on the phone: send the picks to the TV, then watch (after a crow report: the changed moves)
 function ctlLock(){
   if(!TV.room) return;
-  S.lastPlans=S.lastPlans||[null,null]; S.lastPlans[0]=JSON.parse(JSON.stringify(S.plans[0]||{}));
-  TV.room.child('tv/acts').push(JSON.parse(JSON.stringify({a:'moves', round:S.round, plans:S.plans[0]||{}, helperPlan:S.helperPlan[0]||[]})));
-  S.ctlLocked=S.round; window.scrollTo(0,0);
+  const q=S.me, scout=!!S.scouting;
+  S.lastPlans=S.lastPlans||[null,null]; S.lastPlans[q]=JSON.parse(JSON.stringify(S.plans[q]||{}));
+  ctlSend({a:'moves', round:S.round, scout, plans:S.plans[q]||{}, helperPlan:S.helperPlan[q]||[]});
+  if(scout){ S.ctlScouted=S.round; S.scouting=false; } else S.ctlLocked=S.round;
+  window.scrollTo(0,0);
 }
-// What the phone shows: the move screen while the TV waits for this round's moves, otherwise "Watch the TV"
-const ctlViewName = () => S.ctlView==='plan' && S.ctlLocked!==S.round && S.teams ? 'plan' : S.ctlView==='draft' && S.pool ? 'draft' : 'ctlwatch';
-// Send something to the TV
-function ctlSend(m){ if(TV.room) TV.room.child('tv/acts').push(JSON.parse(JSON.stringify(m))); }
+// Crow report on the phone: keep the moves, or change them (the move screen again, with the report on top)
+function ctlKeep(){ ctlSend({a:'keep'}); S.ctlScouted=S.round; }
+function ctlRescout(){ S.scouting=true; S.focus=null; const f=alive(S.me).find(u=>!u.stun); if(f) S.focus=f.uid; window.scrollTo(0,0); }
+// What the phone shows: its move / crow / draft screen while the TV waits for this phone, otherwise "Watch the TV"
+function ctlViewName(){
+  const v=S.ctlView;
+  if(v==='plan' && S.ctlLocked!==S.round && S.teams) return 'plan';
+  if(v==='scout' && S.ctlScouted!==S.round && S.teams) return S.scouting ? 'plan' : 'scout';
+  if(v==='draft' && S.pool) return 'draft';
+  return 'ctlwatch';
+}
+// Send something to the TV, signed with this phone's id so the TV knows which player it is
+function ctlSend(m){ if(TV.room) TV.room.child('tv/acts').push(JSON.parse(JSON.stringify(Object.assign({}, m, {from:PHONE_ID})))); }
 // The story map on the phone: pick a battle (or a draft replay of one you've won); the TV opens it
 function ctlStoryList(list){
   return `<div class="ctlstory"><div class="tlabel">Pick a battle</div>${list.map(b=>`<div class="ctlrow${b.open?'':' locked'}${b.won?' won':''}">
@@ -142,9 +366,13 @@ function ctlStoryList(list){
 }
 function vCtlWatch(){
   const live=!!S.teams && !['setup','story','modeset','credits'].includes(S.phase) && !S.story;
+  const seat=S.ctlSeat, who = seat>=0 && S.tvDuo ? `<p class="ctlwho" style="color:${pc(seat)}">You’re ${esc(S.names[seat]||'Player '+(seat+1))}</p>` : seat<0 && (S.seats||[]).length>=2 ? '<p class="ctlwho muted">Watching: two phones are already playing</p>' : '';
+  const locked = (S.ctlLocked===S.round || S.ctlScouted===S.round) && ['plan','scout'].includes(S.phase);
   return `<div class="ctlwatch"><span class="ctlk" aria-hidden="true">📺</span>
-    <h1>${S.story?'Story mode':'Watch the TV'}</h1>
-    <p class="muted">${S.story?'Pick a battle here, or on the TV.':!live?'Connected. Your moves will show up here when a battle starts.':['plan','result','scout'].includes(S.phase)?(S.ctlLocked===S.round&&S.ctlView==='plan'?`Round ${S.round}: moves locked in.`:`Round ${S.round||1}`):'Look at the TV.'}</p>
+    <h1>${S.story?'Story mode':'Watch the TV'}</h1>${who}
+    ${S.tvGone?'<p class="ctlgone">The TV has disconnected. This phone picks up again when the laptop is back.</p>':''}
+    <p class="muted">${S.story?'Pick a battle here, or on the TV.':!live?'Connected. Your moves will show up here when a battle starts.':locked?`Round ${S.round}: moves locked in.`:['plan','result','scout'].includes(S.phase)?`Round ${S.round||1}`:'Look at the TV.'}</p>
+    ${S.wait&&live?`<p class="ctlwaitline">${S.wait}</p>`:''}
     ${S.next?`<button class="btn big" data-a="ctlnext">${esc(S.next)}</button>`:''}
     ${(S.choices||[]).length?`<div class="ctlchoices">${S.choices.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="ctlpick" data-v="${esc(k)}">${esc(l)}</button>`).join('')}</div>`:''}
     ${S.story?ctlStoryList(S.story):''}
@@ -153,3 +381,11 @@ function vCtlWatch(){
 }
 // Is this 4-letter code a TV (rather than a live online room)?
 async function tvRoom(code){ try{ const db=await firebaseReady(); return !!(await db.ref('rooms/'+code+'/tv/on').get()).val(); }catch(e){ return false; } }
+// A phone that was controlling a TV and reloaded (or was closed by the phone) goes straight back to it
+function ctlResume(){
+  let c=null; try{ c=JSON.parse(localStorage.getItem(CTL_KEY)||'null'); }catch(e){}
+  if(!c) return;
+  if(Date.now()-c.at>6*3600e3){ try{ localStorage.removeItem(CTL_KEY); }catch(e){} return; }
+  tvRoom(c.code).then(ok=>{ if(ok && !S.ctl && !S.tv && S.phase==='setup') ctlJoin(c.code); else if(!ok) try{ localStorage.removeItem(CTL_KEY); }catch(e){} });
+}
+if(typeof document!=='undefined' && typeof render==='function') setTimeout(ctlResume, 300);

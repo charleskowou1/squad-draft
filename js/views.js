@@ -98,7 +98,7 @@ function strengthBar(me, hpOf=u=>u.alive?u.hp:0, prevOf){
   const sideOf=f=>p=>{ const us=S.teams[p].filter(u=>f(u)!==undefined); const max=us.reduce((a,u)=>a+u.max,0); return max?us.reduce((a,u)=>a+Math.max(0,f(u)),0)/max:0; };
   // groups: one per team (2v2: your side, then the other side)
   const groups = S.duo ? [players().filter(q=>sameSide(q,me)).sort((a,b)=>(a!==me)-(b!==me)), enemiesOf(me)] : [[me], ...others(me).map(q=>[q])];
-  const solo=soloView()||S.phase==='plan', share=f=>g=>{ const us=g.flatMap(q=>S.teams[q]).filter(u=>f(u)!==undefined); const max=us.reduce((a,u)=>a+u.max,0); return max?us.reduce((a,u)=>a+Math.max(0,f(u)),0)/max:0; };
+  const solo=soloView()||S.phase==='plan'&&!(S.tvDuo&&S.tv), share=f=>g=>{ const us=g.flatMap(q=>S.teams[q]).filter(u=>f(u)!==undefined); const max=us.reduce((a,u)=>a+u.max,0); return max?us.reduce((a,u)=>a+Math.max(0,f(u)),0)/max:0; };
   const now=groups.map(share(hpOf)), was=prevOf?groups.map(share(prevOf)):now, sum=x=>x.reduce((a,b)=>a+b,0)||1;
   const name=g=>g.length>1 ? g.map(q=>q===me&&solo?'You':nm(q)).join(' & ') : g[0]===me&&solo?'You':g[0]!==me&&solo&&nPlayers()===2?'Opponent':nm(g[0]);
   const label=(g,i)=>`<span style="color:${pc(g[0])}">${i&&groups.length===2?`<b>${Math.round(now[i]*100)}%</b> ${name(g)}`:`${name(g)} <b>${Math.round(now[i]*100)}%</b>`}</span>`;
@@ -766,7 +766,8 @@ function matchLogPanel(){
 }
 const logHTML = () => `<div class="log">${S.log.filter(l=>l.c!=='r').map(l=>`<div class="${l.c}">${fmtLog(l.t)}</div>`).join('')}</div>`;
 // The round plays back one log line at a time (S.play.k = the line being shown); tiles show HP at that moment
-function vResult(){
+// The playback beat being shown: its log lines, any clip, and each fighter's HP at this moment (also drawn by the TV board)
+function playBeat(){
   const done=!S.play||S.play.done, steps=S.play&&S.play.steps;
   const [from,to]=done?[S.log.length-1,S.log.length-1]:steps[S.play.k], k=to, cur=S.log[to], prev=S.log[Math.max(0,from-1)];
   const lines=S.log.slice(from,to+1), group=to>from, clip=!done&&!group&&S.play.clip&&clipWho(S.play.clip)?S.play.clip:null;
@@ -774,9 +775,12 @@ function vResult(){
   const actor=done?null:(cur.by&&findU(lines[0].by))||allUnits().filter(u=>cur.t.startsWith(u.name)).sort((a,b)=>b.name.length-a.name.length)[0];
   const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
     flash: lines.some(l=>l.ko===u.uid) ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
-  const step=done?0:S.play.k, total=done?0:steps.length-1;
   // fighters in this beat (attacker and targets) stay bright in the slim team rows; the rest fade back
   const involved=new Set(lines.flatMap(l=>[l.by,l.on,l.ko]).filter(Boolean));
+  return {done, k, cur, prev, lines, group, clip, actor, moment, involved, step:done?0:S.play.k, total:done?0:steps.length-1};
+}
+function vResult(){
+  const {done, k, cur, prev, lines, group, clip, moment, involved, step, total}=playBeat();
   // vs computer the screen is yours, so label the teams from your side; two players share it, so keep names
   const solo=soloView(), me=myP(), them=[...enemiesOf(me), ...partnersOf(me)], multi=nPlayers()>2;
   const waiting = isOnline() && S.readyNext && S.readyNext[me] && !S.final;

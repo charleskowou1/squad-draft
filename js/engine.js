@@ -283,7 +283,7 @@ function startBattle(){
   // story: an enemy that starts the fight already hurt (part 2 of a two-part fight)
   Object.entries(S.startState||{}).forEach(([id,st])=>S.teams[1].filter(u=>u.id===id).forEach(u=>{
     if(st.hp) u.hp=Math.ceil(u.max*st.hp); if(st.devoured) u.devoured=st.devoured; if(st.poison) u.poison={...st.poison}; }));
-  S.phase = S.mode==='local' ? 'pass' : 'plan';
+  S.phase = S.mode==='local' && !S.tvDuo ? 'pass' : 'plan';   // TV 2-player: each phone picks in secret, no passing
 }
 const alive = p => S.teams[p].filter(u=>u.alive);
 const findU = uid => allUnits().find(u=>u.uid===uid);

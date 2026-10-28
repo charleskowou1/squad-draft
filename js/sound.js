@@ -185,10 +185,11 @@ const SCALES = {miyako:[0,1,5,7,8], insen:[0,1,5,7,10], yo:[0,2,5,7,9]};
 const THEMES = {
   menu:   {bpm:52,  root:50, scale:'yo',     prog:[0,3,1,3], koto:'slow', flute:.25,pad:.7, taiko:0,  bass:.3},   // calm (CK: the old one wasn't)
   draft:  {bpm:88,  root:52, scale:'yo',     prog:[0,2,3,1], koto:'arp',  flute:.3, pad:.3, taiko:.3, bass:.6},
-  battle: {bpm:124, root:50, scale:'insen',  prog:[0,0,3,2], koto:'stab', flute:.5, pad:.25,taiko:1,  bass:1},
+  // battle (CK: more intense): faster, a driving bass line, hi-hats, shamisen-like power stabs and a taiko fill every 4 bars
+  battle: {bpm:140, root:50, scale:'insen',  prog:[0,0,3,2,0,0,4,1], koto:'stab', flute:.55,pad:.3, taiko:1, bass:1, drive:1, hats:1, power:1, fill:1},
   calm:   {bpm:66,  root:55, scale:'yo',     prog:[0,3,1,4], koto:'arp',  flute:.7, pad:.6, taiko:0,  bass:.4},
   dark:   {bpm:70,  root:47, scale:'insen',  prog:[0,1,0,3], koto:'slow', flute:.5, pad:.7, taiko:.2, bass:.6},
-  epic:   {bpm:96,  root:50, scale:'miyako', prog:[0,3,4,2], koto:'arp',  flute:.6, pad:.5, taiko:.7, bass:.8},
+  epic:   {bpm:104, root:50, scale:'miyako', prog:[0,3,4,2], koto:'arp',  flute:.6, pad:.5, taiko:.8, bass:.8, drive:.6, hats:.5, fill:1},
 };
 // story arcs → mood for their scenes and map
 const ARC_MOOD = {prologue:'calm', asakusa:'calm', tsuzumi:'dark', natagumo:'dark', mugen:'epic', district:'epic', swordsmith:'calm', flashback:'epic', castle:'dark', dawn:'epic'};
@@ -212,6 +213,12 @@ function pad(fs,t,len,vol,bus){ fs.forEach(f=>[-6,6].forEach(c=>{ const o=AC.cre
 function bassNote(f,t,len,vol,bus){ const o=AC.createOscillator(), g=AC.createGain();
   o.type='triangle'; o.frequency.value=f; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+len);
   o.connect(g).connect(bus); o.start(t); o.stop(t+len+.05); }
+// battle drive: a closed hi-hat tick, and a bright plucked power chord (sawtooth through a closing filter)
+function hat(t,vol,bus){ hiss('highpass',7000,9000,.035,vol,t-AC.currentTime,bus,.7); }
+function powerStab(fs,t,len,vol,bus){ fs.forEach(f=>{ const o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
+  o.type='sawtooth'; o.frequency.value=f; lp.type='lowpass'; lp.Q.value=4; lp.frequency.setValueAtTime(f*8,t); lp.frequency.exponentialRampToValueAtTime(f*1.2,t+len);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+len);
+  o.connect(lp).connect(g).connect(bus); o.start(t); o.stop(t+len+.05); }); }
 // a simple seeded melody per theme (the same tune every time that theme plays)
 function makeMelody(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))>>>0; const rnd=()=>((h=(h*1103515245+12345)>>>0)/4294967296);
   const out=[]; let d=4; for(let i=0;i<32;i++){ if(rnd()<.45){ out.push(null); continue; } d=Math.max(2,Math.min(9,d+[-2,-1,-1,0,1,1,2][Math.floor(rnd()*7)])); out.push({deg:d, len:rnd()<.3?4:rnd()<.5?2:1}); } return out; }
@@ -225,6 +232,10 @@ function musicStep(t){
   if(th.bass && (beat===0 || (th.taiko>.5 && beat===8))) bassNote(midiHz(noteOf(th, root, -1)), t, q*(beat===0?7:5), .14*th.bass, bus);
   if(th.pad && beat===0) pad([midiHz(noteOf(th,root)), midiHz(noteOf(th,root+2))], t, q*16, .018*th.pad, bus);
   if(th.taiko){ const pat=th.taiko>.5 ? [0,3,6,8,11,14] : [0,8]; if(pat.includes(beat)) taikoHit(t-AC.currentTime, (beat===0?.32:.2)*th.taiko, bus); }
+  if(th.drive && beat%2===0) bassNote(midiHz(noteOf(th, root, beat%8===4?0:-1)), t, q*1.7, .09*th.drive, bus);   // 8th-note bass, jumping an octave
+  if(th.hats) { if(beat%2===1) hat(t, .045*th.hats, bus); else if(th.hats>.7 && beat%4===2) hat(t, .025, bus); }
+  if(th.power && [0,3,6,10].includes(beat)) powerStab([midiHz(noteOf(th,root)), midiHz(noteOf(th,root+2)), midiHz(noteOf(th,root,1))], t, q*(beat===0?3:1.6), (beat===0?.028:.02)*th.power, bus);
+  if(th.fill && bar%4===3 && beat>=12) taikoHit(t-AC.currentTime, (.16+.05*(beat-12))*th.fill, bus);   // drum roll into the next phrase
   if(th.flute && beat%4===0){ const m=MUSIC.mel[(s/4)%MUSIC.mel.length]; if(m && Math.random()<.85) flute(midiHz(noteOf(th, m.deg, 1)), t, q*4*m.len*.95, .05*th.flute, bus); }
   MUSIC.step++;
 }

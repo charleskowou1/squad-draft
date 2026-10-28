@@ -127,7 +127,7 @@ function startDraft(){
 }
 // The next player (after p) who still has fighters, or -1
 const nextChooser = p => { for(let q=p+1;q<nPlayers();q++) if(alive(q).length) return q; return -1; };
-function toSpin(){ S.phase='spin'; S.spin=null; window.scrollTo(0,0); }
+function toSpin(){ S.phase='spin'; S.spin=null; S.tvLocked={}; window.scrollTo(0,0); }
 // After a fighter's move is complete, open the next one that still needs a move
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
@@ -144,11 +144,11 @@ function nextScoutOrFight(){
   S.scouting=false;
   if(S.scoutQueue.length){
     S.scoutP=S.scoutQueue.shift(); S.planFor=S.scoutP;
-    if(vsCpu()) S.phase='scout'; else { S.phase='pass'; S.passScout=true; }
+    if(vsCpu() || S.tvDuo) S.phase='scout'; else { S.phase='pass'; S.passScout=true; }   // TV 2-player: the report goes to the owner's phone
     return newPlanTurn();
   }
   S.passScout=false;
-  if(vsCpu()) fight(); else S.phase='ready';
+  if(vsCpu() || S.tvDuo) fight(); else S.phase='ready';
   newPlanTurn();
 }
 // Run the round, then play it back (a finished match still plays back first, then "See who won")
@@ -188,7 +188,9 @@ const ACTIONS = {
   ocreate(){ onlineCreate(); },
   // TV mode (js/tv.js): this laptop shows the game on the big screen; a phone joins its code as the controller
   tvstart(){ tvStart(); },
-  tvexit(){ tvStop(); ACTIONS.home(); },
+  tvexit(){ tvStop(); tvFit(); ACTIONS.home(); },
+  tvfull(){ tvFullscreen(); },
+  tvmouse(v){ tvMouse(v); },                           // pick this round's moves on the laptop instead of a phone
   ctlnext(){ ctlNext(); },
   ctlpick(v){ ctlSend({a:'choose', key:v}); },          // a choice on the phone: Story map, Next battle, Rematch…
   ctlstage(v,b){ ctlSend({a:'stage', i:+v, draft:b.dataset.d==='1'}); },   // a story battle picked on the phone
@@ -259,14 +261,15 @@ const ACTIONS = {
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
   helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
   ambush(v){ S.plans[S.planFor].ambush=v; },   // Kiriya's trap: which of your fighters it goes around
-  rescout(){ if(isOnline()){ S.scouting=true; S.planFor=S.me; newPlanTurn(); const f=alive(S.me).find(u=>!u.stun); if(f) S.focus=f.uid; return; } S.scouting=true; S.planFor=S.scoutP; S.phase='plan'; S.passScout=false; newPlanTurn(); const f=alive(S.planFor).find(u=>!u.stun); if(f) S.focus=f.uid; },   // open the first fighter to change
-  keepmoves(){ if(isOnline()) return onlineKeepMoves(); nextScoutOrFight(); },
+  rescout(){ if(typeof isCtl==='function' && isCtl()) return ctlRescout(); if(isOnline()){ S.scouting=true; S.planFor=S.me; newPlanTurn(); const f=alive(S.me).find(u=>!u.stun); if(f) S.focus=f.uid; return; } S.scouting=true; S.planFor=S.scoutP; S.phase='plan'; S.passScout=false; newPlanTurn(); const f=alive(S.planFor).find(u=>!u.stun); if(f) S.focus=f.uid; },   // open the first fighter to change
+  keepmoves(){ if(typeof isCtl==='function' && isCtl()) return ctlKeep(); if(isOnline()) return onlineKeepMoves(); nextScoutOrFight(); },
   focus(v){ S.focus = focusOf(S.planFor)===v ? 'none' : v; },
   act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); },
   tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); },
   lockMoves(){
     if(typeof isCtl==='function' && isCtl()) return ctlLock();   // controller: send the picks to the TV
     if(isOnline()){ onlineLockMoves(); return newPlanTurn(); }
+    if(S.tvDuo){ tvSeatLock(S.planFor); return newPlanTurn(); }   // TV 2-player: a phone dropped out and the laptop picked for it
     S.lastPlans[S.planFor]=JSON.parse(JSON.stringify(S.plans[S.planFor]));   // for "Repeat last round"
     if(S.scouting) return nextScoutOrFight();          // re-planned after a crow report
     if(vsCpu()){
@@ -281,7 +284,7 @@ const ACTIONS = {
     nextScoutOrFight();
   },
   skip(){ clearTimeout(S._t); S.play.done=true; if(!storyEnd()) storyMid(); },   // skipping still plays a Mark awakening's cutscene
-  next(){ if(storyMid()) return; if(isAsync()) return asyncWatched(); if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'?'pass':'plan'; newPlanTurn(); },
+  next(){ if(storyMid()) return; if(isAsync()) return asyncWatched(); if(isOnline()){ onlineNext(); return window.scrollTo(0,0); } S.round++; S.planFor=S.mode==='local'?nextChooser(-1):0; S.play=null; S.phase=S.mode==='local'&&!S.tvDuo?'pass':'plan'; newPlanTurn(); },
   finish(){ if(isAsync()) setGame(S.asyncCode,{seen:{m:S.matchNo, r:S.roundId}}); if(isOnline()){ S.asyncWatching=false; S.localOver=true; return window.scrollTo(0,0); } S.play=null;
     if(S.mode==='story' && S.winner===0) return storyWon_();   // ending scene and unlocks first
     S.phase='over'; window.scrollTo(0,0); },

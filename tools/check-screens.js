@@ -2,7 +2,10 @@
 // Catches crashes in js/views.js without opening a browser.
 // Usage:  node tools/check-screens.js
 const { loadGame } = require('./load-game');
-const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'clips.js', 'views.js', 'sound.js'], `
+const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'clips.js', 'views.js', 'sound.js', 'tv.js'], `
+// the TV battle board (js/tv.js) for 2-team games: every playback beat, and the waiting board, as a 2-player TV match
+const TVT={code:'TEST', phones:{a:{name:'A'}, b:{name:'B'}}, seats:['a','b']};
+function tvBoardCheck(b){ const keep=[S.tv,S.tvDuo]; S.tv=TVT; S.tvDuo=!b; try{ vTvBoard(b); tvWaiting(); globalThis.TVN=(globalThis.TVN||0)+1; } finally { [S.tv,S.tvDuo]=keep; } }
 function check(games){
   let errors=0, first='';
   // every character gets a test clip for every moment, so each clip beat gets drawn
@@ -34,8 +37,8 @@ function check(games){
           if(!planReady(p)) throw new Error('plan not ready after choosing every move'); });
         players().forEach(p=>cpuHelpers(p)); S.scoutP=0; S.phase='scout'; vScout(); S.scouting=true; S.planFor=0; vPlan(); S.scouting=false; S.phase='ready'; vReady(); allUnits().forEach(u=>{ S.info=u.uid; vSheet(); }); S.info=null;
         resolve(); const ph=S.phase; S.phase='result';
-        const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; S.play.clip=steps[i][1]>steps[i][0]?null:clipStep(S.log[steps[i][0]]); vResult(); }
-        S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
+        const steps=playSteps(S.log); for(let i=0;i<steps.length;i++){ S.play={k:i,done:false,steps}; S.play.clip=steps[i][1]>steps[i][0]?null:clipStep(S.log[steps[i][0]]); vResult(); if(n===2) tvBoardCheck(playBeat()); }
+        if(n===2) tvBoardCheck(null); S.play=null; vResult(); S.phase=ph; if(S.phase==='result') S.round++;
       }
       vOver(); recordMatch(); if(n>2 && !S.duo && placings().flat().length!==n && S.winner>=0 && S.round<40) throw new Error('placings missing a team'); vSetup();
     }catch(e){ errors++; if(!first) first=e.stack; }
@@ -75,7 +78,7 @@ function check(games){
       vOver();
     }catch(e){ storyErrors++; if(!first) first='story stage '+i+': '+e.stack; errors++; }
   }
-  return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors ('+mids+' Mark awakening scenes).';
+  return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors ('+mids+' Mark awakening scenes, '+(globalThis.TVN||0)+' TV board beats).';
 }
 `);
 console.log(ctx.check(300));
