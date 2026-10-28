@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [92, '2026-10-28', 'Giyu\'s voice line fixed: the "Dead calm" part was cut off, now the whole line plays.'],
   [91, '2026-10-28', 'First voice line: Giyu says "Dead Calm" when his special clip plays (Giyu ✦ too).'],
   [90, '2026-10-28', 'Muzan and the Yoriichis are never dealt as each other\'s rival (Muzan was down to ~25%); the guide shows the version and this change log.'],
   [89, '2026-10-28', 'Opening splash: "a Kwow Media Productions game", with its own sound.'],
