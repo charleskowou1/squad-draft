@@ -51,7 +51,9 @@ const CLIPS = {
 };
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.
-const CLIP_SOUNDS = {};
+const CLIP_SOUNDS = {
+  giyu: {special: 'sounds/giyu-special.mp3'},   // "Dead Calm" (CK's YouTube pick, 0:18-0:22; covers Giyu ✦ and Mark)
+};
 // What each moment is called (shown on the clip box)
 const CLIP_ACTS = {use:'Back pocket', poison:'Poisoned', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
 // Moments that repeat every round (attacks, guarding, regenerating) show their clip at most once every few rounds

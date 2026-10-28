@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [91, '2026-10-28', 'First voice line: Giyu says "Dead Calm" when his special clip plays (Giyu ✦ too).'],
   [90, '2026-10-28', 'Muzan and the Yoriichis are never dealt as each other\'s rival (Muzan was down to ~25%); the guide shows the version and this change log.'],
   [89, '2026-10-28', 'Opening splash: "a Kwow Media Productions game", with its own sound.'],
   [88, '2026-10-28', '"I\'m thinking of a number" replaces the wheel for first pick; cards of 9+ pts are always dealt with a rival within 3 pts; the sun rises over every battle and burns 5% hotter each round after sunrise; Quit asks first.'],
