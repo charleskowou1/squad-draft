@@ -1,4 +1,4 @@
-// Balance simulator for Squad Draft.
+// Balance simulator for Slayer Squad.
 // Runs the real game logic (js/roster.js + js/engine.js) with two computer players and prints win rates.
 // Usage:  node tools/balance-sim.js            (random 10-card drafts, win rate per character)
 //         node tools/balance-sim.js yoriichi,murata vs tanjiro,zenitsu,inosuke,nezuko,genya

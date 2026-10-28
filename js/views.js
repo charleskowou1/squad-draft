@@ -258,7 +258,7 @@ function installCard(){
   const i=S.install; if(!i || i.standalone || !i.mobile || i.hidden) return '';
   const steps = i.ios ? `<ol class="isteps"><li>Tap <b>Share</b> <span class="ishare" aria-hidden="true">⬆︎</span> at the bottom of Safari</li><li>Choose <b>Add to Home Screen</b></li></ol>`
     : i.canPrompt ? '' : '<p class="muted">Open your browser menu (⋮) and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>';
-  return `<div class="install"><div class="ihead"><span class="ik">家</span><div><b>Keep your progress safe</b><span class="muted">Add Squad Draft to your Home Screen. It opens like an app, and your story and stats stay saved.</span></div></div>
+  return `<div class="install"><div class="ihead"><span class="ik">家</span><div><b>Keep your progress safe</b><span class="muted">Add Slayer Squad to your Home Screen. It opens like an app, and your story and stats stay saved.</span></div></div>
     ${steps}<div class="ibtns">${i.canPrompt && !i.ios?'<button class="btn small" data-a="install">Install</button>':''}<button class="btn ghost small" data-a="installlater">Later</button></div></div>`;
 }
 // Story on the home screen: a progress pie and one button to carry on where you left off
@@ -273,11 +273,12 @@ function vSetup(){
   return `
   ${playerName()?'':`<div class="askname"><b>What should we call you?</b><span class="muted">Your name shows when you win, in story mode and online.</span>
     <div class="namerow"><input id="hname" type="text" maxlength="14" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="hname">Save</button></div></div>`}
-  <div class="setbar"><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
+  <div class="setbar">${typeof isTV==='function'&&isTV()?'':'<button class="btn ghost small gear tvbtn" data-a="tvstart"><span aria-hidden="true">📺</span> TV mode</button>'}<button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
-    <div class="eyebrow">A Demon Slayer squad battler</div><h1>Squad Draft</h1>
+    <div class="eyebrow">A Demon Slayer squad battler</div><h1>Slayer Squad</h1>
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
+  ${S.tvMsg?`<p class="hint onlinemsg">${esc(S.tvMsg)}</p>`:''}
   ${artStrip()}
   ${gamesCard()}
   ${dailyCard()}
@@ -858,7 +859,7 @@ function vCredits(){
   return `<div class="credits" data-a="creditsend"><span class="particles p-ember" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i*0.73)%6}s;--s:${0.6+(i%5)*0.15}"></i>`).join('')}</span>
     <div class="roll${S.creditsDone?' done':''}">
       <span class="ckanji" aria-hidden="true">滅</span>
-      <h1>Squad Draft</h1>
+      <h1>Slayer Squad</h1>
       <p class="cline">Built by <b>Charles Kowou</b></p>
       <p class="cline">Inspired by <b>Amelia Gray</b></p>
       <div class="cblock"><div class="eyebrow">They lived to see the sun</div>

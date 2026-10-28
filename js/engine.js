@@ -776,7 +776,7 @@ function recordRound(moves){
 const plainLog = t => t.replace(/\[([+-])(\d+%)\]/g, (m,s,n)=>(s==='-'?'−':'+')+n);
 function battleLogText(){
   const ml=S.matchLog||[], w=S.winner, team=p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.name).join(', ');
-  const out=[`Squad Draft battle log · ${new Date().toLocaleDateString()}`,
+  const out=[`Slayer Squad battle log · ${new Date().toLocaleDateString()}`,
     ...players().map(p=>`${S.names[p]}: ${team(p)}${(S.picks[p]||[]).filter(isHelper).length?' + '+S.picks[p].filter(isHelper).map(id=>BYID[id].short).join(', '):''}`),
     `Result: ${w<0?'nobody wins':S.names[w]+' wins'} after ${S.round} round${S.round===1?'':'s'}`, ''];
   ml.forEach(r=>out.push(roundText(r), ''));

@@ -1,6 +1,6 @@
 {
-  "name": "Squad Draft",
-  "short_name": "Squad Draft",
+  "name": "Slayer Squad",
+  "short_name": "Slayer Squad",
   "description": "A Demon Slayer squad battler for two players or vs the computer.",
   "start_url": "./",
   "scope": "./",

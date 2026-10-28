@@ -1308,3 +1308,34 @@ body.placebg::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:
 /* Clips never show the phone's own play button: they start by themselves (or on the next tap in Low Power Mode) */
 video::-webkit-media-controls,video::-webkit-media-controls-start-playback-button,video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none}
 video{pointer-events:none}
+
+/* ---------- TV mode (js/tv.js): a laptop on the TV shows the game big; a phone is the controller ---------- */
+.tvbtn{display:none}
+@media (min-width:900px){ .tvbtn{display:inline-flex} }   /* the TV button only shows on laptop-sized screens */
+body.tvmode .wrap{max-width:1180px;zoom:1.2}
+body.tvmode .wrap:has(.scene){max-width:980px}
+body.tvmode .planwide,body.tvmode .reswide.done{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+body.tvmode .reswide.done .rcol{display:flex;flex-direction:column;gap:14px}
+body.tvmode .reswide.done .vsdiv{display:none}
+body.tvmode .planwide .opps:not(.many) .tiles.simple{grid-template-columns:1fr 1fr}
+#tvbadge{position:fixed;left:14px;bottom:14px;z-index:9;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:14px;
+  background:rgba(18,15,12,.9);border:1px solid var(--line-2);font-size:.95rem;color:var(--ink-2);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#tvbadge b{color:var(--gold);font-size:1.2rem;letter-spacing:.12em}
+#tvbadge i{color:var(--p1);font-style:normal;font-weight:700}
+/* the phone controller's "Watch the TV" screen */
+.ctlwatch{min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:20px}
+.ctlwatch .ctlk{font-size:4rem}
+.ctlwatch h1{font-family:var(--display);font-size:2.2rem;margin:0}
+.ctlwatch .btn.big{min-width:220px;padding:16px 28px;font-size:1.15rem;margin-top:10px}
+/* the 1.2× TV zoom would push full-height scenes past the bottom: size them to the screen before zooming */
+body.tvmode .scene{min-height:calc((100vh - 40px) / 1.2);min-height:calc((100dvh - 40px) / 1.2)}
+body.tvmode .credits{min-height:calc((100vh - 160px) / 1.2)}
+
+.ctlchoices{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:6px}
+.ctlstory{width:100%;max-width:440px;display:flex;flex-direction:column;gap:6px;margin-top:8px;text-align:left}
+.ctlrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.ctlrow.won{border-color:var(--line-2)}
+.ctlrow.locked{opacity:.5}
+.ctlrow .ctln{width:26px;color:var(--muted);font-weight:700;text-align:center}
+.ctlrow .ctlt{flex:1;min-width:0;display:flex;flex-direction:column}
+.ctlrow .ctlt small{color:var(--muted)}

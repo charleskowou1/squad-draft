@@ -1,4 +1,4 @@
-// Builds Squad-Draft-Guide.txt: rules, every character's stats and special, synergies, helpers, modes, simulated
+// Builds Slayer-Squad-Guide.txt: rules, every character's stats and special, synergies, helpers, modes, simulated
 // win rates and worked examples, written for an AI assistant giving strategy advice. Numbers come from the game files,
 // so rebuild after any change:  node tools/make-guide.js
 const fs = require('fs'), path = require('path');
@@ -20,7 +20,7 @@ out(`SQUAD DRAFT — COMPLETE GUIDE FOR STRATEGY ADVICE
 A Demon Slayer squad-battler (personal fan game). Generated ${new Date().toISOString().slice(0,10)} from the game's own data.
 
 HOW TO USE THIS FILE (for the assistant reading it)
-You are helping a player (Mia) get better at Squad Draft. Everything below is exact game data and rules.
+You are helping a player (Mia) get better at Slayer Squad. Everything below is exact game data and rules.
 Use it to recommend drafts, counter-picks, move choices and when to use helpers. Health is shown in the game as
 a percent of each fighter's own max HP; the raw numbers here (HP, PWR, DEF…) are what the engine uses.
 The simulated win rates near the end come from computer-vs-computer games: treat them as hints, not truth.`);
@@ -249,6 +249,6 @@ EXAMPLE ROUND (teams above): Zenitsu uses Thunderclap and Flash (priority 2), so
   Tanjiro is hit, but Siblings counters don't trigger on area specials, so Nezuko doesn't strike back this time.
   End of round: Doma regenerates 3 (demons heal every round, so finish them rather than chip at them).`);
 
-const file = path.join(__dirname, '..', 'Squad-Draft-Guide.txt');
+const file = path.join(__dirname, '..', 'Slayer-Squad-Guide.txt');
 fs.writeFileSync(file, T.join('\n') + '\n');
 console.log('Wrote ' + file + ' (' + T.join('\n').length + ' characters)');

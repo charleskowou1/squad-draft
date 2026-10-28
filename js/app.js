@@ -19,7 +19,7 @@ function playVid(v){
 }, {passive:true}));
 function render(){
   if(isOnline()) S.planFor=S.me;
-  const view=viewName();
+  const ctl=typeof isCtl==='function' && isCtl(), view = ctl ? ctlViewName() : viewName();   // a phone controlling the TV shows only its moves
   if(view==='over' && !scored && S.mode==='daily'){ scored=true; S.dailyMet=dailyMet(S.daily); if(S.dailyMet) markDaily(S.daily.day); sfx(S.dailyMet?'win':'lose'); }   // no stats
   if(view==='over' && !scored && (isPractice() || S.mode==='story')){ scored=true;   // story and practice don't count toward stats
     if(S.winner!==0) sfx('lose'); }   // story wins are saved (and celebrated) before the ending scene
@@ -39,16 +39,17 @@ function render(){
   document.body.classList.toggle('placebg', !!place);
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
-  music(musicFor(view));   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
+  music(ctl ? null : musicFor(view));   // the TV plays the music, not the controller phone   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
   app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
   app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else { v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
-  if(S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
-  if(S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
+  if(!ctl && S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
+  if(!ctl && S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
   // online host: send each guest phone its own copy of the shared state (only when it changed)
+  if(typeof tvPublish==='function'){ tvPublish(view); tvBadge(); }   // TV mode: keep the phone controller in step
   if(iAmHost() && ONLINE.net){ ONLINE.last=ONLINE.last||{};
     const seats = S.phase==='lobby' ? (S.lobby.seats||[]).map((x,i)=>x&&x.on?i+1:0).filter(Boolean) : others(S.me);
     seats.forEach(q=>{ const j=snapshotFor(q); if(j!==ONLINE.last[q]){ ONLINE.last[q]=j; ONLINE.net.publish(j,q); } }); }
@@ -176,14 +177,22 @@ const ACTIONS = {
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
   home(){ if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
-    const mode=S.mode==='daily'?'cpu':S.mode; S={phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    if(S.ctl) ctlStop();
+    const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
   spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
   toDraft(){ if(isOnline() && !iAmHost()) return; newDraft(S.spin.r); },
-  redeal(){ if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
+  redeal(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'redeal'}); if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
   ocreate(){ onlineCreate(); },
+  // TV mode (js/tv.js): this laptop shows the game on the big screen; a phone joins its code as the controller
+  tvstart(){ tvStart(); },
+  tvexit(){ tvStop(); ACTIONS.home(); },
+  ctlnext(){ ctlNext(); },
+  ctlpick(v){ ctlSend({a:'choose', key:v}); },          // a choice on the phone: Story map, Next battle, Rematch…
+  ctlstage(v,b){ ctlSend({a:'stage', i:+v, draft:b.dataset.d==='1'}); },   // a story battle picked on the phone
+  ctlexit(){ ctlStop(); ACTIONS.home(); },
   acreate(){ asyncCreate(); },
   agame(v){ keepNames(); openGame(v); },
   agamex(v){ const g=myGame(v), st=g&&g.meta; if(st && !st.final && st.phase!=='lobby' && !confirm('Remove this game? It can’t be finished after that.')) return;
@@ -221,9 +230,10 @@ const ACTIONS = {
   info(v){ S.info=v; },
   fight(){ fight(); newPlanTurn(); },
   notes(){ S.notesOpen=!S.notesOpen; },
-  confirmPick(){ if(S.banning){ if(isOnline()) return onlineBan(S.sel); if(canBan(turn(),S.sel)){ sfx('pick'); doBan(S.sel); } return; }
+  confirmPick(){ if(typeof isCtl==='function' && isCtl()){ ctlSend({a:'pick', id:S.sel}); S.sel=null; return; }   // controller: the TV makes the pick
+    if(S.banning){ if(isOnline()) return onlineBan(S.sel); if(canBan(turn(),S.sel)){ sfx('pick'); doBan(S.sel); } return; }
     if(isOnline()){ sfx('pick'); onlinePick(S.sel); S.sel=null; return; } if(!canPick(turn(),S.sel)) return; sfx('pick'); doPick(S.sel); if(S.phase!=='draft') newPlanTurn(); },
-  undo(){ if(isOnline()) return onlineUndo(); undoPick(); },
+  undo(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'undo'}); if(isOnline()) return onlineUndo(); undoPick(); },
   repeat(){ repeatPlans(S.planFor); advanceFocus(S.planFor); },
   speed(v){ S.speed=v; try{ localStorage.setItem('squad-draft-speed',v) }catch(e){} },
   volmusic(v){ S.vol={...S.vol, music:+v}; saveVolumes(S.vol); applyVolumes(); },
@@ -245,7 +255,7 @@ const ACTIONS = {
     S.sceneVs=true; sfx('vs'); },
   sceneskip(){ if(S.sceneFinale) return toCredits(); if(S.sceneMid) return midDone(); if(S.sceneUnlock){ S.unlockAt=(S.newUnlocks||[]).length; return afterOutro(); } if(S.sceneOutro) return afterOutro();
     if(!S.sceneVs){ S.sceneVs=true; return; } beginStage(); if(S.phase==='plan') newPlanTurn(); window.scrollTo(0,0); },
-  lock(){ if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
+  lock(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'lockteam'}); if(isOnline()) return onlineLockTeam(); doLock(turn()); if(S.phase!=='draft') newPlanTurn(); },
   reveal(){ S.phase=S.passScout?'scout':'plan'; newPlanTurn(); },
   helper(v){ const l=S.helperPlan[S.planFor]; S.helperPlan[S.planFor]=l.includes(v)?l.filter(x=>x!==v):l.concat(v); },
   ambush(v){ S.plans[S.planFor].ambush=v; },   // Kiriya's trap: which of your fighters it goes around
@@ -255,6 +265,7 @@ const ACTIONS = {
   act(v,b){ const u=findU(b.dataset.u); setMove(u,v); if(unitReady(u)) advanceFocus(u.p); },
   tgt(v,b){ const u=findU(b.dataset.u); S.plans[u.p][u.uid].t=v; advanceFocus(u.p); },
   lockMoves(){
+    if(typeof isCtl==='function' && isCtl()) return ctlLock();   // controller: send the picks to the TV
     if(isOnline()){ onlineLockMoves(); return newPlanTurn(); }
     S.lastPlans[S.planFor]=JSON.parse(JSON.stringify(S.plans[S.planFor]));   // for "Repeat last round"
     if(S.scouting) return nextScoutOrFight();          // re-planned after a crow report
@@ -419,6 +430,7 @@ async function onlineCreate(){
 async function onlineJoin(){
   const el=document.getElementById('ocode'), code=((el&&el.value)||'').trim().toUpperCase(); S.joinCode=code;
   if(/^[A-Z]{6}$/.test(code)) return asyncJoin(code);
+  if(/^[A-Z]{4}$/.test(code) && await tvRoom(code)) return ctlJoin(code);   // a TV's code: this phone becomes its controller
   if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the code from the other phone (4 or 6 letters).'; return render(); }
   const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
   try{
@@ -520,7 +532,7 @@ async function watchGames(){
 }
 function gamesBadge(){
   const n=gamesToPlay();
-  document.title = n ? `(${n}) Squad Draft` : 'Squad Draft';
+  document.title = n ? `(${n}) Slayer Squad` : 'Slayer Squad';
   try{ if(n && navigator.setAppBadge) navigator.setAppBadge(n); else if(navigator.clearAppBadge) navigator.clearAppBadge(); }catch(e){}
 }
 
