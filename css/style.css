@@ -1312,7 +1312,7 @@ video{pointer-events:none}
 /* ---------- TV mode (js/tv.js): a laptop on the TV shows the game big; a phone is the controller ---------- */
 .tvbtn{display:none}
 @media (min-width:900px){ .tvbtn{display:inline-flex} }   /* the TV button only shows on laptop-sized screens */
-body.tvmode .wrap{max-width:1250px;zoom:var(--tvz,1.2)}   /* --tvz: zoomed to fill the window (tvFit in tv.js) */
+body.tvmode .wrap{max-width:1300px;zoom:var(--tvz,1.2)}   /* --tvz: zoomed to fill the window (tvFit in tv.js) */
 body.tvmode .planwide,body.tvmode .reswide.done{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
 body.tvmode .reswide.done .rcol{display:flex;flex-direction:column;gap:14px}
 body.tvmode .reswide.done .vsdiv{display:none}
@@ -1353,11 +1353,11 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 .ctlwaitline{color:var(--gold);font-weight:600;margin:0}
 
 /* ---------- the TV battle board (vTvBoard in tv.js): opponent's cards on top, yours below ----------
-   Sizes match BOARD in tv.js (card 186 tall, band 112, row gap 14): the attack flight is worked out from them. */
+   Sizes match BOARD in tv.js (card height --ch from sizeBoard, band 112, row gap 14): the attack flight is worked out from them. */
 .board{position:relative;display:flex;flex-direction:column;gap:14px;margin-top:8px}
-.arow{display:flex;justify-content:center;gap:18px;height:186px}
+.arow{display:flex;justify-content:center;gap:18px;height:var(--ch,186px)}
 .aband{height:112px;display:flex;align-items:center;justify-content:center;text-align:center}
-.acard{position:relative;flex:none;width:var(--w);height:186px;border-radius:14px;background:var(--surface);border:2px solid var(--tc);
+.acard{position:relative;flex:none;width:var(--w);height:var(--ch,186px);border-radius:14px;background:var(--surface);border:2px solid var(--tc);
   box-shadow:0 8px 22px rgba(0,0,0,.5);display:flex;flex-direction:column;transition:opacity .3s,filter .3s}
 .acard .aart{flex:1;min-height:0;border-radius:12px 12px 0 0;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
 .acard .aart img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
@@ -1434,3 +1434,10 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 .aover .clipbox{max-width:700px}
 .board.covered .arow{opacity:.3;filter:blur(1px);transition:opacity .3s}
 @media (prefers-reduced-motion:reduce){.board *,.board{animation:none!important}.acard .apop{opacity:1}}
+
+/* the badge once everyone has joined: small and faint, buttons only when the mouse is over it */
+#tvbadge.mini{gap:7px;padding:4px 8px;border-radius:10px;font-size:.72rem;opacity:.4;transition:opacity .3s}
+#tvbadge.mini b{font-size:.8rem}
+#tvbadge.mini .tvk{font-size:.8rem}
+#tvbadge.mini .btn,#tvbadge.mini .tvwait{display:none}
+#tvbadge.mini:hover{opacity:1} #tvbadge.mini:hover .btn{display:inline-flex}

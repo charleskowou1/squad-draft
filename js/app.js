@@ -133,7 +133,7 @@ function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 // A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
 function storyWon_(){
-  const st=STAGES[S.stage], id=st.id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id); applyArtSwaps();
+  const st=STAGES[S.stage], id=st.id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
   S.goalsNow=goalsMet(st); S.starsGot=S.goalsNow.filter(Boolean).length; S.starsBest=stageStars(id); saveStars(id,S.goalsNow);
   Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
 }
@@ -303,16 +303,15 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
-// Pictures that aren't a card's own: Mark Tanjiro in the Selfless State
-const EXTRA_ART = ['tanjiro_selfless','rengoku_smile'];
-// After his battle (Set Your Heart Ablaze) Rengoku keeps his last smile on every card (CK)
-function applyArtSwaps(){ if(ART.rengoku_smile && loadStory().cleared.includes('mugen_akaza')) ART.rengoku=ART.rengoku_smile; }
+// Pictures that aren't a card's own: Mark Tanjiro in the Selfless State. (Rengoku's bloodied last smile is only in
+// his ending cutscene, scenes/rengoku-heart.jpg, not on his card: CK, Oct 28, 2026)
+const EXTRA_ART = ['tanjiro_selfless'];
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
   let waiting=ids.length;
   const finish=()=>{ if(--waiting>0) return;
     ROSTER.forEach(c=>{ const src=found[c.id]||found[c.id.replace(/_mark$/,'')]||found[c.fam]; if(src) ART[c.id]=src; });
-    EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; }); applyArtSwaps();
+    EXTRA_ART.forEach(id=>{ if(found[id]) ART[id]=found[id]; });
     if(Object.keys(ART).length) render(); };
   ids.forEach(id=>{
     const exts=['jpg','png','webp'];

@@ -183,11 +183,13 @@ function tvWaiting(){
   if(S.phase==='draft'){ const q=turn(); if(!S.tvDuo && q!==0) return ''; return off(q)?`${who(q)}’s phone is reconnecting…`:`${who(q)} is picking on the phone`; }
   return '';
 }
-// Fill the screen: the TV layout is designed 1250 × 780 and zoomed to fit the window (laptop or TV, any size)
+// Fill the screen: the TV layout is designed 1300 × 820 and zoomed to fit the window, down as well as up (CK: a
+// laptop sending the TV a small resolution, like 1280 × 720, cut the board off at 1×)
+const winW = () => typeof innerWidth==='number' ? innerWidth : 1300, winH = () => typeof innerHeight==='number' ? innerHeight : 820;
+const tvZoom = () => Math.max(.5, Math.min(winW()/1300, winH()/820));
 function tvFit(){
   if(!isTV()){ document.body.style.removeProperty('--tvz'); return; }
-  const z=Math.max(1, Math.min(innerWidth/1250, innerHeight/780));
-  document.body.style.setProperty('--tvz', z.toFixed(3));
+  document.body.style.setProperty('--tvz', tvZoom().toFixed(3));
 }
 if(typeof addEventListener!=='undefined') addEventListener('resize', ()=>{ if(isTV()) tvFit(); });
 // Full screen hides the browser and window bars (press Esc to leave)
@@ -203,6 +205,8 @@ function tvBadge(){
   if(!isTV()){ if(b) b.remove(); return; }
   if(!b){ b=document.createElement('div'); b.id='tvbadge'; document.body.appendChild(b); }
   const t=S.tv, on=tvAnyPhone(), full=document.fullscreenElement||document.webkitFullscreenElement;
+  // once every phone is in, the badge shrinks to a small faint pill (CK); it comes back full size if a phone drops out
+  b.classList.toggle('mini', on && t.seats.every((id,q)=>tvSeatOn(q)));
   const seats=t.seats.map((id,q)=>`<span class="tvseat${tvSeatOn(q)?'':' off'}" style="--tc:${pc(q)}">${esc(tvSeatName(q)||(S.tvDuo&&S.names[q])||'Phone')} ${tvSeatOn(q)?'✓':'⟳'}</span>`).join('');
   const wait=S.phase==='draft' ? tvWaiting() : '';   // the move board shows its own
   b.innerHTML=`<span class="tvk">📺</span><span>${on?'':'Phone controller code '}<b>${esc(t.code)}</b></span>${seats}${wait?`<span class="tvwait">${wait}</span>`:''}<button class="btn ghost small" data-a="tvfull">${full?'Exit full screen':'Full screen'}</button><button class="btn ghost small" data-a="tvexit">${on?'Exit TV':'Exit TV mode'}</button>`;
@@ -213,7 +217,14 @@ function tvBadge(){
    moves are being chosen it shows who the TV is waiting on; in playback the attacker's card flies across the board
    into its target, the target recoils with the damage, and knocked-out cards fall. Specials, move clips and lines
    play over the board. Card positions come from the card size (fixed per board), so nothing is measured. */
-const BOARD = {gap:18, card:186, band:112, rowGap:14, width:1190};
+// card: the tallest a card gets; the board shrinks cards to fit the window it's in (sizeBoard)
+const BOARD = {gap:18, card:186, band:112, rowGap:14, ch:186};
+// Card width and height for a board with up to n cards in a row: as big as fits the zoomed window (design px)
+function sizeBoard(n){
+  const z=tvZoom(), w=Math.min(1300, winW()/z)-44, h=winH()/z-156-(S.play&&!S.play.done||S.phase==='plan'?96:20);   // 156: heading and strength bar above; 96: the button bar
+  BOARD.ch=Math.max(110, Math.min(BOARD.card, Math.floor((h-BOARD.band-2*BOARD.rowGap)/2)));
+  return Math.max(80, Math.min(BOARD.ch, Math.floor((w-BOARD.gap*(n-1))/n)));
+}
 const tvBoardOK = () => isTV() && !!S.teams && nPlayers()===2;
 // the move screen is a waiting board while a phone picks (unless the laptop chose to pick this round)
 const tvBoardWait = () => tvBoardOK() && ['plan','scout'].includes(S.phase) && !S.scouting && S.tvMouse!==S.round && (S.tvDuo || tvAnyPhone());
@@ -225,12 +236,12 @@ if(typeof VIEWS!=='undefined'){
 }
 const amtOf = l => l.t.match(/\[([+-])(\d+%)\]/)||[];
 const popHTML = l => { const a=amtOf(l); return a[1] ? `<span class="apop ${a[1]==='-'?'dmg':'gain'}">${a[1]==='-'?'−':'+'}${a[2]}</span>` : l.fx==='miss' ? '<span class="apop">miss</span>' : l.fx==='block' ? '<span class="apop">blocked</span>' : ''; };
-const ROW_STEP = BOARD.card + BOARD.band + 2*BOARD.rowGap;   // top row to bottom row
+const rowStep = () => BOARD.ch + BOARD.band + 2*BOARD.rowGap;   // top row to bottom row
 // What each fighter does in this beat: {cls, dx, dy, fx} by uid
 function boardRoles(b, pos){
   const roles=new Map(), add=(u,cls,fx='',o={})=>{ if(!u) return; const r=roles.get(u.uid)||{cls:'',fx:''}; roles.set(u.uid, Object.assign(r, o, {cls:r.cls+' '+cls, fx:r.fx+fx})); };
   // the attacker flies dist of the way to `to` (a position on the board)
-  const fly=(u,to,dist)=>{ const a=pos.get(u.uid); if(a && to) add(u,'fly','',{dx:Math.round((to.x-a.x)*dist), dy:Math.round((to.ri-a.ri)*ROW_STEP*dist)}); };
+  const fly=(u,to,dist)=>{ const a=pos.get(u.uid); if(a && to) add(u,'fly','',{dx:Math.round((to.x-a.x)*dist), dy:Math.round((to.ri-a.ri)*rowStep()*dist)}); };
   const struck=(l,style)=>{ const t=findU(l.on); if(!t) return;
     const mark=l.fx==='miss'?'避':l.fx==='block'?'防':STYLE_KANJI[style]||'斬';
     add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+`<span class="amark">${mark}</span>`+popHTML(l)); };
@@ -256,7 +267,7 @@ function boardRoles(b, pos){
 function vTvBoard(b){
   const me=leftSide(), foe=enemiesOf(me)[0], playing=!!b;
   const rowU=[foe, me].map(p=>playing ? S.teams[p].filter(u=>!b.moment(u).hidden) : S.teams[p]);
-  const n=Math.max(1, ...rowU.map(r=>r.length)), W=Math.min(BOARD.card, Math.floor((BOARD.width-BOARD.gap*(n-1))/n));
+  const n=Math.max(1, ...rowU.map(r=>r.length)), W=sizeBoard(n);
   const pos=new Map(); rowU.forEach((r,ri)=>r.forEach((u,i)=>pos.set(u.uid, {ri, x:(i-(r.length-1)/2)*(W+BOARD.gap)})));
   const beat=playing && b.k>0, cur=b&&b.cur, first=b&&b.lines[0], by=first&&first.by&&findU(first.by);
   // beats that play over the board: the round intro, a special's cut-in, a move clip, a fighter's line
@@ -288,7 +299,7 @@ function vTvBoard(b){
   const heading = playing ? [`Round ${S.round}${b.total?` · ${b.step} of ${b.total}`:''}`, 'The clash'] : [`Round ${S.round}`, S.phase==='scout' ? 'The crow is back' : 'Choose your moves'];
   return `${topbar(heading[0], heading[1], false)}
     ${strengthBar(me, playing?u=>b.cur.hp[u.uid]:undefined, playing?u=>b.prev.hp[u.uid]:undefined)}
-    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}" style="--w:${W}px">
+    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}" style="--w:${W}px;--ch:${BOARD.ch}px">
       <div class="arow top">${rowU[0].map(card).join('')}</div>
       <div class="aband">${band}</div>
       <div class="arow bot">${rowU[1].map(card).join('')}</div>
