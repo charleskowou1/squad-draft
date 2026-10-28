@@ -49,10 +49,10 @@ async function tvStart(){
     if(!code) throw new Error('Could not make a code. Try again.');
     const room=db.ref('rooms/'+code);
     onConnected(db, ()=>{ room.child('host/on').onDisconnect().set(false); room.child('host/on').set(true); });
-    S.tv={code, phones:{}, seats:[]}; S.tvMsg=''; TV.last=null; document.body.classList.add('tvmode');
+    S.tv={code, phones:{}, seats:[], saves:{}, names:{}}; S.tvMsg=''; TV.last=null; document.body.classList.add('tvmode');
     const f=s=>{ const m=s.val(); s.ref.remove(); tvAct(m); }; room.child('tv/acts').on('child_added',f); TV.offs.push(()=>room.child('tv/acts').off('child_added',f));
     const g=s=>tvPhones(s.val()||{}); room.child('tv/phones').on('value',g); TV.offs.push(()=>room.child('tv/phones').off('value',g));
-    TV.room=room; keepAwake(true); ACTIONS.storymap(); render();
+    TV.room=room; keepAwake(true); S.phase='tvhome'; render();   // the TV's own lobby: the code, who's joined, and what to play
   }catch(e){ S.tvMsg=netError(e); render(); }
 }
 function tvStop(){
@@ -63,13 +63,31 @@ function tvStop(){
 function tvPhones(raw){
   if(!isTV()) return;
   const t=S.tv, ph={}; Object.entries(raw).forEach(([k,v])=>{ ph[k.split('~')[0]]=v; }); t.phones=ph;
+  // each phone's name and story save, kept after it drops out so a battle in progress doesn't switch saves
+  Object.entries(ph).forEach(([id,v])=>{ if(v.name) t.names[id]=v.name; if(v.story) t.saves[id]=JSON.parse(v.story); });
   Object.keys(ph).forEach(id=>{ if(t.seats.includes(id)) return;
     if(t.seats.length<2) t.seats.push(id);
     else { const free=t.seats.findIndex(s=>!ph[s]); if(free>=0 && !S.tvDuo) t.seats[free]=id; } });   // mid-match a seat waits for its own phone
   render();
 }
 const tvSeatOn = q => !!(S.tv && S.tv.seats[q] && S.tv.phones[S.tv.seats[q]]);
-const tvSeatName = q => { const p=S.tv && S.tv.seats[q] && S.tv.phones[S.tv.seats[q]]; return p && p.name || ''; };
+const tvSeatName = q => S.tv && S.tv.seats[q] && S.tv.names[S.tv.seats[q]] || '';
+// The players' saves, not the laptop's: story and Quickplay use player 1's phone; a 2-player match deals anyone
+// either phone has unlocked. Story wins go back to player 1's phone (tv/save/<id>, merged in there).
+function tvStoryData(){
+  if(!isTV()) return null;
+  const sv=q=>S.tv.seats[q] && S.tv.saves[S.tv.seats[q]];
+  if(S.tvDuo){ const a=sv(0), b=sv(1); return a&&b ? mergeStory(a,b) : a||b||null; }
+  return sv(0)||null;
+}
+function tvStorySave(st){
+  const id=S.tv.seats[0]; if(!id || S.tvDuo) return;
+  S.tv.saves[id]=JSON.parse(JSON.stringify(st)); if(TV.room) TV.room.child('tv/save/'+id).set(JSON.stringify(st));
+}
+if(typeof STORY_SOURCE!=='undefined'){ STORY_SOURCE.get=tvStoryData; STORY_SOURCE.put=tvStorySave; }
+// On the TV, "your name" (story, Quickplay) is player 1's phone's name
+const thisPlayerName = playerName;
+playerName = () => isTV() && tvSeatName(0) || thisPlayerName();
 const tvPhonesOn = () => !S.tv ? 0 : S.tv.seats.filter((id,q)=>tvSeatOn(q)).length;
 const tvAnyPhone = () => tvPhonesOn()>0;
 // Who picks moves on a phone: player 1 against the computer, both players in a 2-player TV match
@@ -125,8 +143,9 @@ function tvContinue(){
 // Choices for the phone on screens with no single main button (home, end of a battle, credits)
 function tvChoices(view){
   const duo=tvPhonesOn()>=2 ? [['duo',`2 players: ${tvSeatName(0)||'Player 1'} vs ${tvSeatName(1)||'Player 2'}`]] : [];
-  if(view==='setup' || view==='modeset' || view==='codex') return [...duo, ['story','Story mode'],['quickplay','Quickplay vs the computer']];
-  if(view==='story') return duo.length ? duo : null;   // TV mode opens on the story map: two phones can start a match from there
+  if(['tvhome','setup','modeset','codex'].includes(view)){ const p1=tvSeatName(0);
+    return [...duo, ['story', p1?`Story mode · ${p1}’s save`:'Story mode'], ['quickplay', p1?`Quickplay: ${p1} vs the computer`:'Quickplay vs the computer']]; }
+  if(view==='story') return [...duo, ['home','Main menu']];
   if(view==='credits') return [['map','Story map'],['home','Home']];
   if(view==='over'){
     if(S.mode==='story'){ const won=S.winner===0, last=S.stage===STAGES.length-1;
@@ -137,7 +156,7 @@ function tvChoices(view){
 }
 function tvChoose(key){
   if(key==='story' || key==='map') return ACTIONS.storymap();
-  if(key==='quickplay'){ ACTIONS.mode('cpu'); S.names[0]=playerName()||S.names[0]||'Player 1'; return startDraft(); }
+  if(key==='quickplay'){ ACTIONS.mode('cpu'); S.names=[playerName()||'Player 1', S.names[1]||'Computer']; return startDraft(); }
   if(key==='duo') return tvDuoStart();
   if(key==='finale' && S.mode==='story') return ACTIONS.finale();
   if(key==='nextstage' && S.mode==='story') return ACTIONS.stage(S.stage+1);
@@ -207,6 +226,7 @@ function tvBadge(){
   const t=S.tv, on=tvAnyPhone(), full=document.fullscreenElement||document.webkitFullscreenElement;
   // once every phone is in, the badge shrinks to a small faint pill (CK); it comes back full size if a phone drops out
   b.classList.toggle('mini', on && t.seats.every((id,q)=>tvSeatOn(q)));
+  b.hidden = S.phase==='tvhome';   // the lobby shows the code itself
   const seats=t.seats.map((id,q)=>`<span class="tvseat${tvSeatOn(q)?'':' off'}" style="--tc:${pc(q)}">${esc(tvSeatName(q)||(S.tvDuo&&S.names[q])||'Phone')} ${tvSeatOn(q)?'✓':'⟳'}</span>`).join('');
   const wait=S.phase==='draft' ? tvWaiting() : '';   // the move board shows its own
   b.innerHTML=`<span class="tvk">📺</span><span>${on?'':'Phone controller code '}<b>${esc(t.code)}</b></span>${seats}${wait?`<span class="tvwait">${wait}</span>`:''}<button class="btn ghost small" data-a="tvfull">${full?'Exit full screen':'Full screen'}</button><button class="btn ghost small" data-a="tvexit">${on?'Exit TV':'Exit TV mode'}</button>`;
@@ -307,6 +327,29 @@ function vTvBoard(b){
     </div>
     ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : mouse ? actionbar(mouse) : ''}`;
 }
+// The TV's lobby (TV mode opens here, and Main menu comes back here): the code, who has joined, what to play
+function vTvHome(){
+  const t=S.tv, seat=q=>{ const on=tvSeatOn(q), name=tvSeatName(q);
+    return `<div class="tvslot${on?' on':''}" style="--tc:${pc(q)}"><span class="tvsn">Player ${q+1}</span><b>${on?esc(name):q?'Second phone (for 2 players)':'Waiting for a phone…'}</b><span class="muted">${on?'Connected ✓':t.seats[q]?'Reconnecting…':'Not joined yet'}</span></div>`; };
+  const ch=tvChoices('tvhome');
+  return `<div class="tvhome">
+    <div class="hero"><span class="kanji" aria-hidden="true">滅</span><div class="eyebrow">TV mode</div><h1>Slayer Squad</h1></div>
+    <div class="tvjoin"><p>On your phones, open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div>
+    <div class="tvslots">${seat(0)}${seat(1)}</div>
+    <div class="tvmodes">${ch.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="tvchoose" data-v="${k}">${esc(l)}</button>`).join('')}</div>
+    <p class="hint">Pick from either phone, or here. Story mode and unlocks use the players’ own saves from their phones, and story wins are saved back to Player 1’s phone.</p>
+    <div class="tvhomebar"><button class="btn ghost small" data-a="tvfull">Full screen</button><button class="btn ghost small" data-a="tvexit">Exit TV mode</button></div>
+  </div>`;
+}
+if(typeof VIEWS!=='undefined') VIEWS.tvhome = () => vTvHome();
+// Join a TV from a phone's home screen (its own button: not under Online)
+async function tvJoinCode(){
+  const el=document.getElementById('tvcode'), code=((el&&el.value)||'').trim().toUpperCase(); S.tvJoinCode=code;
+  if(!/^[A-Z]{4}$/.test(code)){ S.tvJoinMsg='Type the 4-letter code on the TV.'; return render(); }
+  S.tvJoinMsg='Looking for the TV…'; render();
+  if(await tvRoom(code)){ S.tvJoinMsg=''; S.tvJoinOpen=false; return ctlJoin(code); }
+  S.tvJoinMsg='No TV with that code. Check the code on the TV screen.'; render();
+}
 // The laptop picks this round's moves itself (player 1 against the computer, or a player whose phone dropped out)
 function tvMouse(q){ S.tvMouse=S.round; S.planFor=+q||0; S.focus=null; }
 
@@ -320,7 +363,13 @@ async function ctlJoin(code){
     TV.room=room;
     // here at the TV: the phone's name under its id, removed by the server if the phone drops off
     const me=room.child('tv/phones/'+PHONE_ID+'~'+SESSION);
-    onConnected(db, ()=>{ me.onDisconnect().remove(); me.set({name:playerName()||'Player', at:Date.now()}); });
+    // the phone's story save goes with it, so the TV plays and unlocks from this phone's progress (as a string:
+    // Firebase drops empty lists)
+    onConnected(db, ()=>{ me.onDisconnect().remove(); me.set({name:playerName()||'Player', at:Date.now(), story:JSON.stringify(loadStory())}); });
+    // a story battle won on the TV: merge it into this phone's save (never loses anything already here)
+    const sv=room.child('tv/save/'+PHONE_ID), h=x=>{ const v=x.val(); if(!v) return;
+      try{ writeStory(mergeStory(loadStory(), JSON.parse(v))); me.update({story:JSON.stringify(loadStory())}); }catch(e){} };
+    sv.on('value',h); TV.offs.push(()=>sv.off('value',h));
     const f=s=>{ const v=s.val(); if(v) ctlState(v); }; room.child('tv/state').on('value',f); TV.offs.push(()=>room.child('tv/state').off('value',f));
     const g=s=>{ S.tvGone=s.val()===false; render(); }; room.child('host/on').on('value',g); TV.offs.push(()=>room.child('host/on').off('value',g));
     try{ localStorage.setItem(CTL_KEY, JSON.stringify({code, at:Date.now()})); }catch(e){}

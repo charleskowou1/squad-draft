@@ -273,12 +273,15 @@ function vSetup(){
   return `
   ${playerName()?'':`<div class="askname"><b>What should we call you?</b><span class="muted">Your name shows when you win, in story mode and online.</span>
     <div class="namerow"><input id="hname" type="text" maxlength="14" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="hname">Save</button></div></div>`}
-  <div class="setbar">${typeof isTV==='function'&&isTV()?'':'<button class="btn ghost small gear tvbtn" data-a="tvstart"><span aria-hidden="true">📺</span> TV mode</button>'}<button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
+  <div class="setbar">${typeof isTV==='function'&&isTV()?'':'<button class="btn ghost small gear tvbtn" data-a="tvstart"><span aria-hidden="true">📺</span> TV mode</button>'}<button class="btn ghost small gear tvjoinbtn" data-a="tvjoinopen"><span aria-hidden="true">📺</span> Join a TV</button><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
     <div class="eyebrow">A Demon Slayer squad battler</div><h1>Slayer Squad</h1>
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${S.tvMsg?`<p class="hint onlinemsg">${esc(S.tvMsg)}</p>`:''}
+  ${S.tvJoinOpen?`<div class="panel tvjoinpanel"><b>Join a TV</b><span class="muted">Type the code on the TV screen. This phone becomes your controller.</span>
+    <div class="joinrow"><input id="tvcode" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.tvJoinCode||'')}" aria-label="TV code"><button class="btn" data-a="tvjoin">Join</button></div>
+    ${S.tvJoinMsg?`<p class="hint onlinemsg">${esc(S.tvJoinMsg)}</p>`:''}</div>`:''}
   ${artStrip()}
   ${gamesCard()}
   ${dailyCard()}

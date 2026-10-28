@@ -319,7 +319,19 @@ const selflessUnlocked = () => storyReached('akaza');
 // From here on progress is kept: don't change this key again unless CK asks for another reset.
 const STORY_KEY = 'squad-draft-story-v2';   // {cleared:[ids], stars:{id: best stars 1–3}}
 try{ localStorage.removeItem('squad-draft-story') }catch(e){}
-function loadStory(){ try{ return JSON.parse(localStorage.getItem(STORY_KEY))||{cleared:[]} }catch(e){ return {cleared:[]} } }
+// TV mode reads and writes a phone's save instead of this device's (tv.js sets STORY_SOURCE.get / .put): the players'
+// progress lives on their phones, so the TV plays story and deals unlocks from theirs
+const STORY_SOURCE = {get:null, put:null};
+function loadStory(){
+  const v=STORY_SOURCE.get && STORY_SOURCE.get(); if(v) return JSON.parse(JSON.stringify(v));
+  try{ return JSON.parse(localStorage.getItem(STORY_KEY))||{cleared:[]} }catch(e){ return {cleared:[]} } }
+function writeStory(s){ if(STORY_SOURCE.put && STORY_SOURCE.get && STORY_SOURCE.get()) return STORY_SOURCE.put(s); try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
+// Two saves combined: every battle either has won, and for each battle the better star run
+function mergeStory(a, b){
+  const out={cleared:[...new Set([...(a.cleared||[]), ...(b.cleared||[])])], goals:{}, stars:{}};
+  [a,b].forEach(x=>Object.entries(x.stars||{}).forEach(([id,n])=>{ if(n>(out.stars[id]||0)){ out.stars[id]=n; if(x.goals&&x.goals[id]) out.goals[id]=x.goals[id]; else delete out.goals[id]; } }));
+  return out;
+}
 // Stars: ★ win, ★★ win with at least `standing` fighters still up (or team health above `hp2`%), ★★★ win within `rounds` rounds (or, on some survive
 // stages, with your team above `health`% at the end). Targets come from simulated strong-player wins (CLAUDE.md).
 // ★★ is "fighters standing" where that means something; on solo battles (and wherever 1 fighter standing is all a win
@@ -340,9 +352,9 @@ function goalsGot(id){ const s=loadStory(), g=(s.goals||{})[id], n=(s.stars||{})
 const stageStars = id => goalsGot(id).filter(Boolean).length;
 const totalStars = () => STAGES.reduce((a,st)=>a+stageStars(st.id),0);
 function saveStars(id,met){ const n=met.filter(Boolean).length, s=loadStory(); if(n<=stageStars(id)) return;   // only a better run replaces the best
-  s.goals=s.goals||{}; s.stars=s.stars||{}; s.goals[id]=met.map(Boolean); s.stars[id]=n; try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
+  s.goals=s.goals||{}; s.stars=s.stars||{}; s.goals[id]=met.map(Boolean); s.stars[id]=n; writeStory(s); }
 const storyWon = () => loadStory().cleared.filter(id=>STAGES.some(s=>s.id===id)).length;
-function saveStoryClear(id){ const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); try{ localStorage.setItem(STORY_KEY,JSON.stringify(s)) }catch(e){} }
+function saveStoryClear(id){ const s=loadStory(); if(!s.cleared.includes(id)) s.cleared.push(id); writeStory(s); }
 const stageCleared = i => loadStory().cleared.includes(STAGES[i].id);
 const stageUnlocked = i => i===0 || stageCleared(i-1) || stageCleared(i);
 // The battle to play next: the first unlocked one not won yet (or the last one)

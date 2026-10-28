@@ -4,8 +4,8 @@
 const { loadGame } = require('./load-game');
 const ctx = loadGame(['roster.js', 'engine.js', 'story.js', 'daily.js', 'online.js', 'notes.js', 'effects.js', 'clips.js', 'views.js', 'sound.js', 'tv.js'], `
 // the TV battle board (js/tv.js) for 2-team games: every playback beat, and the waiting board, as a 2-player TV match
-const TVT={code:'TEST', phones:{a:{name:'A'}, b:{name:'B'}}, seats:['a','b']};
-function tvBoardCheck(b){ const keep=[S.tv,S.tvDuo]; S.tv=TVT; S.tvDuo=!b; try{ vTvBoard(b); tvWaiting(); globalThis.TVN=(globalThis.TVN||0)+1; } finally { [S.tv,S.tvDuo]=keep; } }
+const TVT={code:'TEST', phones:{a:{name:'A'}, b:{name:'B'}}, seats:['a','b'], names:{a:'A', b:'B'}, saves:{}};
+function tvBoardCheck(b){ const keep=[S.tv,S.tvDuo]; S.tv=TVT; S.tvDuo=!b; try{ vTvBoard(b); tvWaiting(); vTvHome(); tvChoices('tvhome'); tvChoices('story'); globalThis.TVN=(globalThis.TVN||0)+1; } finally { [S.tv,S.tvDuo]=keep; } }
 function check(games){
   let errors=0, first='';
   // every character gets a test clip for every moment, so each clip beat gets drawn

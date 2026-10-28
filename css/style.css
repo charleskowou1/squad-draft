@@ -1441,3 +1441,23 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 #tvbadge.mini .tvk{font-size:.8rem}
 #tvbadge.mini .btn,#tvbadge.mini .tvwait{display:none}
 #tvbadge.mini:hover{opacity:1} #tvbadge.mini:hover .btn{display:inline-flex}
+
+/* Join a TV: its own button on the phone's home screen (the laptop has TV mode instead) */
+.tvjoinbtn{display:inline-flex}
+@media (min-width:900px){ .tvjoinbtn{display:none} }
+.tvjoinpanel{display:flex;flex-direction:column;gap:8px}
+/* the TV's lobby: big code, the two player slots, what to play */
+.tvhome{min-height:calc(100vh / var(--tvz,1.2) - 160px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center}
+.tvhome .hero{display:flex;flex-direction:column;align-items:center;text-align:center} .tvhome .hero .kanji{position:static;margin-bottom:8px}
+.tvjoin p{margin:0 0 8px;font-size:1.15rem;color:var(--ink-2)}
+.tvcode{font-family:var(--display);font-size:5.5rem;font-weight:800;letter-spacing:.22em;line-height:1;color:var(--gold);text-shadow:0 0 30px rgba(214,165,77,.35)}
+.tvslots{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.tvslot{width:300px;display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:16px;background:var(--surface);border:2px dashed var(--line-2);text-align:left}
+.tvslot.on{border:2px solid var(--tc);box-shadow:0 0 24px color-mix(in srgb,var(--tc) 30%,transparent)}
+.tvslot .tvsn{font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc)}
+.tvslot b{font-size:1.25rem}
+.tvmodes{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.tvmodes .btn{min-width:260px;padding:14px 22px;font-size:1.05rem}
+.tvhome .hint{max-width:640px}
+.tvhomebar{display:flex;gap:10px}
+#tvbadge[hidden]{display:none}

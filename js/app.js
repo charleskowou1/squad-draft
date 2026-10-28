@@ -178,7 +178,7 @@ const ACTIONS = {
   start: startDraft,
   home(){ if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
-    const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
+    const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
@@ -190,7 +190,10 @@ const ACTIONS = {
   tvstart(){ tvStart(); },
   tvexit(){ tvStop(); tvFit(); ACTIONS.home(); },
   tvfull(){ tvFullscreen(); },
-  tvmouse(v){ tvMouse(v); },                           // pick this round's moves on the laptop instead of a phone
+  tvmouse(v){ tvMouse(v); },
+  tvchoose(v){ tvChoose(v); },                          // a mode on the TV's lobby, picked on the laptop
+  tvjoinopen(){ S.tvJoinOpen=!S.tvJoinOpen; S.tvJoinMsg=''; setTimeout(()=>{ const el=document.getElementById('tvcode'); if(el) el.focus(); }); },
+  tvjoin(){ tvJoinCode(); },                           // pick this round's moves on the laptop instead of a phone
   ctlnext(){ ctlNext(); },
   ctlpick(v){ ctlSend({a:'choose', key:v}); },          // a choice on the phone: Story map, Next battle, Rematch…
   ctlstage(v,b){ ctlSend({a:'stage', i:+v, draft:b.dataset.d==='1'}); },   // a story battle picked on the phone
