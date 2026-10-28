@@ -1241,10 +1241,10 @@ details ul b{color:var(--fg)}
 .dawnsky{display:none;position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen}
 body.dawn .dawnsky{display:block}
 .dawnsky::before{content:'';position:absolute;inset:0;opacity:calc(var(--dawn,0)*.9);transition:opacity 2.4s ease;
-  background:linear-gradient(to top,rgba(255,140,60,.34),rgba(224,87,59,.14) 30%,transparent 62%)}
+  background:linear-gradient(to top,rgba(255,140,60,calc(.34 + var(--heat,0) * .2)),rgba(224,87,59,calc(.14 + var(--heat,0) * .16)) 30%,transparent calc(62% + var(--heat,0) * 20%))}
 .dawnsky .sun{position:absolute;right:-70px;bottom:70px;width:300px;height:300px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,244,205,.75) 0 26%,rgba(255,201,105,.5) 40%,rgba(255,140,60,.22) 58%,transparent 71%);
-  transform:translateY(calc((1 - var(--dawn,0)) * 340px));opacity:calc(.3 + var(--dawn,0)*.7);
+  transform:translateY(calc((1 - var(--dawn,0)) * 340px)) scale(calc(1 + var(--heat,0) * .45));opacity:calc(.3 + var(--dawn,0)*.7);
   transition:transform 2.4s cubic-bezier(.3,.7,.3,1),opacity 2.4s ease;animation:sunpulse 5s ease-in-out infinite}
 @keyframes sunpulse{50%{filter:brightness(1.12)}}
 @media (prefers-reduced-motion: reduce){.dawnsky::before,.dawnsky .sun{transition:none;animation:none}}
@@ -1461,3 +1461,46 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 .tvhome .hint{max-width:640px}
 .tvhomebar{display:flex;gap:10px}
 #tvbadge[hidden]{display:none}
+
+/* Who picks first: a character thinks of a number; nine numbered character cards (vSpin) */
+.guess{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:4px}
+.gthink{display:flex;align-items:center;gap:12px;max-width:440px;width:100%}
+.gthink .gl.stg{flex:none;width:58px;height:70px}
+.gsay{flex:1;padding:10px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line-2);font-family:var(--display);font-size:1.05rem;position:relative}
+.gsay::before{content:'';position:absolute;left:-7px;top:22px;width:12px;height:12px;background:var(--surface);border-left:1px solid var(--line-2);border-bottom:1px solid var(--line-2);transform:rotate(45deg)}
+.gsay .gwho{display:block;font-family:var(--body);font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.gsay b{color:var(--gold);font-size:1.3rem}
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:440px}
+.gcard{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;border:2px solid var(--tc);background:#000;padding:0;cursor:pointer;
+  transition:transform .2s}
+.guess.fresh:not(.done) .gcard{animation:popin .35s calc(var(--i) * .04s) ease-out both}
+.gcard:not([disabled]):hover{transform:translateY(-3px)}
+.gcard .gart{position:absolute;inset:0} .gcard .gart img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.gcard .ck{display:flex;align-items:center;justify-content:center;height:100%;font-size:2.4rem;color:var(--ink-2)}
+.gcard .gnum{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:rgba(14,12,10,.85);border:2px solid var(--gold);color:var(--gold);font-family:var(--display);font-weight:800;font-size:1.4rem}
+.gcard .gtag{position:absolute;top:6px;left:6px;right:6px;padding:3px 6px;border-radius:8px;color:#111;font-weight:800;font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcard[disabled]{cursor:default}
+.guess:not(.done) .gcard[disabled]:not(.taken){filter:saturate(.7) brightness(.8)}
+.guess.done .gcard:not(.secret):not(.taken){filter:grayscale(.8) brightness(.45)}
+.gcard.secret{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 34px rgba(214,165,77,.7);transform:scale(1.04);z-index:2}
+.guess.fresh .gcard.secret{animation:greveal .8s ease-out both}
+.gcard.secret .gnum{background:var(--gold);color:#111}
+.gcard.win{box-shadow:0 0 0 3px var(--tc),0 0 30px var(--tc)}
+@keyframes greveal{0%{transform:rotateY(90deg) scale(.9)}60%{transform:rotateY(0) scale(1.08)}100%{transform:scale(1.04)}}
+.gwhy{margin:0;text-align:center}
+body.tvmode .ggrid{max-width:560px;grid-template-columns:repeat(9,1fr);max-width:none}
+body.tvmode .gthink{max-width:560px}
+body.tvmode .guess{padding-top:20px}
+
+/* the TV's draft while phones pick: whose turn, the teams, every card dealt */
+.tvturn{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 18px;border-radius:14px;border:2px solid var(--tc);
+  background:color-mix(in srgb,var(--tc) 12%,var(--surface));text-align:center;flex-wrap:wrap}
+.tvturn b{font-family:var(--display);font-size:1.5rem}
+.tvgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important}
+.tvhelpers{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* Quit in battle asks first */
+.quitask{text-align:center;display:flex;flex-direction:column;gap:10px}
+.quitask h2{margin:0;font-family:var(--display)}
+.quitask .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}

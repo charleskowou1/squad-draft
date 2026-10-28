@@ -29,7 +29,15 @@ function match(seed, opts = {}) {
   publish();
   // host spins and starts the draft
   H.bansOn = seed % 2 === 0;   // half the matches start with a ban round: each phone bans on its own turn
-  H.phase = 'spin'; H.spin = Object.assign(host.spinWheel(), { state: 'done' }); host.newDraft(H.spin.r); publish();
+  // who picks first: every phone takes a number (guests send theirs to the host); a repeated number does nothing
+  H.phase = 'spin'; H.spin = host.newGuess(); publish();
+  phones.forEach((ph, q) => { const taken = H.spin.picks.filter(Boolean), n0 = [1,2,3,4,5,6,7,8,9].find(x => !taken.includes(x));
+    if (taken.length) { ph.onlineGuess(taken[0]); if (q === hi) publish(); if (H.spin.picks[q]) problems.push('a number was taken twice'); }
+    ph.onlineGuess(n0); if (q === hi) publish(); });
+  if (H.spin.state !== 'done') problems.push('number game did not finish');
+  { const d = H.spin.picks.map(x => Math.abs(x - H.spin.secret)); if (d[H.spin.r] !== Math.min(...d)) problems.push('closest number did not pick first'); }
+  phones.forEach((ph, q) => { if (q !== hi && (!ph.S_().spin || ph.S_().spin.r !== H.spin.r)) problems.push('phones disagree on who picks first'); });
+  host.newDraft(H.spin.r); publish();
   for (let b = 0; b < n && H.banning; b++) { const p = host.turn(), ctx = phones[p], id = ctx.S_().pool.find(x => ctx.api().canBan(p, x)); ctx.onlineBan(id); if (p === hi) publish(); }
   if (H.bansOn && (H.banning || H.bans.length !== n)) problems.push('ban round did not finish');
   for (let k = 0; k < 120 && H.phase === 'draft'; k++) {

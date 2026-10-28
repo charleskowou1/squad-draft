@@ -66,7 +66,7 @@ function hostMaybeNextRound(){
   if(!S.readyNext.every(Boolean) || S.final) return;
   S.round++; S.phase='plan'; S.movesLocked=players().map(p=>!alive(p).length); S.readyNext=players().map(()=>false); S.hostNote=null;
 }
-function hostRematch(){ S.final=false; S.localOver=false; S.winner=undefined; S.phase='spin'; S.spin=null; }
+function hostRematch(){ S.final=false; S.localOver=false; S.winner=undefined; S.phase='spin'; S.spin=newGuess(); }
 // An action from a guest phone (msg.p = its seat). Anything out of turn is ignored.
 function hostHandle(msg){
   const p=msg.p;
@@ -84,6 +84,7 @@ function hostHandle(msg){
         S.movesLocked[p]=true; hostAfterLocks();
       }
       break;
+    case 'guess': if(S.phase==='spin') guessPick(p, msg.n); break;   // who picks first: this phone's number
     case 'keep': if(S.phase==='scout' && S.scoutP===p) hostNextScout(); break;
     case 'next': if(S.phase==='result'){ S.readyNext[p]=true; hostMaybeNextRound(); } break;
     case 'rematch': if(S.phase==='result' && S.final) hostRematch(); break;
@@ -101,7 +102,6 @@ function takeOverHost(oldName){
     S.movesLocked=players().map(p=>!alive(p).length || (p===S.me && !!S.movesLocked[p]));
     S.plans=players().map((pl,p)=>p===S.me ? (S.plans[p]||{}) : {}); S.helperPlan=players().map((h,p)=>p===S.me ? (S.helperPlan[p]||[]) : []);
   }
-  if(S.phase==='spin' && S.spin && S.spin.state==='spinning') S.spin.state='done';
 }
 // Host lobby: start with the players seated now (seats 0..n-1; an empty seat in the middle has to be filled first)
 function hostStartMatch(){
@@ -146,6 +146,7 @@ function onlineNext(){
   S.readyNext[S.me]=true;
   if(iAmHost()) hostMaybeNextRound(); else send({a:'next'});
 }
+function onlineGuess(n){ if(S.phase!=='spin') return; if(iAmHost()) guessPick(S.me,n); else send({a:'guess', n}); }
 function onlineRematch(){ if(iAmHost()) hostRematch(); else send({a:'rematch'}); }
 
 /* ---------- play at your own pace (2 phones, no host) ----------

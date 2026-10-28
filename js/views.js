@@ -24,7 +24,14 @@ const tip = (id, text) => !inPrologue() || tipsSeen().includes(id) ? '' : `<div 
 // Game screens get a small ⚙ so music and sound can be changed mid-game (playback pauses while it's open)
 function topbar(eyebrow, title, quit=true){
   return `<header class="top"><div><div class="eyebrow">${eyebrow}</div><div class="title">${title}</div></div>
-    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
+    <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button>${quit?(inMatch()?'<button class="btn ghost small" data-a="askquit">Quit</button>':S.mode==='story'?'<button class="btn ghost small" data-a="home">Back</button>':'<button class="btn ghost small" data-a="home">Quit</button>'):''}</div></header>`;
+}
+// In a match (from who-picks-first to the last round), Quit asks first instead of leaving straight away (CK)
+const inMatch = () => ['spin','draft','pass','plan','scout','ready','result'].includes(S.phase);
+function quitAsk(){
+  return `<div class="scrim" data-a="unquit"></div><div class="modal"><div class="in quitask" role="dialog" aria-modal="true" aria-label="Quit this battle?">
+    <h2>Quit this ${S.phase==='draft'||S.phase==='spin'?'match':'battle'}?</h2><p class="muted">${isOnline()?'You’ll leave the game for everyone.':'This match won’t be saved.'}</p>
+    <div class="row"><button class="btn ghost" data-a="unquit">Keep playing</button><button class="btn" data-a="quit" data-v="${S.mode==='story'?'map':'home'}">Quit${S.mode==='story'?' to story map':''}</button></div></div></div>`;
 }
 const actionbar = inner => `<div class="actionbar"><div class="in">${inner}</div></div>`;
 const statCells = c => `<span class="stats"><span><i>HP</i>${c.hp}</span><span><i>PWR</i>${c.pow}</span><span><i>SPD</i>${c.spd}</span><span><i>DEF</i>${c.def}</span></span>`;
@@ -157,13 +164,13 @@ function modeSettings(){
     return `<div class="setline"><span class="tlabel">Players</span>${seg('cfgplayers',n,[[2,'2'],[3,'3 · Triple threat'],[4,'4']])}</div>
       ${n===4?`<div class="setline"><span class="tlabel">With 4 players</span>${seg('cfgduo',c.duo?'on':'off',[['off','Free-for-all'],['on','2v2 teams']])}</div>`:''}
       <div class="names">${Array.from({length:n},(_,i)=>`<label class="pname" style="--tc:${pc(i)}"><span>Player ${i+1}</span><input id="n${i}" type="text" maxlength="14" value="${esc(names[i])}"></label>`).join('')}</div>
-      ${pts}${pool}${note}<button class="btn" data-a="start">Start: spin for first pick</button>`; }
+      ${pts}${pool}${note}<button class="btn" data-a="start">Start: who picks first?</button>`; }
   if(S.mode==='cpu' || S.mode==='practice')
     return `${S.mode==='practice'?'<p class="hint">Curate the match: you draft for every team, the computers’ too, then fight the computers. Practice games don’t count toward your records.</p>':''}
       <label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
       <div class="setline"><span class="tlabel">Difficulty</span>${seg('cfglevel',c.level,Object.entries(LEVELS).map(([k,l])=>[k,l.label]))}</div>
       <p class="hint">${{easy:'Picks moves almost at random. Good for learning the cards.',normal:'Plays sensibly but makes mistakes.',hard:'Goes for knockouts, spreads damage and saves its specials.'}[c.level]}</p>
-      ${pts}${pool}<button class="btn" data-a="start">${S.mode==='practice'?'Start drafting':'Start: spin for first pick'}</button>`;
+      ${pts}${pool}<button class="btn" data-a="start">${S.mode==='practice'?'Start drafting':'Start: who picks first?'}</button>`;
   if(S.mode==='online')
     return `<label class="pname" style="--tc:${pc(0)}"><span>Your name</span><input id="n0" type="text" maxlength="14" value="${esc(S.names[0])}"></label>
       <div class="onlinebox">
@@ -307,20 +314,34 @@ function vSetup(){
 }
 
 /* ---------- who picks first ---------- */
+// Who picks first: a character thinks of a number from 1 to 9; each player takes a numbered character card; closest
+// goes first (engine.js: newGuess / guessPick). Local players take turns on the one screen; online and on a TV each
+// phone picks its own; the computer picks at random right after you.
+// The cards deal in, and the secret card flips, only the first time this screen draws them: guest phones and the TV
+// redraw on every update, which would restart the animations (and keep the cards half-faded)
+const GUESS_SHOWN = new Set();
 function vSpin(){
-  const sp=S.spin, done=sp&&sp.state==='done', R=96, segs=wheelSegs(), seg=360/segs, n=nPlayers(), guest=isOnline()&&!iAmHost();
-  const pt=(a,r)=>{ const t=a*Math.PI/180; return `${(100+r*Math.sin(t)).toFixed(2)} ${(100-r*Math.cos(t)).toFixed(2)}`; };
-  const slices=Array.from({length:segs},(_,i)=>{ const p=i%n, a0=i*seg, a1=a0+seg;
-    return `<path d="M100 100 L${pt(a0,R)} A${R} ${R} 0 0 1 ${pt(a1,R)} Z" style="fill:${pc(p)}"/>
-      <text x="100" y="${n>2?32:40}" transform="rotate(${a0+seg/2} 100 100)"${n>2?' style="font-size:9px"':''}>${esc(S.names[p].slice(0,8))}</text>`; }).join('');
-  const wheel=`<div class="wheelbox"><span class="pointer" aria-hidden="true"></span>
-    <svg class="wheel" viewBox="0 0 200 200" style="transform:rotate(${done?sp.angle:0}deg)" role="img" aria-label="Wheel with ${players().map(nm).join(', ')}">
-      <circle cx="100" cy="100" r="99" class="rim"/>${slices}</svg>
-    <button class="hubbtn${sp||guest?'':' ready'}" data-a="spin" ${sp||guest?'disabled':''} aria-label="Spin the wheel">滅</button></div>`;
+  const g=S.spin; if(!g || g.game!=='guess') return `${topbar('Before the draft', 'Who picks first?')}`;
+  const seenKey=g.cards.join()+'|'+g.state, fresh=!GUESS_SHOWN.has(seenKey); GUESS_SHOWN.add(seenKey);
+  const done=g.state==='done', ctl=typeof isCtl==='function'&&isCtl(), guest=isOnline()&&!iAmHost();
+  const onPhones = typeof isTV==='function' && isTV() && (S.tvDuo || tvAnyPhone());   // the TV: the phones pick
+  const me = onPhones ? -1 : isOnline()||ctl ? S.me : S.mode==='cpu' ? 0 : guessTurn();
+  const mine = !done && me>=0 && !g.picks[me];
+  const host=BYID[g.host], waiting=players().filter(q=>!g.picks[q]);
+  const card=(id,i)=>{ const n=i+1, o=g.picks.indexOf(n), c=BYID[id], win=done && o===g.r;
+    return `<button class="gcard${o>=0?' taken':''}${done&&n===g.secret?' secret':''}${win?' win':''}" data-a="guess" data-v="${n}" ${mine&&o<0?'':'disabled'} style="--tc:${o>=0?pc(o):'var(--line-2)'};--i:${i}">
+      <span class="gart">${ART[id]?`<img src="${ART[id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span><span class="gnum">${n}</span>
+      ${o>=0?`<span class="gtag" style="background:${pc(o)}">${nm(o)}</span>`:''}</button>`; };
+  const say = done ? `It was <b>${g.secret}</b>!` : 'I’m thinking of a number from 1 to 9.';
+  const dist = q => Math.abs(g.picks[q]-g.secret);
   const status = done
-    ? `<div class="spinres" style="color:${pc(sp.r)}">${nm(sp.r)} picks first</div>${actionbar(guest?`<button class="btn" disabled>Waiting for ${nm(0)} to start…</button>`:`<button class="btn team" data-a="toDraft" style="--bc:${pc(sp.r)}">Start the draft</button>`)}`
-    : `<div class="spinhint">${sp?'Spinning…':guest?`${nm(0)} spins the wheel`:'Tap the 滅 seal to spin'}</div>`;
-  return `${topbar('Before the draft', 'Who picks first?')}<div class="spin">${wheel}${status}</div>`;
+    ? `<div class="spinres" style="color:${pc(g.r)}">${nm(g.r)} picks first</div>
+       <p class="hint gwhy">${g.tie?`A tie at ${plural(dist(g.r),'away')}… a coin flip decided it.`:players().map(q=>`${nm(q)} ${g.picks[q]} (${dist(q)} away)`).join(' · ')}</p>
+       ${ctl?'':actionbar(guest?`<button class="btn" disabled>Waiting for ${nm(hostSeat())} to start…</button>`:`<button class="btn team" data-a="toDraft" style="--bc:${pc(g.r)}">Start the draft</button>`)}`
+    : `<div class="spinhint">${mine?`<span style="color:${pc(me)}">${nm(me)}</span>, pick a number`:`Waiting for ${waiting.map(q=>`<span style="color:${pc(q)}">${nm(q)}</span>`).join(' and ')} to pick${onPhones?' on the phone':''}…`}</div>`;
+  return `${topbar('Before the draft', 'Who picks first?')}
+    <div class="guess${done?' done':''}${fresh?' fresh':''}"><div class="gthink">${seal(host,'stg')}<div class="gsay"><span class="gwho">${esc(host.short||host.name)}</span><span>${say}</span></div></div>
+    <div class="ggrid">${g.cards.map(card).join('')}</div>${status}</div>`;
 }
 
 /* ---------- draft ---------- */
@@ -443,7 +464,7 @@ function vLobby(){
       <div class="seats">${[0,1,2,3].map(i=>i===0?seat(0,S.lobbyHost||S.names[0],true):seat(i,(seats[i-1]||{}).name,(seats[i-1]||{}).on)).join('')}</div>
       ${taken>=2?'<p class="hint">3 or 4 players: free-for-all. Every team fights every other team.</p>':''}
     </div>
-    ${host?actionbar(`<button class="btn" data-a="ostart" ${ok?'':'disabled'}>${ok?`Start with ${taken+1}: spin for first pick`:'Waiting for players…'}</button>`):''}`;
+    ${host?actionbar(`<button class="btn" data-a="ostart" ${ok?'':'disabled'}>${ok?`Start with ${taken+1}: who picks first?`:'Waiting for players…'}</button>`):''}`;
 }
 // Who picks next: the current pick and the next few, so a double pick is never a surprise
 function orderStrip(p){
@@ -584,6 +605,7 @@ function artStrip(){
 }
 // Card detail, centred on screen, when a card is tapped during the draft (or a fighter's info card in battle)
 function vSheet(){
+  if(S.quitAsk) return quitAsk();
   if(S.settings) return vSettings();
   if(S.phase==='codex') return codexSheet();
   if(S.info) return vInfo();

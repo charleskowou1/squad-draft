@@ -152,9 +152,24 @@ function buildPool(){
     const left=fams.slice(), f=[];
     while(f.length<Math.min(poolSize(),fams.length)) f.push(takeWeighted(left, x=>familyOdds(x,cards)));   // a new phone with few unlocks can have fewer characters than a 4-player deal
     const ids=f.map(fam=>takeWeighted(cards.filter(c=>c.fam===fam), versionOdds).id);
+    addRivals(ids, cards);
     if(ids.filter(id=>BYID[id].cost<=4).length>=3+(nPlayers()-2)*2) return ids.sort((a,b)=>BYID[b].cost-BYID[a].cost).concat(dealHelpers());
   }
   return cards.slice(0,poolSize()).map(c=>c.id).concat(dealHelpers());
+}
+// Big cards come with a rival (CK, Oct 28, 2026): a card of RIVAL_MIN+ points is always dealt with another character
+// within RIVAL_GAP points of it, so a lone Final Form Muzan isn't decided by who picks first. If the deal has none,
+// a mid-priced card (over 4 points, so the cheap-card guarantee holds) is swapped for one. Same deal size.
+const RIVAL_MIN = 9, RIVAL_GAP = 3;
+function addRivals(ids, cards){
+  const cost=id=>BYID[id].cost, near=(a,b)=>Math.abs(cost(a)-cost(b))<=RIVAL_GAP;
+  ids.slice().sort((a,b)=>cost(b)-cost(a)).forEach(big=>{
+    if(cost(big)<RIVAL_MIN || !ids.includes(big) || ids.some(o=>o!==big && near(o,big))) return;
+    const fams=new Set(ids.map(id=>BYID[id].fam)), rivals=cards.filter(c=>!fams.has(c.fam) && near(c.id,big));
+    const out=ids.filter(id=>id!==big && cost(id)>4 && !near(id,big));
+    if(!rivals.length || !out.length) return;
+    ids[ids.indexOf(out[Math.floor(Math.random()*out.length)])] = rivals[Math.floor(Math.random()*rivals.length)].id;
+  });
 }
 // first = the player who won the spin and picks first (0 or 1)
 function newDraft(first=0){
@@ -164,6 +179,29 @@ function newDraft(first=0){
 // Who picks first: a fair coin flip, shown as a wheel. Returns the winner and how far to turn the wheel.
 const WHEEL_SEGS = 8;
 const wheelSegs = () => nPlayers()===3 ? 9 : WHEEL_SEGS;   // slices take turns between the players
+/* ---------- who picks first: "I'm thinking of a number" (CK, Oct 28, 2026: replaces the wheel) ----------
+   A character thinks of a number from 1 to 9, shown as nine numbered character cards. Everyone takes a different
+   number (the computer picks at random); whoever is closest picks first. A tie is settled by a coin flip, said on
+   screen. S.spin = {game:'guess', host, cards, secret, picks:[number or 0 per player], state:'picking'|'done', r, tie} */
+const GUESS_HOSTS = ['kagaya','urokodaki','tengen','shinobu','tamayo'];
+function newGuess(){
+  const fams=ROSTER.filter(c=>c.id===c.fam && !c.helper && !c.spawn).map(c=>c.id), cards=[];
+  while(cards.length<9 && fams.length) cards.push(fams.splice(Math.floor(Math.random()*fams.length),1)[0]);
+  return {game:'guess', host:GUESS_HOSTS[Math.floor(Math.random()*GUESS_HOSTS.length)], cards, secret:1+Math.floor(Math.random()*9), picks:players().map(()=>0), state:'picking'};
+}
+// whose number it is on a shared screen (Local: in order), or -1
+const guessTurn = () => { const g=S.spin; return g && g.state==='picking' ? g.picks.findIndex(n=>!n) : -1; };
+function guessPick(p, n){
+  const g=S.spin; n=+n;
+  if(!g || g.state!=='picking' || !(p>=0 && p<g.picks.length) || g.picks[p] || !(n>=1 && n<=9) || g.picks.includes(n)) return false;
+  g.picks[p]=n; if(g.picks.every(Boolean)) guessReveal(); return true;
+}
+function cpuGuess(p){ const g=S.spin, free=[1,2,3,4,5,6,7,8,9].filter(n=>!g.picks.includes(n)); return guessPick(p, free[Math.floor(Math.random()*free.length)]); }
+function guessReveal(){
+  const g=S.spin, d=g.picks.map(n=>Math.abs(n-g.secret)), best=Math.min(...d), tied=players().filter(p=>d[p]===best);
+  g.r=tied[Math.floor(Math.random()*tied.length)]; g.tie=tied.length>1; g.state='done';
+}
+// The old wheel's random first picker: still used as the coin flip for own-pace games and by the tests
 function spinWheel(){
   const n=nPlayers(), segs=wheelSegs(), r = Math.floor(Math.random()*n), seg = 360/segs;
   const i = r + n*Math.floor(Math.random()*segs/n);   // slice i belongs to player i % n
@@ -735,11 +773,11 @@ function resolve(){
   S.curMove=null;
   // end of round: poison, Shinobu's devour damage, sunrise, regeneration, cooldowns
   const sun=sunUp();
-  if(sun && S.round===SUNRISE_ROUND) L('The sun rises! From now on demons burn every round and stop regenerating.','h',fx('burn',null,null));
+  if(sun && S.round===SUNRISE_ROUND) L('The sun rises! From now on demons burn every round, hotter each time, and stop regenerating.','h',fx('burn',null,null));
   players().forEach(p=>S.teams[p].forEach(u=>{
     if(u.alive && u.poison){ u.hp=Math.max(0,u.hp-u.poison.dmg); L(`Poison hits ${u.name} ${lost(u,u.poison.dmg)}.`,'k',fx('poison',null,u)); fall(u); u.poison.turns--; if(u.poison.turns<=0) u.poison=null; }
     if(u.alive && u.devoured){ u.hp=Math.max(0,u.hp-u.devoured); L(`Shinobu's poison eats away at ${u.name} ${lost(u,u.devoured)}.`,'k',fx('poison',null,u)); fall(u); }
-    if(sun && u.alive && u.demon && !u.sunproof){ const d=Math.ceil(u.max*SUN_BURN); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u); }
+    if(sun && u.alive && u.demon && !u.sunproof){ const d=Math.ceil(u.max*sunBurn()); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u); }
     if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !u.sunproof)){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
     if(u.cd>0) u.cd--;
     if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
@@ -790,6 +828,8 @@ function roundText(r){
 // Sunrise: long games end. From round SUNRISE_ROUND demons (except the sun-proof) burn SUN_BURN of their max HP every
 // round and stop regenerating. Not in story mode (its own fights are about holding out until dawn).
 const SUNRISE_ROUND = 10, SUN_BURN = .1;   // round 10 since Oct 27, 2026 (CK: sun in ~10% / 25% / 30% of 10 / 20 / 30-pt games; at 12 it was 5 / 14 / 16%)
+// The burn grows every round the sun is up (CK, Oct 28, 2026): 10% at sunrise, then 15%, 20%, 25%…
+const SUN_GROW = .05, sunBurn = () => SUN_BURN + SUN_GROW*Math.max(0, S.round-SUNRISE_ROUND);
 const sunUp = () => S.mode!=='story' && S.round>=SUNRISE_ROUND;
 /* ---------- story beats: protect, boss phases and mid-battle lines (all set by the stage; nothing hidden) ----------
    twist.protect: id      you lose if that fighter on your team falls

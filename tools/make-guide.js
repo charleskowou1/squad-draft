@@ -38,7 +38,7 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
   and controls their own squad; heals, hides, shields and training can target the partner's fighters; Giyu's Dead
   Calm covers both squads; a side wins when the other side has nobody left. The 12-pt card cap applies.
 - OPTIONAL BANS (off by default, under "More options"): before the draft each player bans one character.
-- SUNRISE: from round ${SUNRISE_ROUND} (not in Story) demons burn 10% of their max HP every round and stop regenerating
+- SUNRISE: from round ${SUNRISE_ROUND} (not in Story) demons burn 10% of their max HP that round, 5% more every round after (15%, 20%, 25%…), and stop regenerating
   (Demon King Tanjiro is sun-proof). Long games end; Final Muzan got weaker in long fights.
 - STORY UNLOCKS: winning a story battle unlocks the demons, Marks, Legends and alternate versions it introduces for
   every other mode. Base slayers, allies, Hand/Swamp Demon and helpers are always available.
@@ -52,12 +52,14 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
 hr('2. THE DRAFT');
 out(`- Budget: 10, 20 (default) or 30 points per side (set per mode on the main menu).
 - Team size: 1 to 6 fighters. You can lock your team at any time ("Lock team"); you auto-lock if nothing is affordable.
-- A wheel spin decides who picks first. Then snake order: A, B, B, A, A, B, B, A…
+- Who picks first: a character thinks of a number from 1 to 9; each player takes a different number (the computer picks at random); the closest picks first (a tie is a coin flip). Then snake order: A, B, B, A, A, B, B, A…
   Once one side locks, the other keeps picking until they lock or can't afford anything.
 - Each character has versions (base, Mark ✦, or Yoriichi prime/age 85, Tengen/Retired Tengen, Muzan/Final Form).
   Only ONE version of a character can be drafted per match, by either side. Taking Giyu rules out Giyu ✦ for everyone.
 - POOL (Settings): "Random" (default) deals 12 characters (14 at 30 points), always at least 3 costing 4 or less;
   "All" offers every character. Re-deal is allowed before the first pick (Random pool only).
+- Big cards come with a rival: any card costing 9+ is always dealt with another character within 3 points of it
+  (a mid-priced card is swapped out for one if needed), so one giant isn't simply decided by who picks first.
 - 10-point games only deal cards costing 6 or less. 30-point games favour pricier characters and Mark versions.
 - Rarity: Yoriichi is dealt in about 1 draft in 8 (prime about 1 in 23); Final-Form Muzan about 1 in 10.
 - BACK-POCKET HELPERS (always offered, 1 pt, max ONE per player, no fighter slot): see section 7.

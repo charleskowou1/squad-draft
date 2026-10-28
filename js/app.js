@@ -3,7 +3,7 @@
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
 const VIEWS = {credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-let scored = false, spinShown = null;
+let scored = false, spinShown = null;   // spinShown: the number game already revealed on this screen (for its ding)
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
 const viewName = () => isOnline() && S.final && S.localOver ? 'over' : S.phase==='scout' && S.scouting ? 'plan' : S.phase;
 
@@ -31,9 +31,14 @@ function render(){
   const open=[...app.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id);
   document.body.classList.toggle('localmode', S.mode==='local');
   // Until Dawn: a sun climbs over the battle screen as the rounds count down to sunrise (stage.sunrise)
-  const st=S.mode==='story' && STAGES[S.stage], sky=!!(st && st.sunrise && ['plan','result','pass','scout','ready'].includes(view));
+  const st=S.mode==='story' && STAGES[S.stage], fighting=['plan','result','pass','scout','ready'].includes(view);
+  // the sun climbs over the battle: Until Dawn (story) over its rounds; every other battle in the 4 rounds before
+  // sunrise (round SUNRISE_ROUND), then it burns hotter each round after (--heat)
+  const before=4, sky=fighting && !!S.teams && (st ? !!st.sunrise : S.round>SUNRISE_ROUND-before);
   document.body.classList.toggle('dawn', sky);
-  if(sky){ const n=st.twist.survive; document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-1)/(n-1))).toFixed(3)); }
+  if(sky){ const n=st?st.twist.survive:before, from=st?1:SUNRISE_ROUND-before;
+    document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-from)/(st?n-1:before))).toFixed(3));
+    document.body.style.setProperty('--heat', st ? 0 : Math.max(0, Math.min(1, (S.round-SUNRISE_ROUND)/4)).toFixed(3)); }
   // Story battles fight in front of the battle's place picture (img/places/, the same one as its cutscenes)
   const place=['plan','result','pass','scout','ready','over'].includes(view) && (st ? PLACE_ART[st.id]||PLACE_ART[st.arc] : S.place && PLACE_ART[S.place]);   // story: the battle's place; other modes: the match's
   document.body.classList.toggle('placebg', !!place);
@@ -47,21 +52,12 @@ function render(){
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
   if(!ctl && S.phase==='draft' && S.mode==='cpu' && turn()!==0){ clearTimeout(S._t); S._t=setTimeout(()=>{ if(S.banning) cpuBan(); else cpuDraftStep(S.level); render(); },700); }
-  if(!ctl && S.phase==='spin' && S.spin && S.spin.state==='spinning' && spinShown!==S.spin.angle) animateSpin();
+  if(!ctl && S.phase==='spin' && S.spin && S.spin.state==='done' && S.spin.cards && spinShown!==S.spin.cards.join()){ spinShown=S.spin.cards.join(); sfx('ding'); }   // the number is revealed
   // online host: send each guest phone its own copy of the shared state (only when it changed)
   if(typeof tvPublish==='function'){ tvPublish(view); tvBadge(); }   // TV mode: keep the phone controller in step
   if(iAmHost() && ONLINE.net){ ONLINE.last=ONLINE.last||{};
     const seats = S.phase==='lobby' ? (S.lobby.seats||[]).map((x,i)=>x&&x.on?i+1:0).filter(Boolean) : others(S.me);
     seats.forEach(q=>{ const j=snapshotFor(q); if(j!==ONLINE.last[q]){ ONLINE.last[q]=j; ONLINE.net.publish(j,q); } }); }
-}
-// Turn the freshly drawn wheel to its landing angle, then show who won
-function animateSpin(){
-  spinShown=S.spin.angle;   // online, the guest's phone animates the host's spin too (the host decides when it's done)
-  const w=app.querySelector('.wheel');
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ w.classList.add('go'); w.style.transform=`rotate(${S.spin.angle}deg)`; }));
-  // ticks that slow down with the wheel, then a ding
-  if(!quickMotion()) for(let t=0,gap=40; t<3900; t+=gap, gap*=1.09) setTimeout(()=>sfx('tick'), t);
-  clearTimeout(S._t); S._t=setTimeout(()=>{ if(isOnline() && !iAmHost()){ sfx('ding'); return; } S.spin.state='done'; sfx('ding'); render(); }, quickMotion()?300:4300);
 }
 // How long a playback line stays up: enough to read it, longer for long lines and knockouts
 // Playback speed (Settings): Slow / Normal / Fast multiply how long each action stays up
@@ -127,7 +123,7 @@ function startDraft(){
 }
 // The next player (after p) who still has fighters, or -1
 const nextChooser = p => { for(let q=p+1;q<nPlayers();q++) if(alive(q).length) return q; return -1; };
-function toSpin(){ S.phase='spin'; S.spin=null; S.tvLocked={}; window.scrollTo(0,0); }
+function toSpin(){ S.phase='spin'; S.spin=newGuess(); S.tvLocked={}; window.scrollTo(0,0); }   // who picks first: the number game
 // After a fighter's move is complete, open the next one that still needs a move
 function advanceFocus(p){ const n=alive(p).find(u=>!u.stun && !unitReady(u)); S.focus = n ? n.uid : 'none'; }
 function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
@@ -182,8 +178,15 @@ const ACTIONS = {
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
   vibe(v){ S.vibeOn=v==='on'; try{ localStorage.setItem('squad-draft-vibe',v) }catch(e){} },
   rematch(){ if(isOnline()) return onlineRematch(); if(isPractice()) return newDraft(0); toSpin(); },
-  spin(){ if(isOnline() && !iAmHost()) return; if(!S.spin) S.spin=Object.assign(spinWheel(),{state:'spinning'}); },
-  toDraft(){ if(isOnline() && !iAmHost()) return; newDraft(S.spin.r); },
+  // who picks first: take a number (a phone controlling a TV sends it; online the host applies it; vs the computer it
+  // answers straight after you)
+  guess(v){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'guess', n:+v});
+    if(isOnline()) return onlineGuess(+v);
+    const p = S.mode==='cpu' ? 0 : guessTurn(); if(p<0 || !guessPick(p,+v)) return; sfx('pick');
+    if(S.mode==='cpu') others(0).forEach(q=>cpuGuess(q)); },
+  toDraft(){ if(isOnline() && !iAmHost()) return; if(!S.spin || S.spin.state!=='done') return; newDraft(S.spin.r); },
+  askquit(){ S.quitAsk=true; },
+  unquit(){ S.quitAsk=false; },
   redeal(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'redeal'}); if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
   ocreate(){ onlineCreate(); },
   // TV mode (js/tv.js): this laptop shows the game on the big screen; a phone joins its code as the controller
@@ -214,7 +217,7 @@ const ACTIONS = {
   savename(v){ const el=document.getElementById(v), n=el&&el.value.trim(); if(!n) return; savePlayerName(n); S.names[0]=playerName();
     const ns=loadNames(); if(ns && (ns[0]==='CK'||!ns[0])){ ns[0]=playerName(); saveNames(ns); }
     S.nameSaved=true; setTimeout(()=>{ S.nameSaved=false; render(); },1500); },
-  quit(v){ S.settings=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
+  quit(v){ S.settings=false; S.quitAsk=false; S.play=null; clearTimeout(S._t); if(v==='map') ACTIONS.storymap(); else ACTIONS.home(); window.scrollTo(0,0); },   // story: leave a battle from Settings
   placecfg(v){ try{ localStorage.setItem(PLACE_KEY,v) }catch(e){} },   // Settings → Battle background
   settab(v){ S.setTab=v; if(v==='stats') loadGlobalStats(); },
   theirs(){ S.showTheirs=!S.showTheirs; },
@@ -302,7 +305,7 @@ document.addEventListener('click',e=>{
   const fn=ACTIONS[b.dataset.a]; if(!fn) return;
   fn(b.dataset.v,b); render();
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||S.settings)){ S.sel=null; S.info=null; S.settings=false; render(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||S.settings||S.quitAsk)){ S.sel=null; S.info=null; S.settings=false; S.quitAsk=false; render(); } });
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.

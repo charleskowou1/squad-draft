@@ -107,6 +107,7 @@ function tvAct(m){
   if(m.a==='lockteam' && myDraft){ ACTIONS.lock(); render(); return; }
   if(m.a==='undo' && S.phase==='draft'){ ACTIONS.undo(); render(); return; }
   if(m.a==='redeal' && S.phase==='draft'){ ACTIONS.redeal(); render(); return; }
+  if(m.a==='guess' && S.phase==='spin'){ if(S.tvDuo ? seat<2 && guessPick(seat,m.n) : seat===0) { if(!S.tvDuo) ACTIONS.guess(m.n); sfx('pick'); } render(); return; }
   if(m.a==='keep' && S.phase==='scout' && S.scoutP===seat){ ACTIONS.keepmoves(); render(); return; }
   if(m.a==='moves' && m.round===S.round && tvChooser(seat)){
     const plans=m.plans||{}, helpers=(m.helperPlan||[]).filter(h=>(S.helpers[seat]||[]).includes(h));
@@ -130,13 +131,13 @@ function tvSeatLock(q){
 function tvNextLabel(){
   if(S.phase==='scene') return S.sceneVs ? 'Fight' : 'Next';
   if(S.phase==='result') return !S.play || !S.play.done ? 'Skip' : S.final ? 'See who won' : 'Next round';
-  if(S.phase==='spin') return !S.spin ? 'Spin the wheel' : S.spin.state==='done' ? 'Start the draft' : null;
+  if(S.phase==='spin') return S.spin && S.spin.state==='done' ? 'Start the draft' : null;   // numbers are picked on the phones
   return null;   // the crow report's Keep / Change are only on its owner's phone
 }
 function tvContinue(){
   const l=tvNextLabel(); if(!l) return;
   if(S.phase==='scene') return S.sceneVs ? ACTIONS.sceneskip() : ACTIONS.scenenext();
-  if(S.phase==='spin') return !S.spin ? ACTIONS.spin() : ACTIONS.toDraft();
+  if(S.phase==='spin') return ACTIONS.toDraft();
   if(l==='Skip') return ACTIONS.skip();
   return S.final ? ACTIONS.finish() : ACTIONS.next();
 }
@@ -176,6 +177,7 @@ function tvDuoStart(){
 const tvStoryList = () => STAGES.map((st,i)=>({i, title:st.title, arc:ARCS[st.arc].title, open:stageUnlocked(i), won:stageCleared(i), stars:stageStars(st.id)}));
 // What the phone at seat q should show
 function tvSeatView(q, view){
+  const g=S.spin; if(S.phase==='spin' && g && g.state==='picking' && !g.picks[q] && (S.tvDuo ? q<2 : q===0 && S.mode==='cpu')) return 'guess';
   if(S.phase==='plan' && tvChooser(q) && !tvLocked(q) && !(S.tvMouse===S.round && S.planFor===q)) return 'plan';
   if(S.phase==='scout' && S.scoutP===q && tvChooser(q)) return 'scout';
   if(view==='draft' && turn()===q && (S.tvDuo ? q<2 : q===0 && (S.mode==='cpu'||S.mode==='story'))) return 'draft';
@@ -192,13 +194,14 @@ function tvPublish(view){
 }
 // Who the TV is waiting on, in words ('' when it isn't waiting on a phone)
 function tvWaiting(){
-  if(!isTV() || !S.teams && S.phase!=='draft') return '';
+  if(!isTV() || !S.teams && !['draft','spin'].includes(S.phase)) return '';
   const who=q=>esc(S.names[q]||`Player ${q+1}`), off=q=>!tvSeatOn(q);
   if(!S.tvDuo && !tvAnyPhone()) return '';
   if(S.phase==='plan'){ const w=players().filter(q=>tvChooser(q) && !tvLocked(q)); if(!w.length) return '';
     const done=S.tvDuo ? players().filter(q=>tvChooser(q) && tvLocked(q)).map(q=>`${who(q)} ✓`) : [];
     return [...done, ...w.map(q=>off(q)?`${who(q)}’s phone is reconnecting…`:`Waiting for ${who(q)}’s moves`)].join(' · '); }
   if(S.phase==='scout' && S.scoutP>=0) return `${who(S.scoutP)}’s Kasugai Crow is scouting…`;
+  if(S.phase==='spin' && S.spin && S.spin.state==='picking'){ const w=players().filter(q=>!S.spin.picks[q] && (S.tvDuo||q===0)); return w.length ? `Waiting for ${w.map(who).join(' and ')} to pick a number` : ''; }
   if(S.phase==='draft'){ const q=turn(); if(!S.tvDuo && q!==0) return ''; return off(q)?`${who(q)}’s phone is reconnecting…`:`${who(q)} is picking on the phone`; }
   return '';
 }
@@ -253,6 +256,19 @@ if(typeof VIEWS!=='undefined'){
   VIEWS.plan = () => tvBoardWait() ? vTvBoard(null) : base.plan();
   VIEWS.scout = () => tvBoardWait() ? vTvBoard(null) : base.scout();
   VIEWS.result = () => tvBoardOK() && S.play && !S.play.done ? vTvBoard(playBeat()) : base.result();
+  const baseDraft=VIEWS.draft;
+  VIEWS.draft = () => isTV() && (S.tvDuo || tvAnyPhone()) ? vTvDraft() : baseDraft();
+}
+// The draft on the TV while phones pick (CK): the phones have the details, so the TV shows whose turn it is, every
+// card dealt (taken ones tagged with who took them), and each team so far
+function vTvDraft(){
+  const p=turn(), cpu=!S.tvDuo && p!==0, who=`<span style="color:${pc(p)}">${nm(p)}</span>`;
+  const verb=S.banning?'ban':'pick', wait=tvWaiting();
+  return `${topbar(S.banning?`Ban round · ${S.bans.length+1} of ${nPlayers()}`:'Draft', `${who}’s ${verb}`, false)}
+    <div class="tvturn" style="--tc:${pc(p)}"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${cpu?`${nm(p)} is ${S.banning?'banning':'picking'}…`:wait||`${nm(p)} is picking`}</b><span class="muted">${budget()} points each · up to ${teamCap()} fighters</span></div>
+    <div class="teams">${players().map(q=>teamBox(q,p)).join('')}</div>
+    <div class="grid tvgrid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
+    ${S.banning?'':`<div class="tvhelpers"><span class="tlabel">Back pocket</span>${S.pool.filter(isHelper).map(id=>{ const o=S.picks.findIndex(t=>t.includes(id)); return `<span class="hchip${o>=0?' owned':''}" ${o>=0?`style="--tc:${pc(o)}"`:''}>${seal(BYID[id],'pip')}<span><b>${esc(BYID[id].short)}</b><small>${o>=0?nm(o):esc(BYID[id].sig.tag)}</small></span></span>`; }).join('')}</div>`}`;
 }
 const amtOf = l => l.t.match(/\[([+-])(\d+%)\]/)||[];
 const popHTML = l => { const a=amtOf(l); return a[1] ? `<span class="apop ${a[1]==='-'?'dmg':'gain'}">${a[1]==='-'?'−':'+'}${a[2]}</span>` : l.fx==='miss' ? '<span class="apop">miss</span>' : l.fx==='block' ? '<span class="apop">blocked</span>' : ''; };
@@ -412,6 +428,7 @@ function ctlViewName(){
   const v=S.ctlView;
   if(v==='plan' && S.ctlLocked!==S.round && S.teams) return 'plan';
   if(v==='scout' && S.ctlScouted!==S.round && S.teams) return S.scouting ? 'plan' : 'scout';
+  if(v==='guess' && S.spin) return 'spin';
   if(v==='draft' && S.pool) return 'draft';
   return 'ctlwatch';
 }

@@ -18,14 +18,17 @@ function check(games){
       ['local','online','cpu','practice','story'].forEach(m=>{ S.mode=m; vSetup(); if(m!=='story') vModeSet(); }); S.mode=mode; S.settings=true; vSheet(); S.setTab='stats'; vSheet(); S.setTab='save'; vSheet(); S.setTab='general'; S.settings=false;
       S.install={ios:g%2===0,mobile:true,standalone:false,canPrompt:g%3===0}; vSetup(); S.install=null;
       if(mode==='online'){ S.phase='lobby'; S.lobby={code:'TEST',seats:[{name:'B',on:true},{name:'C',on:n>2},null]}; vLobby(); S.phase='setup'; }
-      S.spin=null; vSpin(); S.spin=Object.assign(spinWheel(),{state:'spinning'}); vSpin(); S.spin.state='done'; vSpin();
+      S.spin=newGuess(); vSpin(); if(guessPick(0,10) || guessPick(0,0)) throw new Error('number game took a number outside 1-9');
+      players().forEach((q,i)=>{ if(i===1 && guessPick(q, S.spin.picks[0])) throw new Error('number game allowed the same number twice'); cpuGuess(q); vSpin(); });
+      if(S.spin.state!=='done') throw new Error('number game did not finish'); vSpin();
+      { const g=S.spin, d=g.picks.map(n=>Math.abs(n-g.secret)); if(d[g.r]!==Math.min(...d)) throw new Error('number game: the closest did not go first'); }
       if(S.spin.r<0||S.spin.r>=n) throw new Error('spin winner out of range');
       newDraft(S.spin.r);
       if(turn()!==S.spin.r) throw new Error('spin winner did not pick first');
       if(S.pool.some(id=>BYID[id].cost>maxCardCost())) throw new Error('card over the cost cap dealt');
       if(S.bansOn){ for(let b=0;b<n;b++){ if(!S.banning) throw new Error('ban round ended early'); vDraft(); S.sel=S.pool[0]; vSheet(); S.sel=null; cpuBan(); }
         if(S.banning || S.bans.length!==n) throw new Error('ban round did not finish'); if(S.pool.some(id=>S.bans.some(b=>BYID[b.id].fam===BYID[id].fam) && canPick(turn(),id))) throw new Error('banned card can be picked'); }
-      let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
+      let k=0; while(S.phase==='draft'&&k++<200){ vDraft(); if(k===1){ S.quitAsk=true; vSheet(); S.quitAsk=false; } { const keep=S.tv; S.tv=TVT; vTvDraft(); S.tv=keep; } S.pool.forEach(id=>{ S.sel=id; vSheet(); }); pocketDraft(turn()); S.sel=null; cpuDraftStep(level); }
       if(S.phase==='draft') throw new Error('draft did not finish');
       if(S.teams.length!==n) throw new Error('wrong number of teams');
       if(S.teams.some(t=>t.length>maxTeam)) throw new Error('a team is over the max fighters setting');
