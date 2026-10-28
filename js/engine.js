@@ -161,8 +161,12 @@ function buildPool(){
 // within RIVAL_GAP points of it, so a lone Final Form Muzan isn't decided by who picks first. If the deal has none,
 // a mid-priced card (over 4 points, so the cheap-card guarantee holds) is swapped for one. Same deal size.
 const RIVAL_MIN = 9, RIVAL_GAP = 3;
+// Never each other's rival: a card and its direct counter (CK, Oct 28, 2026: Muzan was always being dealt next to a
+// Yoriichi and fell to ~25%). Either way round, by family.
+const NOT_RIVALS = [['muzan','yoriichi']];
+const counterPair = (a,b) => NOT_RIVALS.some(([x,y])=>(BYID[a].fam===x&&BYID[b].fam===y)||(BYID[a].fam===y&&BYID[b].fam===x));
 function addRivals(ids, cards){
-  const cost=id=>BYID[id].cost, near=(a,b)=>Math.abs(cost(a)-cost(b))<=RIVAL_GAP;
+  const cost=id=>BYID[id].cost, near=(a,b)=>Math.abs(cost(a)-cost(b))<=RIVAL_GAP && !counterPair(a,b);
   ids.slice().sort((a,b)=>cost(b)-cost(a)).forEach(big=>{
     if(cost(big)<RIVAL_MIN || !ids.includes(big) || ids.some(o=>o!==big && near(o,big))) return;
     const fams=new Set(ids.map(id=>BYID[id].fam)), rivals=cards.filter(c=>!fams.has(c.fam) && near(c.id,big));

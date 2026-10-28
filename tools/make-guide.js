@@ -16,8 +16,17 @@ const { ROSTER, BYID, STAGES, LEVELS, MICE_PWR, AMBUSH_DMG, SUNRISE_ROUND, ARCS,
 const T = []; const out = s => T.push(s); const hr = t => out('\n' + '='.repeat(78) + '\n' + t + '\n' + '='.repeat(78));
 const PRIO = { 3: 'acts first (priority 3)', 2: 'acts very early (priority 2)', 1: 'acts early (priority 1)' };
 
-out(`SQUAD DRAFT — COMPLETE GUIDE FOR STRATEGY ADVICE
-A Demon Slayer squad-battler (personal fan game). Generated ${new Date().toISOString().slice(0,10)} from the game's own data.
+// The version is the offline cache number (bumped with every push); the change log is tools/changelog.js
+const VERSION = +(fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8').match(/squad-draft-v(\d+)/)||[])[1];
+const CHANGES = require('./changelog');
+if(CHANGES[0][0] !== VERSION) console.warn(`Note: sw.js is v${VERSION} but the newest line in tools/changelog.js is v${CHANGES[0][0]}. Add this version's change.`);
+const fmtDate = d => new Date(d+'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+out(`SLAYER SQUAD — COMPLETE GUIDE FOR STRATEGY ADVICE
+Version ${VERSION} · generated ${fmtDate(new Date().toISOString().slice(0,10))} from the game's own data.
+A Demon Slayer squad-battler (personal fan game by Charles Kowou, inspired by Amelia Gray).
+
+WHAT CHANGED, VERSION BY VERSION (newest first; the biggest change in each)
+${CHANGES.map(([v,d,t])=>`  v${String(v).padEnd(3)} ${fmtDate(d).padEnd(13)} ${t}`).join('\n')}
 
 HOW TO USE THIS FILE (for the assistant reading it)
 You are helping a player (Mia) get better at Slayer Squad. Everything below is exact game data and rules.
