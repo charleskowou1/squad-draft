@@ -327,7 +327,7 @@ const DREAM_STAGES = [
     blurb:'Tanjiro wakes up. Everyone is home.',
     scene:[['nezuko',"Brother, you're late for breakfast!"],['tanjiro','I had a terrible dream. Everyone was gone.'],['tanjuro','Then breathe, Tanjiro. Morning is here.'],['tanjiro',"Father… you're… Of course you're here. Why would I be surprised?"],['tanjuro',"Come. Show me the dance. Let's see how much you remember."]],
     outro:[['tanjuro',"You've grown strong. Stronger than I ever taught you."],['tanjiro','You taught me everything.'],['tanjuro','Did I? When?'],['tanjiro',"…I don't know. It feels like a long time ago."]]},
-  {id:'dr_ablaze', arc:'dream1', title:'Heart Ablaze', place:'A training field in the sun', foe:'Rengoku', mine:['tanjiro','zenitsu','inosuke'], enemy:['rengoku'], level:'normal',
+  {id:'dr_ablaze', pockets:['chuntaro'], arc:'dream1', title:'Heart Ablaze', place:'A training field in the sun', foe:'Rengoku', mine:['tanjiro','zenitsu','inosuke'], enemy:['rengoku'], level:'normal',
     blurb:'A living Rengoku wants to see how far you have come.',
     scene:[['zenitsu','Why are we training? The war is over! I want to nap!'],['inosuke','Fight me, Big Eyebrows!'],['rengoku','Excellent spirit! All three of you, at once!'],['tanjiro','Rengoku… you look well.'],['rengoku','Of course! Why would I not?']],
     outro:[['rengoku',"Well done! You've surpassed me, young Kamado!"],['tanjiro',"Please don't say that."],['rengoku','Why not? It is what every teacher hopes for.'],['inosuke','Hey. Why are you crying again?']]},
@@ -340,7 +340,7 @@ const DREAM_STAGES = [
     blurb:'A demon is sighted on a train. An ordinary mission.',
     scene:[['tanjiro','Rengoku, why are we on this train?'],['rengoku',"A demon's been sighted! An ordinary mission!"],['tanjiro',"Please. Don't fight him alone."],['rengoku','Him? Who, Kamado?'],['akaza','Good evening, Kyojuro. Become a demon, and we can fight forever.']],
     outro:[['rengoku','Well fought! Upper Moon Three, defeated at last!'],['tanjiro',"You did it, Rengoku! You're all right!"],['rengoku','…Tanjiro. Why are you crying?'],['tanjiro',"I don't know. I just feel like I already said goodbye to you."],['rengoku','Strange. I remember a train. A sunrise. And then… nothing at all.']]},
-  {id:'dr_flowers', arc:'dream2', title:'Flowers Together', place:'The Butterfly Estate', foe:'Doma', mine:['kanae','shinobu'], enemy:['doma'], level:'normal',
+  {id:'dr_flowers', pockets:['aoi'], arc:'dream2', title:'Flowers Together', place:'The Butterfly Estate', foe:'Doma', mine:['kanae','shinobu'], enemy:['doma'], level:'normal',
     blurb:'Two sisters, and the demon they share.',
     scene:[['kanae',"Shinobu, you've grown so serious. Smile for me."],['shinobu',"Sister, I… I can't remember why I stopped."],['doma','What a lovely pair of sisters! Shall I save you both?'],['shinobu','You. I know that voice. I have hated that voice for a very long time.'],['kanae',"Then let's end it together."]],
     outro:[['kanae',"There. It's over."],['shinobu','It was never this easy. Why was it this easy?'],['kanae',"Maybe because this time, you weren't alone."]]},
@@ -348,11 +348,11 @@ const DREAM_STAGES = [
     blurb:"Tengen's wives go undercover, and things go badly.",
     scene:[['suma',"I don't want to go undercover! Lord Tengen said it would be fun, and it's NOT!"],['makio',"Stop crying or I'll give you something to cry about!"],['hinatsuru',"Focus, both of you. The Oiran is a demon, and he's counting on us."],['daki','Three ugly little mice. Which one should I wear first?']],
     outro:[['tengen',"Flashy work, my wives! I couldn't be prouder!"],['suma','We did it, Lord Tengen! Your eye is… you have both your eyes!'],['tengen','Of course I do. Why would I not?'],['hinatsuru',"…Yes. Of course. Forgive me. I don't know why I looked at it."]]},
-  {id:'dr_selection', arc:'dream2', title:'Final Selection, Again', place:'Mount Fujikasane', foe:'Hand Demon', mine:['giyu','sabito'], enemy:['hand','swamp'], level:'normal',
+  {id:'dr_selection', pockets:['goto'], arc:'dream2', title:'Final Selection, Again', place:'Mount Fujikasane', foe:'Hand Demon', mine:['giyu','sabito'], enemy:['hand','swamp'], level:'normal',
     blurb:'Giyu goes back to the mountain he never really left.',
     scene:[['giyu',"Sabito. You're supposed to…"],['sabito',"Supposed to what? Stay behind me, Giyu. I'll handle this."],['giyu','No. Not this time. This time I stand beside you.'],['sabito','Since when do you talk so much?']],
     outro:[['sabito','We passed. Both of us.'],['giyu','Both of us.'],['sabito','So why do you look like that? We won!'],['giyu',"Because I have never been this happy. And I don't trust it."]]},
-  {id:'dr_nothing', arc:'dream2', title:'Nothing Stays Dead', place:'The Butterfly Estate, at dusk', foe:'Doma', mine:['kanae','shinobu','giyu','tanjiro'], enemy:['doma'], level:'hard',
+  {id:'dr_nothing', pockets:['aoi'], arc:'dream2', title:'Nothing Stays Dead', place:'The Butterfly Estate, at dusk', foe:'Doma', mine:['kanae','shinobu','giyu','tanjiro'], enemy:['doma'], level:'hard',
     twist:{survive:6}, boosts:[{side:1, hp:4, pow:4, label:'Doma: +300% HP, +4 PWR'}],
     blurb:'Something that was finished is back.',
     scene:[['tanjiro',"Everyone's so happy. Why does it keep hurting?"],['doma','Good morning! Did you miss me?'],['shinobu','No. No, we killed you.'],['doma',"Did you? I wouldn't know. Nothing here seems to stick."],['giyu','Tanjiro, get back. This is wrong. All of this is wrong.']],
@@ -366,7 +366,7 @@ const DREAM_STAGES = [
     blurb:'Every step he takes, his brother was already there.',
     scene:[['michikatsu','Every step I take, you were already there.'],['yoriichi','Brother, I never wanted to be ahead of you.'],['michikatsu','I know. That is what I cannot forgive.'],['michikatsu','Draw your sword. For once in my life, look at me as an equal.']],
     outro:[['yoriichi',"I've always looked up to you. All of my life."],['michikatsu',"…Even a dream won't let me win."],['yoriichi','A dream?'],['','They both go still, and turn toward where Tanjiro is standing.']]},
-  {id:'dr_question', arc:'dream3', title:'A Question from the Sun', place:'Beyond the memory', foe:'Yoriichi', mine:['tanjiro_mark'], enemy:['yoriichi'], level:'normal',
+  {id:'dr_question', pockets:['tecchin'], arc:'dream3', title:'A Question from the Sun', place:'Beyond the memory', foe:'Yoriichi', mine:['tanjiro_mark'], enemy:['yoriichi'], level:'normal',
     boosts:[{side:0, hp:2.2, pow:4, label:'Tanjiro: +120% HP, +4 PWR'}],
     blurb:'He finally meets the man whose earrings he wears.',
     scene:[['yoriichi','You can see me, can\'t you? Child with my earrings.'],['tanjiro',"You're Yoriichi. You saved my family's line. I've wanted to thank you all my life."],['yoriichi','Then show me your dance.']],
@@ -376,12 +376,12 @@ const DREAM_STAGES = [
     blurb:'A dream can hold more than one person.',
     scene:[['tanjiro','A dream. If this is a dream, then who else is in here?'],['hakuji',"Koyuki, stay inside. Master Keizo, I'll deal with them."],['tanjiro',"Akaza? No. That's who he was."],['hakuji','I swore I\'d protect them. This time I will be here.']],
     outro:[['hakuji',"You've seen how this ends, haven't you? You, boy."],['tanjiro','You can see me?'],['hakuji','Leave me this. Just this one morning. Please.'],['','Tanjiro bows, and walks away.']]},
-  {id:'dr_train', arc:'dream4', title:'The Dream Train', place:'A train with no end', foe:'Enmu', mine:['tanjiro','zenitsu','inosuke','nezuko'], enemy:['enmu'], level:'normal',
+  {id:'dr_train', pockets:['chuntaro'], arc:'dream4', title:'The Dream Train', place:'A train with no end', foe:'Enmu', mine:['tanjiro','zenitsu','inosuke','nezuko'], enemy:['enmu'], level:'normal',
     boosts:[{side:1, hp:3.5, pow:5, label:'Enmu: +250% HP, +5 PWR'}],
     blurb:'Only one demon could do something like this.',
     scene:[['inosuke','I smell a demon! Finally!'],['zenitsu',"There's a sound under everything. Like breathing. Like the whole world's asleep."],['tanjiro','It has to be Enmu. Only he could do this.'],['enmu','Oh, you came. How sweet. And how very, very late.']],
     outro:[['enmu',"Hit me all you like. I'm only a passenger here."],['tanjiro','Stop this dream!'],['enmu',"Me? Oh, you poor boy. You really don't know."]]},
-  {id:'dr_confess', arc:'dream4', title:"Enmu's Confession", place:'The last carriage', foe:'Enmu', mine:['tanjiro_mark'], enemy:['enmu','rengoku','kanae'], level:'normal',
+  {id:'dr_confess', pockets:['tecchin'], arc:'dream4', title:"Enmu's Confession", place:'The last carriage', foe:'Enmu', mine:['tanjiro_mark'], enemy:['enmu','rengoku','kanae'], level:'normal',
     boosts:[{side:0, hp:1.6, pow:2, label:'Tanjiro: +60% HP, +2 PWR'},{side:1, hp:.6, label:'Shadows: −40% HP'}],
     blurb:'He has one thing left to tell you.',
     scene:[['enmu',"I've made hundreds of dreams. I know a borrowed one when I see one."],['enmu',"I didn't build this place. I just crawled in, to enjoy the view."],['tanjiro','Then who?'],['enmu',"Who woke up crying? Who can't let them go? Who needs them all alive?"]],
@@ -396,17 +396,16 @@ const DREAM_STAGES = [
     blurb:'The hardest fight of his life.',
     scene:[['tanjiro_demon',"Why would you leave? They're alive here. Father. Mother. Rengoku."],['tanjiro','None of this is real.'],['tanjiro_demon',"It's real enough. Stay, and nobody ever dies again. Isn't that what you wanted?"],['tanjiro','…More than anything.']],
     outro:[['tanjiro','But Nezuko is calling me. The real Nezuko.'],['tanjiro_demon',"Then you'll lose them all a second time."],['tanjiro','I know.'],['','The shadow breaks. Muzan stands behind it, where he has always been.'],['muzan_final',"Then I'll keep this world for myself."]]},
-  {id:'dr_nine', arc:'dream5', title:'Nine Hashira', place:'The last dawn', foe:'Final Muzan', mine:['giyu','shinobu','rengoku','muichiro','mitsuri','obanai','sanemi','gyomei','tengen'], enemy:['muzan_final'], level:'hard', waves:3,
+  {id:'dr_nine', pockets:['goto'], arc:'dream5', title:'Nine Hashira', place:'Where the dream is breaking', foe:'Final Muzan', mine:['giyu','shinobu','rengoku','muichiro','mitsuri','obanai','sanemi','gyomei','tengen'], enemy:['muzan_final'], level:'hard', waves:3,
     boosts:[{side:1, hp:3.6, pow:2, label:'Muzan: +260% HP, +2 PWR'}],
-    phases:[{id:'muzan_final', at:.25, rally:true, pow:3, label:'+3 PWR', line:'Why won\'t you stay DEAD?!'}],
-    beats:[{when:'low', id:'muzan_final', at:.25, who:'rengoku', text:'Because he remembers us!'}],
+    phases:[{id:'muzan_final', at:.25, rally:true, pow:3, label:'+3 PWR', line:'Why won\'t you stay DEAD?!', reply:{id:'rengoku', text:'Because he remembers us!'}}],
     blurb:'Three at a time. Choose the order. Everyone left charges in at the end.',
     scene:[['muzan_final',"You cling to the dead, boy. So I'll use them. I've lived in your grief since the last sunrise."],['tanjiro',"I can't beat him alone."],['rengoku','You never had to!'],['giyu','Tanjiro. Stay behind us.'],['shinobu','Just once more, all of us.'],['gyomei','Namu Amida Butsu. Hashira, to your places.']],
     outro:[['muzan_final',"You'll wake up alone. You'll beg to come back here."],['sanemi','Shut up.'],['tanjiro',"He's fading. All of it's fading."],['rengoku','Then there\'s one thing left to do, young Kamado.']]},
-  {id:'dr_waking', arc:'dream5', title:'Waking', place:'The last dawn', foe:"Muzan's Will", mine:['tanjiro'], enemy:['muzan'], level:'normal',
-    twist:{reinforce:[{id:'rengoku',round:2},{id:'shinobu',round:3},{id:'kanae',round:4},{id:'sabito',round:5},{id:'makomo',round:6}]},
-    boosts:[{side:1, hp:2.2, pow:1, label:"Muzan's Will: +120% HP, +1 PWR"}],
-    blurb:'The last thing standing between him and the morning.',
+  {id:'dr_waking', pockets:['aoi'], arc:'dream5', title:'Waking', place:'The last dawn', foe:"Muzan's Will", mine:['tanjiro','giyu'], enemy:['muzan'], level:'hard',
+    twist:{protect:'tanjiro', reinforce:[{id:'rengoku',round:2},{id:'tengen_retired',round:3},{id:'shinobu',round:4},{id:'kanae',round:5},{id:'sabito',round:6},{id:'makomo',round:7}]},
+    boosts:[{side:1, hp:1.8, label:"Muzan's Will: +80% HP"}],
+    blurb:'Keep Tanjiro alive. If he falls, it all ends.',
     scene:[['muzan','Everything you love ends the moment you open your eyes.'],['tanjiro',"I know. I've already lived through it."],['rengoku',"Go on. We'll walk with you as far as we can."]],
     outro:[['','The dream turns to morning. They stand together one last time.'],['tanjuro',"You remembered the dance. That's all a father could ask."],['shinobu','Smile, Tanjiro. It suits you.'],['kanae','Thank you for looking after my sister.'],['sabito',"You never needed us to swing for you."],['makomo',"Be happy. That's an order."],['rengoku','Set your heart ablaze. Now, and always.'],['tanjiro','Thank you. All of you. Goodbye.'],['','Everything turns to white.']]},
 ];
@@ -531,7 +530,7 @@ function beginStage(){
   if(!S.storyDraft){
     // Nine Hashira: the first few fight, and the rest wait their turn (the order you chose)
     const order=st.waves ? (S.waveOrder||st.mine) : st.mine;
-    S.picks=[order.slice(0,st.waves||order.length), st.enemy.slice()]; S.locked=[true,true]; S.pool=[];
+    S.picks=[[...order.slice(0,st.waves||order.length), ...(st.pockets||[])], st.enemy.slice()]; S.locked=[true,true]; S.pool=[];
     startBattle(); S.waveQ=st.waves ? order.slice(st.waves) : [];
     return;
   }
@@ -560,8 +559,8 @@ const STAGE_UNLOCKS = (()=>{ const seen=new Set(), out={};
   MAIN_STAGES.forEach(st=>{ const ids=[...st.mine, ...st.enemy, ...((st.twist||{}).reinforce||[]).map(r=>r.id), ...(st.awaken||[]).map(a=>a.to||a.id+'_mark'), ...(UNLOCK_EXTRAS[st.id]||[])];
     out[st.id]=[...new Set(ids)].filter(id=>BYID[id] && lockable(BYID[id]) && !seen.has(id) && (!UNLOCK_AT[id] || UNLOCK_AT[id]===st.id) && !DREAM_CARDS.includes(id)); out[st.id].forEach(id=>seen.add(id)); });
   DREAM_STAGES.concat(SIX_STAGES).forEach(st=>{ out[st.id]=[]; });
-  // The Endless Dream unlocks at the end of each chapter
-  Object.assign(out, {dr_wrongtrain:['makomo','tanjuro','chuntaro'], dr_nothing:['hinatsuru','makio','suma','aoi'], dr_question:['michikatsu','tecchin'], dr_heart:['hakuji','goto']});
+  // The Endless Dream: a character unlocks in the battle they fight in (CK)
+  Object.assign(out, {dr_morning:['tanjuro'], dr_ablaze:['chuntaro'], dr_returned:['makomo'], dr_flowers:['aoi'], dr_wives:['hinatsuru','makio','suma'], dr_selection:['goto'], dr_brothers:['michikatsu'], dr_question:['tecchin'], dr_hakuji:['hakuji']});
   return out; })();
 // Lockable cards that no battle unlocks start unlocked
 const UNLOCKED_FROM_STORY = new Set(Object.values(STAGE_UNLOCKS).flat());

@@ -301,7 +301,7 @@ function boardRoles(b, pos){
     add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+targetFx(l)+`<span class="amark">${mark}</span>`+popHTML(l)); };
   const first=b.lines[0], by=first.by&&findU(first.by), type=first.fx||'';
   b.lines.forEach(l=>{ if(l.ko) add(findU(l.ko),'kod'); });
-  if(first.gone){ add(findU(first.on),'pulled'); return roles; }   // Nakime's biwa: dropped through the floor, off the screen
+  if(first.gone){ add(findU(first.on),'pulled',kDoors); return roles; }   // Nakime's biwa: dropped through the floor, off the screen
   if(b.flurry && by){   // one Attack's quick strikes: one flight, one total
     const t=findU(first.on), sum=flurryPct(b.lines), style=styleOf(by,'attack');
     if(t && pos.get(t.uid)) fly(by, pos.get(t.uid), .8);
@@ -348,7 +348,7 @@ function vTvBoard(b){
     const koLine=beat&&b.lines.find(l=>l.ko===u.uid), cut=!!koLine && slicedBy(koLine,u), dust=crumbleKind(koLine);
     const state = dust ? ` crumbling ${dust}` : cut ? ` cutdown cut-${cutStyle(koLine)}` : r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
     const back = beat && !over && !b.involved.has(u.uid) && !r.cls && !state ? ' back' : '';
-    const inner=`${o.calm&&b.involved.has(u.uid)?waterRing():''}<div class="aart">${artOf(u)?`<img src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
+    const inner=`${o.calm&&b.involved.has(u.uid)?waterRing():''}<div class="aart">${artOf(u)?`<img decoding="sync" src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
       <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
       ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}`;
     return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${u.bound?' bound'+u.bound:''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };

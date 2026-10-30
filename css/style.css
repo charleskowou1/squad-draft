@@ -1551,10 +1551,10 @@ body.tvmode .guess{padding-top:20px}
 .arow.calm .waterring{inset:-10px 3%}
 /* Nakime (CK): the biwa drops a fighter through the floor; for the rest of the round they're an empty place */
 .stage.goneaway{z-index:20}
-.stage.goneaway .st-on{animation:pulled 1.5s .3s cubic-bezier(.55,0,.85,.35) both!important;z-index:20}
+.stage.goneaway .st-on{animation:pulled 1.4s 1s cubic-bezier(.55,0,.85,.35) both!important;z-index:20}
 .stage.goneaway .st-mark{color:#d9b3ff;text-shadow:0 0 16px rgba(190,130,255,.8)}
 @keyframes pulled{0%{transform:none;opacity:1}18%{transform:translateY(-12px) rotate(-3deg)}75%{opacity:1}100%{transform:translateY(62vh) rotate(16deg) scale(.82);opacity:0}}
-.acard.pulled{animation:pulledtv 1.5s .25s cubic-bezier(.55,0,.85,.35) both!important;z-index:30}
+.acard.pulled{animation:pulledtv 1.4s 1s cubic-bezier(.55,0,.85,.35) both!important;z-index:30}
 .acard.bot.pulled{z-index:30}
 @keyframes pulledtv{0%{transform:none;opacity:1}18%{transform:translateY(-16px) rotate(-3deg)}80%{opacity:1}100%{transform:translateY(120vh) rotate(14deg) scale(.85);opacity:0}}
 .acard.lost{opacity:.14;filter:grayscale(1);border-style:dashed}
@@ -1598,7 +1598,7 @@ body.tvmode .awt{font-size:2rem}
 @keyframes boltflash{0%,18%{background:transparent}26%{background:rgba(255,245,190,.75)}100%{background:transparent}}
 :has(> .sfx-bolt) .stage .pop,:has(> .sfx-bolt) .apop,:has(> .sfx-tiger) .stage .pop,:has(> .sfx-tiger) .apop{animation-delay:.65s!important}
 :has(> .sfx-ninth) .stage .pop,:has(> .sfx-ninth) .apop{animation-delay:1s!important}
-:has(> .sfx-thirteen) .stage .pop,:has(> .sfx-thirteen) .apop{animation-delay:.75s!important}
+:has(> .sfx-sunform) .stage .pop,:has(> .sfx-sunform) .apop{animation-delay:1.1s!important}
 .sfx-mist i{position:absolute;left:-30%;top:var(--y);width:160%;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(225,235,245,.92),rgba(225,235,245,0) 70%);filter:blur(10px);animation:mistpass 2.2s var(--d) ease-in-out both}
 @keyframes mistpass{0%{transform:translateX(-45%);opacity:0}35%,62%{transform:translateX(0);opacity:1}100%{transform:translateX(45%);opacity:0}}
 .sfx-drum i{position:absolute;top:50%;left:50%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:6px solid rgba(214,165,77,.85);animation:drumring .8s var(--d) ease-out both}
@@ -1652,13 +1652,14 @@ body.tvmode .awt{font-size:2rem}
 @keyframes flyin{0%{opacity:0;transform:translateY(-16px)}30%{opacity:1}75%{opacity:1;transform:translateY(26px)}100%{opacity:0;transform:translateY(34px)}}
 .tfx .sash{fill:none;stroke:#f06aa6;stroke-width:6;stroke-dasharray:90 30;filter:drop-shadow(0 0 3px #000)}
 .tfx .pflame{fill:#ff6fb5;opacity:.9;filter:drop-shadow(0 0 6px #ff2f92)}
-.tfx .thr{stroke:#f4f4f4;stroke-width:1.2;filter:drop-shadow(0 0 2px #fff)}
-/* Yoriichi: Sun Breathing's thirteen forms, stroke by stroke around one sun, then the rays burst out */
-.sunwheel{inset:auto!important;top:50%!important;left:50%!important;width:min(84vw,56vh)!important;height:min(84vw,56vh)!important;transform:translate(-50%,-50%);overflow:visible;fill:none}
-.sunwheel path{stroke:#ffcf5c;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 5px #ff9d1f);opacity:0;animation:sunstroke 1.5s var(--d) ease-out forwards}
-.sunwheel .ray{stroke:#ffe9a8;stroke-width:2;stroke-linecap:round;filter:drop-shadow(0 0 4px #ffb03a);transform-box:view-box;opacity:0;animation:sunray .7s var(--d) ease-out forwards}
-@keyframes sunstroke{0%{opacity:0}8%{opacity:1}75%{opacity:1}100%{opacity:0}}
-@keyframes sunray{0%{opacity:0;stroke-dasharray:0 40}30%{opacity:1;stroke-dasharray:30 40}100%{opacity:0;stroke-dasharray:30 40}}
+.tfx .thr{stroke:#e0162f;stroke-width:1.1;filter:drop-shadow(0 0 2px #ff3b52)}
+/* Yoriichi: a sun rises, thirteen blades of light cross the screen, and 日 lands */
+.sunglow{position:absolute;inset:0;background:radial-gradient(ellipse 90% 60% at 50% 72%,rgba(255,232,170,.95),rgba(255,160,40,.55) 42%,rgba(255,90,20,0) 72%);mix-blend-mode:screen;animation:sunup 1.7s ease-out both}
+@keyframes sunup{0%{opacity:0;transform:translateY(34%)}30%{opacity:1;transform:none}70%{opacity:.9}100%{opacity:0}}
+.sfx-sunform .blade{position:absolute;top:50%;left:50%;width:170vmax;height:7px;margin:-3px 0 0 -85vmax;background:linear-gradient(90deg,transparent,#ffb03a 30%,#fff 50%,#ffb03a 70%,transparent);box-shadow:0 0 16px 3px rgba(255,170,50,.9);transform:rotate(var(--a)) translateX(-110%);animation:sunblade .42s var(--d) cubic-bezier(.3,.8,.4,1) both}
+@keyframes sunblade{0%{transform:rotate(var(--a)) translateX(-110%);opacity:1}70%{opacity:1}100%{transform:rotate(var(--a)) translateX(110%);opacity:0}}
+.sfx-sunform .hi{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:36vmin;color:#fff4d0;text-shadow:0 0 34px #ff8a1f,0 0 6px #7a2a00;animation:hiland 1.7s ease-out both}
+@keyframes hiland{0%,50%{opacity:0;transform:scale(1.8)}64%{opacity:1;transform:scale(1)}82%{opacity:1}100%{opacity:0;transform:scale(1.04)}}
 /* Muzan's whips */
 .sfx-whips path,.sfx-whips2 path{fill:none;stroke:#b0132a;stroke-width:6;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 5px #ff2a44);stroke-dasharray:600;stroke-dashoffset:600;animation:whip 1.15s var(--d) cubic-bezier(.2,.8,.3,1) both}
 @keyframes whip{0%{stroke-dashoffset:600;opacity:1}38%{stroke-dashoffset:0;opacity:1}72%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
@@ -1687,532 +1688,7 @@ body.tvmode .awt{font-size:2rem}
 /* The blow that ends the match, and a team's last fighter */
 .sfx-final{animation:finalflash .7s ease-out both}
 @keyframes finalflash{0%{background:rgba(255,255,255,.55)}100%{background:transparent}}
-.cutin.hasclip .lines{z-index:1;mix-blend-mode:screen;animation:zoomlines .5s linear infinite,fadeaway 1.1s .2s both}
-@keyframes fadeaway{to{opacity:0}}
-.cflash{position:absolute;inset:0;z-index:3;background:#fff;pointer-events:none;animation:cflash .5s .12s ease-out both}
-@keyframes cflash{0%{opacity:0}15%{opacity:.85}100%{opacity:0}}
-.cutin.hasclip .cimg{display:none}
-.cutin.hasclip .band,.cutin.hasclip.right .band{width:100%;margin:0;padding:22px 16px 14px;gap:0;clip-path:none;border-top:0;z-index:2;
-  background:linear-gradient(transparent,rgba(10,9,8,.9) 55%);animation:bandup .5s .35s cubic-bezier(.2,.9,.2,1) both}
-@keyframes bandup{from{transform:translateY(40%);opacity:0}}
-.cutin.hasclip .ctext{border-left:3px solid var(--tc);padding-left:10px;align-items:flex-start;text-align:left}
-.cutin.hasclip.right .ctext{border-left:0;border-right:3px solid var(--tc);padding:0 10px 0 0;align-items:flex-end;text-align:right}
-.cutin.hasclip .cwho{font-size:.7rem}
-.cutin.hasclip .cmove{font-size:1.2rem;animation:enter .4s .45s both}
-.cutin.hasclip .cquote{font-size:.78rem;animation:enter .4s .65s both}
-.cutin.hasclip .ckanji,.clipbox .cstamp{position:absolute;z-index:2;top:10%;right:12px;left:auto;bottom:auto;width:44px;height:44px;display:grid;place-items:center;
-  font-size:26px;line-height:1;font-weight:800;color:#fff;opacity:1;border-radius:8px;background:color-mix(in srgb,var(--sc,var(--low)) 82%,#000);
-  box-shadow:0 0 0 2px rgba(255,255,255,.85),0 6px 16px rgba(0,0,0,.5);transform:rotate(-8deg);animation:stamp .5s .55s cubic-bezier(.2,1.5,.3,1) both}
-.cutin.hasclip.right .ckanji,.clipbox.right .cstamp{right:auto;left:12px;transform:rotate(8deg)}
-@keyframes stamp{from{transform:scale(2.4) rotate(-20deg);opacity:0}}
-.now.clipbeat{padding:10px;gap:10px}
-.clipbox{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;
-  --glow:var(--tc);box-shadow:0 0 0 2px var(--glow),0 0 26px color-mix(in srgb,var(--glow) 45%,transparent),0 10px 26px rgba(0,0,0,.5);animation:clipwipe .5s cubic-bezier(.2,.9,.2,1) backwards}
-.clipbox.right{animation-name:clipwiper}
-.clipbox.act-regen,.clipbox.act-heal,.clipbox.act-revive{--glow:#5fd38d;animation:clipwipe .5s cubic-bezier(.2,.9,.2,1) backwards,healglow 1.6s .4s ease-in-out infinite}
-.clipbox.right.act-regen,.clipbox.right.act-heal,.clipbox.right.act-revive{animation-name:clipwiper,healglow}
-.clipbox.act-ko,.clipbox.act-fall{--glow:var(--low)}
-.clipbox.act-defend{--glow:#8fb4ff}
-@keyframes healglow{50%{box-shadow:0 0 0 2px var(--glow),0 0 44px color-mix(in srgb,var(--glow) 70%,transparent),0 10px 26px rgba(0,0,0,.5)}}
-.clipbox.act-regen .cstamp,.clipbox.act-heal .cstamp,.clipbox.act-revive .cstamp{background:#2f8f5b}
-.clipbox.act-defend .cstamp{background:#3f5f9f}
-.clipbox video{position:absolute;inset:0}
-.clipbox .cliptag{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:22px 14px 10px;display:flex;align-items:baseline;gap:8px;text-align:left;font-size:.9rem;
-  color:var(--fg);background:linear-gradient(transparent,rgba(10,9,8,.88) 55%);animation:bandup .5s .35s cubic-bezier(.2,.9,.2,1) both}
-.clipbox.right .cliptag{flex-direction:row-reverse;text-align:right}
-.clipbox .cliptag i{font-style:normal;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;
-  background:color-mix(in srgb,var(--glow) 30%,rgba(0,0,0,.4));color:var(--fg)}
-@media (prefers-reduced-motion: reduce){.cutin.hasclip,.clipbox,.cvid,.cbars::before,.cbars::after,.cflash,.clipbox *{animation:none!important}.cflash{display:none}}
-
-/* story: scene pictures (img/scenes/), Mark awakenings between rounds, unlocks one at a time */
-.stagecast .scenepor img{object-position:50% 30%}   /* a scene picture in the speaker's portrait frame (same size as the others) */
-@keyframes picin{from{opacity:0;transform:scale(.96)}}
-.scene.awakening::before{content:'';position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(circle at 50% 55%,rgba(255,80,60,.55),rgba(160,20,20,.25) 45%,transparent 70%);animation:awakeflash 1.4s ease-out both}
-@keyframes awakeflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
-.stagecast .lead.awaken .gl.lg{box-shadow:0 0 0 3px var(--mark),0 0 40px rgba(255,70,50,.65),0 18px 40px rgba(0,0,0,.55);animation:awakepulse 1.6s .5s ease-in-out infinite}
-@keyframes awakepulse{50%{box-shadow:0 0 0 3px var(--mark),0 0 70px rgba(255,90,60,.9),0 18px 40px rgba(0,0,0,.55)}}
-.stagecast .lead.awaken{animation:awakein .8s cubic-bezier(.2,1.3,.3,1) both}
-@keyframes awakein{0%{transform:scale(.85);filter:brightness(3) saturate(0)}40%{filter:brightness(2)}100%{transform:none;filter:none}}
-.markstamp{position:absolute;top:-14px;right:-16px;z-index:3;width:50px;height:50px;display:grid;place-items:center;font-size:28px;font-weight:800;color:#fff;
-  background:var(--mark);border-radius:10px;box-shadow:0 0 0 2px rgba(255,255,255,.85),0 8px 18px rgba(0,0,0,.5);transform:rotate(-10deg);animation:stamp .55s .45s cubic-bezier(.2,1.5,.3,1) both}
-.markburst{position:absolute;inset:-30%;z-index:-1;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,110,70,.45) 0 6deg,transparent 6deg 18deg);
-  -webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%);animation:burstspin 8s linear infinite,picin .6s both}
-@keyframes burstspin{to{transform:rotate(360deg)}}
-.ulist.one{min-height:190px;align-items:center}
-.ucard.big{animation:unlockpop .7s cubic-bezier(.2,1.4,.3,1) both}
-.ucard.big .gl.lg{width:130px!important;height:160px!important;font-size:3.6rem;box-shadow:0 0 0 3px var(--gold),0 0 36px rgba(214,165,77,.6)}
-.ucard.big b{font-size:1.05rem}
-@keyframes unlockpop{0%{transform:scale(.4) rotate(-8deg);opacity:0;filter:brightness(3)}60%{filter:brightness(1.4)}100%{transform:none;opacity:1;filter:none}}
-.udots{display:flex;gap:6px;justify-content:center;position:relative;z-index:3}
-.udots i{width:8px;height:8px;border-radius:50%;background:var(--line-2)}.udots i.on{background:var(--gold)}.udots i.done{background:var(--muted)}
-@media (prefers-reduced-motion: reduce){.scene.awakening::before,.stagecast .lead.awaken,.stagecast .lead.awaken .gl.lg,.markstamp,.markburst,.ucard.big{animation:none!important}}
-
-/* Win screen: full battle log */
-.mlhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-.copylog{display:inline-flex;align-items:center;gap:6px}
-.matchlog summary{cursor:pointer;color:var(--ink-2);padding:4px 0}
-.mlround{margin-top:12px}
-.mlr{font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
-.mlmoves{font-size:.82rem;color:var(--ink-2);border-left:3px solid var(--tc);padding:2px 8px;margin-bottom:4px}
-.mlmoves b{color:var(--tc);margin-right:4px}
-
-/* Home: own-pace online games (your turn first, in gold) */
-.games{display:flex;flex-direction:column;gap:6px;margin:12px 0}
-.games .eyebrow{margin-bottom:2px}
-.grow{display:flex;align-items:stretch;border-radius:14px;border:1px solid var(--line-2);background:var(--grain),var(--surface);overflow:hidden}
-.grow.mine{border-color:var(--gold);background:var(--grain),linear-gradient(120deg,rgba(214,165,77,.16),var(--surface) 60%)}
-.gopen{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:none;border:0;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
-.gopen span{color:var(--muted);font-size:.86rem}
-.grow.mine .gopen span{color:var(--gold);font-weight:700}
-.gx{width:44px;background:none;border:0;border-left:1px solid var(--line);color:var(--muted);font-size:1.2rem;cursor:pointer}
-.asynchint{margin:6px 0}
-
-/* Until Dawn: the sun rises over the battle screen, one step a round (--dawn 0 → 1, set by app.js). It glows over the
-   page (screen blend, no taps), under the action bar. */
-.dawnsky{display:none;position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden;mix-blend-mode:screen}
-body.dawn .dawnsky{display:block}
-.dawnsky::before{content:'';position:absolute;inset:0;opacity:calc(var(--dawn,0)*.9);transition:opacity 2.4s ease;
-  background:linear-gradient(to top,rgba(255,140,60,calc(.34 + var(--heat,0) * .2)),rgba(224,87,59,calc(.14 + var(--heat,0) * .16)) 30%,transparent calc(62% + var(--heat,0) * 20%))}
-.dawnsky .sun{position:absolute;right:-70px;bottom:70px;width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,244,205,.75) 0 26%,rgba(255,201,105,.5) 40%,rgba(255,140,60,.22) 58%,transparent 71%);
-  transform:translateY(calc((1 - var(--dawn,0)) * 340px)) scale(calc(1 + var(--heat,0) * .45));opacity:calc(.3 + var(--dawn,0)*.7);
-  transition:transform 2.4s cubic-bezier(.3,.7,.3,1),opacity 2.4s ease;animation:sunpulse 5s ease-in-out infinite}
-@keyframes sunpulse{50%{filter:brightness(1.12)}}
-@media (prefers-reduced-motion: reduce){.dawnsky::before,.dawnsky .sun{transition:none;animation:none}}
-
-/* End credits (story finale): the roll rises slowly; tapping it (or the roll ending) settles it in place */
-.credits{position:relative;min-height:calc(100vh - 160px);overflow:hidden;text-align:center;cursor:pointer}
-.credits .roll{padding:40px 16px 60px;animation:creditroll 20s linear both}   /* 42 s felt too slow (CK) */
-.credits .roll.done{animation:none}
-@keyframes creditroll{from{transform:translateY(70vh)}to{transform:translateY(0)}}
-.credits .ckanji{display:inline-grid;place-items:center;width:84px;height:84px;border-radius:18px;background:var(--accent);color:#fff;font-family:var(--display);font-size:3rem;box-shadow:0 10px 30px rgba(224,87,59,.35)}
-.credits h1{font-family:var(--display);font-size:2.6rem;margin:16px 0 10px}
-.credits .cline{margin:4px 0;color:var(--ink-2);font-size:1.05rem}
-.credits .cline b{color:var(--gold)}
-.credits .cblock{margin:44px 0 0}
-.credits .cseals{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:14px}
-.credits .cseals span{display:flex;flex-direction:column;align-items:center;gap:6px;width:76px}
-.credits .cseals .gl.lg{width:64px;height:78px;border-radius:12px}
-.credits .cseals small{color:var(--ink-2);font-size:.78rem}
-.credits .cfallen{color:var(--ink-2);line-height:1.9;margin:10px auto 0;max-width:420px}
-.credits .cthanks{margin:56px 0 0;font-family:var(--display);font-size:1.6rem;color:var(--gold)}
-@media (prefers-reduced-motion: reduce){.credits .roll{animation:none}}
-
-/* Kiriya's Ambush Orders: pick the fighter the trap goes around (under your fighters on the move screen) */
-.ambushpick{margin:12px 0 0;padding:10px 12px;border-radius:12px;border:1px dashed var(--gold);background:rgba(214,165,77,.06)}
-.ambushpick .tgs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
-
-/* A place picture behind an arc's cutscenes (img/places/<arc>.jpg), darkened so lines stay readable */
-.scene[data-place]{background-image:linear-gradient(to bottom,rgba(12,10,8,.4),rgba(12,10,8,.08) 38%,rgba(12,10,8,.2) 55%,rgba(12,10,8,.88) 80%),var(--place);background-size:cover;background-position:center}
-
-/* Story battles: the battle's place picture behind the whole screen, darker than in the cutscenes (more small text) */
-body.placebg{background:transparent}   /* the page colour stays on html; the picture is a fixed layer (iPhones don't do fixed backgrounds) */
-body.placebg::after{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:linear-gradient(rgba(18,15,12,.68),rgba(18,15,12,.68)),var(--placebg) center/cover no-repeat}
-
-/* Your name: Settings field and the home screen's one-time question */
-.namerow{display:flex;gap:8px;margin-top:6px}
-.namerow input{flex:1;min-width:0;background:var(--bg-2);border:1px solid var(--line-2);border-radius:10px;padding:8px 10px;color:var(--fg);font:inherit}
-.askname{display:flex;flex-direction:column;gap:2px;padding:12px;margin:10px 0;border-radius:14px;border:1.5px solid var(--gold);background:var(--grain),linear-gradient(120deg,rgba(214,165,77,.14),var(--surface) 60%)}
-
-/* A cutscene line that plays a clip (scene option {clip}): a wide video above the speakers */
-.scenevid{position:relative;z-index:2;width:100%;aspect-ratio:16/9;max-height:38vh;border-radius:14px;overflow:hidden;margin:6px 0;
-  box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);animation:picin .7s cubic-bezier(.2,.8,.2,1) both}
-.scenevid video{width:100%;height:100%;object-fit:cover;display:block}
-
-/* Codex lore: the character's line and a sentence of background */
-.lore{margin:8px 0 2px;padding:10px 12px;border-left:3px solid var(--gold);border-radius:4px 10px 10px 4px;background:rgba(214,165,77,.07)}
-.lore q{display:block;font-family:var(--display);font-size:1.05rem;color:var(--fg);quotes:"“" "”"}
-.lore p{margin:4px 0 0;color:var(--ink-2);font-size:.88rem;line-height:1.45}
-
-.credits .cseals.fallen .gl.lg{filter:grayscale(.65) brightness(.9)}
-.credits .cseals.fallen small{max-width:84px;text-align:center;line-height:1.25}
-/* A Mark awakening in a story cutscene shakes the screen (CK) */
-.scene.awakening{animation:awakeshake .6s cubic-bezier(.36,.07,.19,.97) both}
-@keyframes awakeshake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,3px)}40%,60%{transform:translate(7px,-3px)}}
-@media (prefers-reduced-motion: reduce){.scene.awakening{animation:none}}
-
-/* Settings → Battle background: one button per place, so the row wraps onto more lines on a phone */
-.placeset .seg{flex-wrap:wrap}
-.placeset .seg button{flex:1 1 calc(33% - 3px);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* Clips never show the phone's own play button: they start by themselves (or on the next tap in Low Power Mode) */
-video::-webkit-media-controls,video::-webkit-media-controls-start-playback-button,video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none}
-video{pointer-events:none}
-
-/* ---------- TV mode (js/tv.js): a laptop on the TV shows the game big; a phone is the controller ---------- */
-.tvbtn{display:none}
-@media (min-width:900px){ .tvbtn{display:inline-flex} }   /* the TV button only shows on laptop-sized screens */
-body.tvmode .wrap{max-width:1300px;zoom:var(--tvz,1.2)}   /* --tvz: zoomed to fill the window (tvFit in tv.js) */
-body.tvmode .planwide,body.tvmode .reswide.done{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
-body.tvmode .reswide.done .rcol{display:flex;flex-direction:column;gap:14px}
-body.tvmode .reswide.done .vsdiv{display:none}
-body.tvmode .planwide .opps:not(.many) .tiles.simple{grid-template-columns:1fr 1fr}
-#tvbadge{position:fixed;left:14px;bottom:14px;z-index:9;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:14px;
-  background:rgba(18,15,12,.9);border:1px solid var(--line-2);font-size:.95rem;color:var(--ink-2);box-shadow:0 10px 30px rgba(0,0,0,.5)}
-#tvbadge b{color:var(--gold);font-size:1.2rem;letter-spacing:.12em}
-#tvbadge i{color:var(--p1);font-style:normal;font-weight:700}
-/* the phone controller's "Watch the TV" screen */
-.ctlwatch{min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:20px}
-.ctlwatch .ctlk{font-size:4rem}
-.ctlwatch h1{font-family:var(--display);font-size:2.2rem;margin:0}
-.ctlwatch .btn.big{min-width:220px;padding:16px 28px;font-size:1.15rem;margin-top:10px}
-/* the 1.2× TV zoom would push full-height scenes past the bottom: size them to the screen before zooming */
-body.tvmode .scene{min-height:calc(100vh / var(--tvz,1.2) - 150px);min-height:calc(100dvh / var(--tvz,1.2) - 150px)}   /* 150px: the .wrap padding, so the scene fills the window without scrolling */
-body.tvmode .credits{min-height:calc((100vh - 160px) / var(--tvz,1.2))}
-/* cutscenes and credits on the TV (body.tvscene, set in tvBadge): no page padding, the scene is the whole screen */
-body.tvmode.tvscene .wrap{max-width:none;padding:0;gap:0}
-body.tvmode.tvscene .scene{min-height:calc(100vh / var(--tvz,1.2));min-height:calc(100dvh / var(--tvz,1.2));border-radius:0;padding:28px 44px}
-body.tvmode.tvscene .credits{min-height:calc(100vh / var(--tvz,1.2));min-height:calc(100dvh / var(--tvz,1.2))}
-body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvscene #tvbadge:hover{opacity:1}
-
-.ctlchoices{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-top:6px}
-.ctlstory{width:100%;max-width:440px;display:flex;flex-direction:column;gap:6px;margin-top:8px;text-align:left}
-.ctlrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
-.ctlrow.won{border-color:var(--line-2)}
-.ctlrow.locked{opacity:.5}
-.ctlrow .ctln{width:26px;color:var(--muted);font-weight:700;text-align:center}
-.ctlrow .ctlt{flex:1;min-width:0;display:flex;flex-direction:column}
-.ctlrow .ctlt small{color:var(--muted)}
-
-/* TV: phones in the corner badge, who the TV is waiting on, and the phone's own lines */
-#tvbadge .tvseat{font-weight:700;color:var(--tc);white-space:nowrap}
-#tvbadge .tvseat.off{color:var(--muted);animation:dotpulse 1.4s infinite}
-#tvbadge .tvwait{color:var(--fg);font-weight:600;max-width:320px}
-.ctlwho{font-weight:800;font-size:1.1rem;margin:0}
-.ctlgone{color:var(--low);font-weight:700;margin:0}
-.ctlwaitline{color:var(--gold);font-weight:600;margin:0}
-
-/* ---------- the TV battle board (vTvBoard in tv.js): opponent's cards on top, yours below ----------
-   Sizes match BOARD in tv.js (card height --ch from sizeBoard, band 112, row gap 14): the attack flight is worked out from them. */
-.board{position:relative;display:flex;flex-direction:column;gap:14px;margin-top:8px}
-.arow{display:flex;justify-content:center;gap:18px;height:var(--ch,186px)}
-.aband{height:112px;display:flex;align-items:center;justify-content:center;text-align:center}
-.acard{position:relative;flex:none;width:var(--w);height:var(--ch,186px);border-radius:14px;background:var(--surface);border:2px solid var(--tc);
-  box-shadow:0 8px 22px rgba(0,0,0,.5);display:flex;flex-direction:column;transition:opacity .3s,filter .3s}
-.acard .aart{flex:1;min-height:0;border-radius:12px 12px 0 0;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
-.acard .aart img{width:100%;height:100%;object-fit:cover;object-position:50% 18%}
-.acard .ak{font-family:var(--display);font-size:3.2rem;color:var(--tc)}
-.acard .ainfo{padding:6px 9px 8px;display:flex;flex-direction:column;gap:4px}
-.acard .anm{font-weight:800;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.acard .ahp{display:flex;align-items:center;gap:7px}
-.acard .ahp b{font-size:.85rem;min-width:36px;text-align:right}
-.acard .abar{flex:1;height:7px;border-radius:4px;background:var(--bg-2);overflow:hidden}
-.acard .abar i{display:block;height:100%;background:var(--hp);transition:width .5s}
-.acard .abar i.drain{animation:drain .7s .45s ease-out both}
-.acard .ahp.low .abar i{background:var(--low)} .acard .ahp.low b{color:var(--low)}
-.acard .smarks{position:absolute;top:6px;right:6px}
-.acard.dead{opacity:.35;filter:grayscale(1)}
-.acard.back{opacity:.55;filter:saturate(.6)}
-.acard .fxl{top:42%;width:150px;height:150px;margin:-75px 0 0 -75px}
-.acard .amark{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:800;font-size:3rem;color:#fff;
-  opacity:0;pointer-events:none;text-shadow:0 0 22px var(--accent),0 0 6px #000;z-index:4}
-.acard .apop{position:absolute;top:22%;left:50%;transform:translateX(-50%);font-weight:900;font-size:2rem;opacity:0;white-space:nowrap;
-  text-shadow:0 3px 10px rgba(0,0,0,.85);z-index:6;animation:floatup 1.8s .42s ease-out both}
-.acard .apop.dmg{color:#ff6b5c} .acard .apop.gain{color:#5fd39a} .acard .apop:not(.dmg):not(.gain){color:var(--ink-2);font-size:1.3rem}
-/* the attack: the attacker flies across the board into its target and back, glowing in its team colour */
-.acard.fly{z-index:5;animation:afly .95s cubic-bezier(.55,0,.35,1) both}
-@keyframes afly{0%{transform:none}12%{transform:translate(calc(var(--dx) * -.06),calc(var(--dy) * -.06)) scale(1.04)}
-  36%{transform:translate(var(--dx),var(--dy)) scale(1.14);box-shadow:0 0 0 3px var(--tc),0 0 46px var(--tc)}
-  48%{transform:translate(calc(var(--dx) * .9),calc(var(--dy) * .9)) scale(1.08)}100%{transform:none}}
-.acard.struck{animation:arecoil .55s .33s ease-out both}
-.acard.struck .amark{animation:slash .6s .3s ease-out both}
-@keyframes arecoil{0%{transform:none}20%{transform:translate(9px,-4px) rotate(4deg);box-shadow:0 0 0 3px var(--low),0 0 40px rgba(255,93,76,.7)}
-  45%{transform:translate(-7px,2px) rotate(-3deg)}70%{transform:translate(4px,0)}100%{transform:none}}
-.acard.dodged{animation:dodge .6s .3s ease-in-out both}
-.acard.dodged .amark,.acard.blocked .amark{color:var(--ink-2);text-shadow:0 0 8px #000;animation:slash .6s .32s ease-out both}
-.acard.blocked{animation:shield .8s .3s ease-out}
-/* knocked out: hit, then the card topples and goes grey under a KO stamp */
-.acard.felled{animation:afall .9s .55s cubic-bezier(.5,0,.75,1) both}
-.acard.felled::after{content:'KO';position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-8deg);padding:4px 14px;border-radius:8px;
-  background:var(--low);color:#fff;font-weight:900;font-size:1.6rem;z-index:6;animation:stamp .5s .7s ease-out both}
-@keyframes afall{0%{transform:none;filter:none;opacity:1}60%{transform:translateY(10px) rotate(-7deg) scale(.95);filter:grayscale(.7)}100%{transform:translateY(8px) rotate(-5deg) scale(.94);filter:grayscale(1) brightness(.6);opacity:.6}}
-/* moves on one fighter: healing and training glow green, guarding blue, poison purple, specials gold */
-.acard.fx-heal,.acard.fx-revive,.acard.fx-buff{animation:healglow 1.2s .2s ease-out}
-.acard.fx-heal .amark,.acard.fx-revive .amark,.acard.fx-buff .amark{color:#5fd39a;text-shadow:0 0 18px rgba(95,211,154,.8);animation:rise 1.1s .15s ease-out both}
-.acard.fx-guard{animation:shield 1s .15s ease-out}
-.acard.fx-guard .amark{color:#8fb6ff;text-shadow:0 0 18px rgba(143,182,255,.8);animation:rise 1.1s .1s ease-out both}
-.acard.fx-poison{animation:poisoned 1.1s .2s ease-out}
-.acard.fx-poison .amark{color:#b77cff;text-shadow:0 0 18px rgba(183,124,255,.8);animation:rise 1.1s .15s ease-out both}
-.acard.fx-stun{filter:saturate(.4)} .acard.fx-stun .amark{color:var(--muted);animation:rise 1.2s .1s ease-out both}
-.acard.fx-special,.acard.fx-burn{animation:charge 1s ease-out}
-.acard.fx-special .amark{color:var(--gold);animation:rise 1s .2s ease-out both}
-.acard.fx-burn .amark{color:#ffb347;animation:rise 1s .2s ease-out both}
-.acard.fx-spawn .amark,.acard.spawned{animation:spawn .7s ease-out both}
-/* big hits shake the whole board; a knockout flashes it red */
-.board.big{animation:quake .5s .36s ease-out}
-.board.big.k{animation:quake .55s .36s ease-out, koflash .9s .34s ease-out}
-/* the line for this beat in the middle of the board */
-.aline{max-width:820px;padding:12px 22px;border-radius:14px;background:rgba(14,12,10,.82);border:1px solid var(--line-2);font-size:1.15rem;
-  display:flex;align-items:center;gap:14px;animation:dropin .35s ease-out both}
-.aline.k{border-color:rgba(255,93,76,.55);color:#ff9488}
-.aline.h{border-color:rgba(82,179,136,.55);color:#8fd3b2}
-.aline.x{border-color:rgba(214,165,77,.6);color:var(--gold);font-family:var(--display)}
-.aline .stage{height:90px;width:auto}
-/* while moves are chosen: who the TV is waiting on */
-.await{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 26px;border-radius:16px;background:rgba(14,12,10,.82);border:1px dashed var(--line-2)}
-.await b{font-family:var(--display);font-size:1.5rem}
-.await small{color:var(--muted)}
-.adots{display:flex;gap:6px}
-.adots i{width:9px;height:9px;border-radius:50%;background:var(--gold);animation:dotpulse 1.2s infinite}
-.adots i:nth-child(2){animation-delay:.2s} .adots i:nth-child(3){animation-delay:.4s}
-/* specials, clips, lines and the round intro play over the board */
-.aover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:8;pointer-events:none}
-.aover > .now{width:min(900px,92%);background:rgba(14,12,10,.92);box-shadow:0 20px 60px rgba(0,0,0,.7)}
-.aover > .now.cut{min-height:300px}
-.aover > .now.intro{min-height:220px}
-.aover > .now.intro .ig{font-size:5rem}
-.aover .clipbox{max-width:700px}
-.board.covered .arow{opacity:.3;filter:blur(1px);transition:opacity .3s}
-@media (prefers-reduced-motion:reduce){.board *,.board{animation:none!important}.acard .apop{opacity:1}}
-
-/* the badge once everyone has joined: small and faint, buttons only when the mouse is over it */
-#tvbadge.mini{gap:7px;padding:4px 8px;border-radius:10px;font-size:.72rem;opacity:.4;transition:opacity .3s}
-#tvbadge.mini b{font-size:.8rem}
-#tvbadge.mini .tvk{font-size:.8rem}
-#tvbadge.mini .btn,#tvbadge.mini .tvwait{display:none}
-#tvbadge.mini:hover{opacity:1} #tvbadge.mini:hover .btn{display:inline-flex}
-
-/* Join a TV: its own button on the phone's home screen (the laptop has TV mode instead) */
-.tvjoinbtn{display:inline-flex}
-@media (min-width:900px){ .tvjoinbtn{display:none} }
-.tvjoinpanel{display:flex;flex-direction:column;gap:8px}
-/* the TV's lobby: big code, the two player slots, what to play */
-.tvhome{min-height:calc(100vh / var(--tvz,1.2) - 160px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center}
-.tvhome .hero{display:flex;flex-direction:column;align-items:center;text-align:center} .tvhome .hero .kanji{position:static;margin-bottom:8px}
-.tvjoin p{margin:0 0 8px;font-size:1.15rem;color:var(--ink-2)}
-.tvcode{font-family:var(--display);font-size:5.5rem;font-weight:800;letter-spacing:.22em;line-height:1;color:var(--gold);text-shadow:0 0 30px rgba(214,165,77,.35)}
-.tvslots{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-.tvslot{width:300px;display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:16px;background:var(--surface);border:2px dashed var(--line-2);text-align:left}
-.tvslot.on{border:2px solid var(--tc);box-shadow:0 0 24px color-mix(in srgb,var(--tc) 30%,transparent)}
-.tvslot .tvsn{font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--tc)}
-.tvslot b{font-size:1.25rem}
-.tvmodes{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.tvmodes .btn{min-width:260px;padding:14px 22px;font-size:1.05rem}
-.tvhome .hint{max-width:640px}
-.tvhomebar{display:flex;gap:10px}
-#tvbadge[hidden]{display:none}
-
-/* Who picks first: a character thinks of a number; nine numbered character cards (vSpin) */
-.guess{display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:4px}
-.gthink{display:flex;align-items:center;gap:12px;max-width:440px;width:100%}
-.gthink .gl.stg{flex:none;width:58px;height:70px}
-.gsay{flex:1;padding:10px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line-2);font-family:var(--display);font-size:1.05rem;position:relative}
-.gsay::before{content:'';position:absolute;left:-7px;top:22px;width:12px;height:12px;background:var(--surface);border-left:1px solid var(--line-2);border-bottom:1px solid var(--line-2);transform:rotate(45deg)}
-.gsay .gwho{display:block;font-family:var(--body);font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
-.gsay b{color:var(--gold);font-size:1.3rem}
-.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:440px}
-.gcard{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;border:2px solid var(--tc);background:#000;padding:0;cursor:pointer;
-  transition:transform .2s}
-.guess.fresh:not(.done) .gcard{animation:popin .35s calc(var(--i) * .04s) ease-out both}
-.gcard:not([disabled]):hover{transform:translateY(-3px)}
-.gcard .gart{position:absolute;inset:0} .gcard .gart img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
-.gcard .ck{display:flex;align-items:center;justify-content:center;height:100%;font-size:2.4rem;color:var(--ink-2)}
-.gcard .gnum{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:rgba(14,12,10,.85);border:2px solid var(--gold);color:var(--gold);font-family:var(--display);font-weight:800;font-size:1.4rem}
-.gcard .gtag{position:absolute;top:6px;left:6px;right:6px;padding:3px 6px;border-radius:8px;color:#111;font-weight:800;font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gcard[disabled]{cursor:default}
-.guess:not(.done) .gcard[disabled]:not(.taken){filter:saturate(.7) brightness(.8)}
-.guess.done .gcard:not(.secret):not(.taken){filter:grayscale(.8) brightness(.45)}
-.gcard.secret{border-color:var(--gold);box-shadow:0 0 0 4px var(--gold),0 0 44px rgba(214,165,77,.95);transform:scale(1.14);z-index:2;animation:gpulse 1.6s .8s ease-in-out infinite}
-.guess.done .gcard.taken:not(.secret){filter:brightness(.6)}
-.gcard .gis{position:absolute;left:0;right:0;top:50%;transform:translateY(-70%) rotate(-4deg);padding:5px 2px;background:var(--gold);color:#111;font-family:var(--display);font-weight:800;font-size:.86rem;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.6)}
-.gcard.secret .gnum{width:50px;height:50px;font-size:1.5rem}
-@keyframes gpulse{50%{box-shadow:0 0 0 6px var(--gold),0 0 70px rgba(214,165,77,1)}}
-@media (prefers-reduced-motion:reduce){.gcard.secret{animation:none!important}}
-.guess.fresh .gcard.secret{animation:greveal .8s ease-out both}
-.gcard.secret .gnum{background:var(--gold);color:#111}
-.gcard.win{box-shadow:0 0 0 3px var(--tc),0 0 30px var(--tc)}
-@keyframes greveal{0%{transform:rotateY(90deg) scale(.9)}60%{transform:rotateY(0) scale(1.08)}100%{transform:scale(1.14)}}
-.gwhy{margin:0;text-align:center}
-body.tvmode .ggrid{max-width:560px;grid-template-columns:repeat(9,1fr);max-width:none}
-body.tvmode .gthink{max-width:560px}
-body.tvmode .guess{padding-top:20px}
-
-/* the TV's draft while phones pick: whose turn, the teams, every card dealt */
-.tvturn{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 18px;border-radius:14px;border:2px solid var(--tc);
-  background:color-mix(in srgb,var(--tc) 12%,var(--surface));text-align:center;flex-wrap:wrap}
-.tvturn b{font-family:var(--display);font-size:1.5rem}
-.tvgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important}
-.tvhelpers{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-
-/* Quit in battle asks first */
-.quitask{text-align:center;display:flex;flex-direction:column;gap:10px}
-.quitask h2{margin:0;font-family:var(--display)}
-.quitask .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-
-/* Opening splash (index.html #splash): "a Kwow Media Productions game", tap to start, the sting, then it fades out */
-.splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;cursor:pointer;
-  background:radial-gradient(90% 70% at 50% 45%,#2a211b,#0e0c0a 75%);color:var(--fg);-webkit-user-select:none;user-select:none;transition:opacity .7s ease}
-.splash.out{opacity:0;pointer-events:none}
-.sp-in{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;animation:fade 1s ease-out both}
-.sp-seal{display:flex;align-items:center;justify-content:center;width:64px;height:64px;margin-bottom:14px;border-radius:12px;background:var(--accent);color:#fff;
-  font-family:var(--display);font-size:2.4rem;transform:rotate(-4deg);box-shadow:0 10px 30px rgba(224,87,59,.35)}
-.sp-a,.sp-game{font-family:var(--display);font-style:italic;font-size:1.15rem;color:var(--ink-2);letter-spacing:.08em}
-.sp-name{font-family:var(--display);font-weight:800;font-size:clamp(1.9rem,7vw,3.4rem);line-height:1.1;color:var(--gold);letter-spacing:.04em;padding:0 16px}
-.sp-line{display:block;width:min(420px,70vw);height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);transform:scaleX(0)}
-.sp-tap{font-size:.85rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);animation:dotpulse 1.8s ease-in-out infinite}
-/* after the tap: a slash of light under the name, the name flares, the seal stamps */
-.splash.go .sp-tap{visibility:hidden}
-.splash.go .sp-line{animation:spslash .5s .62s cubic-bezier(.2,.8,.2,1) forwards}
-.splash.go .sp-name{animation:spflare 1.4s .7s ease-out both}
-.splash.go .sp-seal{animation:spstamp .45s .05s cubic-bezier(.2,1.6,.4,1) both}
-@keyframes spslash{to{transform:scaleX(1)}}
-@keyframes spflare{0%{text-shadow:none}30%{text-shadow:0 0 28px rgba(214,165,77,.9),0 0 60px rgba(224,87,59,.5);transform:scale(1.04)}100%{text-shadow:0 0 12px rgba(214,165,77,.25);transform:none}}
-@keyframes spstamp{0%{transform:rotate(-4deg) scale(1.6);opacity:.4}100%{transform:rotate(-4deg) scale(1);opacity:1}}
-@media (prefers-reduced-motion:reduce){.splash *{animation:none!important}.splash.go .sp-line{transform:none}}
-
-/* Dead Calm (CK): a ring of still water around Giyu's whole team, kept up for the rest of the round */
-.waterring{position:absolute;inset:-8px -14px;pointer-events:none;z-index:3}
-.waterring i{position:absolute;inset:0;border-radius:50%;border:4px solid rgba(120,200,255,.85);box-shadow:0 0 18px rgba(90,180,255,.8),inset 0 0 18px rgba(90,180,255,.55);animation:calmin .9s cubic-bezier(.2,.7,.3,1) both,calmwave 3.4s .9s ease-in-out infinite}
-.waterring i:nth-child(2){inset:7px;border-width:2px;border-style:dashed;border-color:rgba(190,232,255,.8);box-shadow:none;animation:calmin .9s .1s cubic-bezier(.2,.7,.3,1) both,calmspin 7s linear infinite}
-.waterring i:nth-child(3){inset:-7px;border-width:2px;border-color:rgba(120,200,255,.4);box-shadow:none;animation:calmin .9s .2s cubic-bezier(.2,.7,.3,1) both,calmspin 11s linear infinite reverse}
-@keyframes calmin{0%{transform:scale(1.5);opacity:0}100%{transform:scale(1);opacity:1}}
-@keyframes calmwave{50%{transform:scale(1.025,.975)}}
-@keyframes calmspin{to{transform:rotate(360deg)}}
-.stage.calmstage{height:128px}
-.calmteam{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:12px 26px;z-index:2}
-.calmstage .waterring{inset:0 4%}
-.calmstage .gl.stg{width:58px;height:70px}
-.mini .m.calm .gl.mini{box-shadow:0 0 0 2px rgba(120,200,255,.95),0 0 14px rgba(90,180,255,.95)}
-.mini:has(.m.calm){position:relative}
-.arow.calm{position:relative}
-.arow.calm .waterring{inset:-10px 3%}
-/* Nakime (CK): the biwa drops a fighter through the floor; for the rest of the round they're an empty place */
-.stage.goneaway{z-index:20}
-.stage.goneaway .st-on{animation:pulled 1.5s .3s cubic-bezier(.55,0,.85,.35) both!important;z-index:20}
-.stage.goneaway .st-mark{color:#d9b3ff;text-shadow:0 0 16px rgba(190,130,255,.8)}
-@keyframes pulled{0%{transform:none;opacity:1}18%{transform:translateY(-12px) rotate(-3deg)}75%{opacity:1}100%{transform:translateY(62vh) rotate(16deg) scale(.82);opacity:0}}
-.acard.pulled{animation:pulledtv 1.5s .25s cubic-bezier(.55,0,.85,.35) both!important;z-index:30}
-.acard.bot.pulled{z-index:30}
-@keyframes pulledtv{0%{transform:none;opacity:1}18%{transform:translateY(-16px) rotate(-3deg)}80%{opacity:1}100%{transform:translateY(120vh) rotate(14deg) scale(.85);opacity:0}}
-.acard.lost{opacity:.14;filter:grayscale(1);border-style:dashed}
-.mini .m.lost{opacity:.14;filter:grayscale(1)}
-/* Kagaya's Final Resolve (CK): one big beat for everyone who awakens */
-.now.awakebeat{border-color:rgba(214,70,60,.7);background:radial-gradient(circle at 50% 45%,rgba(214,60,50,.3),rgba(0,0,0,.55));overflow:hidden;padding:18px 12px;animation:awakeshake .6s cubic-bezier(.36,.07,.19,.97) both}
-.awaken{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
-.awk{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--display);font-size:9rem;line-height:1;color:rgba(214,60,50,.26);pointer-events:none;animation:awstamp .7s ease-out both}
-.awrow{position:relative;display:flex;justify-content:center;flex-wrap:wrap;gap:12px}
-.awc{display:flex;flex-direction:column;align-items:center;gap:5px;animation:popin .4s calc(var(--i) * .1s) ease-out both}
-.awc small{font-weight:800;color:var(--fg)}
-.awpic{position:relative;display:block;width:92px;height:116px;border-radius:12px;overflow:hidden;background:#000;border:2px solid var(--gold);box-shadow:0 0 22px rgba(214,70,60,.75)}
-.awaken.many .awpic{width:58px;height:74px}
-.awpic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%}
-.awpic img.old{animation:awold 1s calc(.5s + var(--i) * .14s) ease-in both}
-.awpic img.new{animation:awnew 1s calc(.5s + var(--i) * .14s) ease-out both}
-.awt{position:relative;font-family:var(--display);font-size:1.25rem;color:var(--gold);text-shadow:0 0 14px rgba(214,70,60,.8);animation:rise .8s .9s ease-out both}
-@keyframes awold{to{opacity:0;filter:brightness(3) saturate(0)}}
-@keyframes awnew{0%{opacity:0;filter:brightness(3.4)}100%{opacity:1;filter:none}}
-@keyframes awstamp{0%{transform:translate(-50%,-50%) scale(2.2);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
-body.tvmode .awpic{width:150px;height:190px}
-body.tvmode .awaken.many .awpic{width:120px;height:152px}
-body.tvmode .awt{font-size:2rem}
-.tvcfg{width:100%;max-width:640px;margin:0 auto 12px;display:flex;flex-direction:column;gap:6px}
-.ctlround,.ctlwatch .overteams,.ctlwatch .mvp{text-align:left;width:100%}
-@media (prefers-reduced-motion:reduce){.waterring i,.acard.pulled,.stage.goneaway .st-on,.now.awakebeat,.awaken *{animation:none!important}.awpic img.old{opacity:0}}
-
-/* Big moments for a few specials (CK): over the whole screen for a beat (effects.js SFX_ART) */
-.sfx{position:fixed;inset:0;z-index:70;pointer-events:none;overflow:hidden}
-.sfx svg{position:absolute;inset:0;width:100%;height:100%}
-.sfx-bolt{animation:boltflash .7s ease-out both}
-.sfx-bolt polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-dasharray:400;stroke-dashoffset:400;animation:boltdraw .9s cubic-bezier(.2,.9,.2,1) both}
-.sfx-bolt .b1{stroke:#ffd84d;stroke-width:16;filter:blur(6px)}
-.sfx-bolt .b2{stroke:#fff;stroke-width:5}
-.sfx-darkbolt{animation:darkflash .7s ease-out both}
-.sfx-darkbolt polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-dasharray:400;stroke-dashoffset:400;animation:boltdraw .9s cubic-bezier(.2,.9,.2,1) both}
-.sfx-darkbolt .b1{stroke:#7a2bd6;stroke-width:17;filter:blur(6px)}
-.sfx-darkbolt .b2{stroke:#120518;stroke-width:6}
-@keyframes darkflash{0%,18%{background:transparent}26%{background:rgba(40,10,70,.6)}100%{background:transparent}}
-@keyframes boltdraw{0%{stroke-dashoffset:400;opacity:1}35%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
-@keyframes boltflash{0%,18%{background:transparent}26%{background:rgba(255,245,190,.75)}100%{background:transparent}}
-:has(> .sfx-bolt) .stage .pop,:has(> .sfx-bolt) .apop,:has(> .sfx-tiger) .stage .pop,:has(> .sfx-tiger) .apop{animation-delay:.65s!important}
-:has(> .sfx-ninth) .stage .pop,:has(> .sfx-ninth) .apop{animation-delay:1s!important}
-:has(> .sfx-thirteen) .stage .pop,:has(> .sfx-thirteen) .apop{animation-delay:.75s!important}
-.sfx-mist i{position:absolute;left:-30%;top:var(--y);width:160%;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(225,235,245,.92),rgba(225,235,245,0) 70%);filter:blur(10px);animation:mistpass 2.2s var(--d) ease-in-out both}
-@keyframes mistpass{0%{transform:translateX(-45%);opacity:0}35%,62%{transform:translateX(0);opacity:1}100%{transform:translateX(45%);opacity:0}}
-.sfx-drum i{position:absolute;top:50%;left:50%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:6px solid rgba(214,165,77,.85);animation:drumring .8s var(--d) ease-out both}
-@keyframes drumring{0%{transform:scale(.3);opacity:1}100%{transform:scale(3.4);opacity:0}}
-:has(> .sfx-drum) .reswide,:has(> .sfx-drum) .board{animation:drumshake .6s ease-in-out}
-@keyframes drumshake{0%,100%{transform:none}15%{transform:translateY(7px)}30%{transform:translateY(-5px)}50%{transform:translateY(6px)}65%{transform:translateY(-4px)}82%{transform:translateY(3px)}}
-.sfx-claws line{stroke:#fff;stroke-width:7;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 7px #ff5d4c);stroke-dasharray:400;stroke-dashoffset:400;animation:clawcut 1.1s var(--d) cubic-bezier(.2,.8,.3,1) both}
-@keyframes clawcut{0%{stroke-dashoffset:400;opacity:1}30%{stroke-dashoffset:0;opacity:1}70%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
-.firering{position:absolute;top:50%;left:50%;width:min(86vw,62vh);height:min(86vw,62vh);transform:translate(-50%,-50%)}
-.firering i{position:absolute;inset:0;border-radius:50%;border:10px solid #ff8a2b;box-shadow:0 0 30px 8px #ff5d1f,inset 0 0 30px 8px #ffb347;animation:firein 1.8s ease-out both,calmspin 3s linear infinite}
-.firering i:nth-child(2){inset:12px;border:4px dashed #ffe08a;box-shadow:none;animation-direction:normal,reverse}
-.firering i:nth-child(3){inset:-14px;border:5px dotted #ff5d1f;box-shadow:0 0 22px #ff5d1f}
-@keyframes firein{0%{opacity:0;scale:.4}22%{opacity:1;scale:1}70%{opacity:1;scale:1}100%{opacity:0;scale:1.14}}
-.compassfx{position:absolute;top:50%;left:50%;width:190%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:-1;overflow:visible;pointer-events:none}
-.compassfx g{transform-origin:50% 50%;animation:compassopen 1.5s ease-out both}
-.compassfx line,.compassfx circle{fill:none;stroke:#7fd8ff;stroke-width:1.1;filter:drop-shadow(0 0 3px #ff7ad9)}
-.compassfx polygon{fill:#ff9be3}
-@keyframes compassopen{0%{transform:scale(.2) rotate(-90deg);opacity:0}35%{transform:scale(1) rotate(0);opacity:1}75%{opacity:1}100%{transform:scale(1.1) rotate(30deg);opacity:0}}
-/* Dead Calm stays on any one fighter in the spotlight while their team is under it */
-.st-on .waterring,.st-by .waterring{inset:-12px -14px}
-.acard .waterring{inset:-14px}
-/* Doma: ice petals around the target, the middle stays clear */
-.lotusfx{position:absolute;top:50%;left:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);overflow:visible;pointer-events:none;z-index:2}
-.st-on .lotusfx{top:38%}
-.acard .lotusfx{top:34%;width:112%}
-.lotusfx path{fill:rgba(205,240,255,.9);stroke:#fff;stroke-width:.5;filter:drop-shadow(0 0 4px #7fd0ff);opacity:0;animation:lotusopen 1.7s var(--d) ease-out both}
-@keyframes lotusopen{0%{opacity:0;transform:translateY(14px)}30%{opacity:1;transform:none}72%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-4px)}}
-/* Rengoku: Flame Tiger tears across the screen; Ninth Form swallows it in fire */
-.tband{position:absolute;left:0;right:0;top:calc(50% - 21vmin);height:42vmin;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,rgba(255,80,20,0),#ff5a1c 22%,#ffc24a 50%,#ff5a1c 78%,rgba(255,80,20,0));filter:drop-shadow(0 0 26px #ff6a1f);animation:tigerrun .95s cubic-bezier(.3,.7,.5,1) both}
-.tband b{font-family:var(--display);font-size:30vmin;line-height:1;color:#fff6dc;text-shadow:0 0 24px #ff3b12}
-@keyframes tigerrun{0%{transform:translateX(-115%) skewX(-16deg)}45%{transform:translateX(0) skewX(-16deg)}62%{transform:translateX(0) skewX(-16deg);opacity:1}100%{transform:translateX(115%) skewX(-16deg);opacity:0}}
-.nburst{position:absolute;inset:0;background:radial-gradient(circle,#fff3c4 0,#ffae3a 24%,#ff4a12 52%,rgba(150,20,0,.75) 76%,rgba(120,10,0,0) 100%);animation:ninthburst 1.3s ease-out both}
-.nspin{position:absolute;top:50%;left:50%;width:170vmax;height:170vmax;margin:-85vmax;border-radius:50%;background:conic-gradient(rgba(255,240,180,.75),rgba(255,70,10,0) 25%,rgba(255,240,180,.75) 50%,rgba(255,70,10,0) 75%,rgba(255,240,180,.75));mix-blend-mode:screen;animation:ninthburst 1.3s ease-out both,calmspin 1.3s linear}
-.sfx-ninth .nk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:34vmin;color:#fff;text-shadow:0 0 30px #ff2a00,0 0 8px #000;animation:ninthstamp 1.3s ease-out both}
-@keyframes ninthburst{0%{opacity:0;scale:.2}28%{opacity:1;scale:1}66%{opacity:1}100%{opacity:0;scale:1.3}}
-@keyframes ninthstamp{0%{opacity:0;scale:2}26%{opacity:1;scale:1}70%{opacity:1;scale:1}100%{opacity:0;scale:1.05}}
-/* One Attack's quick strikes, as one beat (Yoriichi, Type Zero) */
-.stage.flurry .st-by{animation:lunge .3s ease-in-out var(--n)}
-.stage.flurry.rev .st-by{animation:lunge-l .3s ease-in-out var(--n)}
-.stage.flurry .st-on{animation:recoil .3s .08s ease-out var(--n)}
-.stage.flurry.rev .st-on{animation:recoil-l .3s .08s ease-out var(--n)}
-.stage .pop.fl{margin-left:calc((var(--i) - .5) * 40px);animation:floatup 1.2s calc(.1s + var(--i) * .3s) ease-out both}
-/* On the fighter a special lands on */
-.tfx{position:absolute;top:38%;left:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);overflow:visible;pointer-events:none;z-index:2}
-.acard .tfx{top:34%;width:112%}
-.tfx .tfi{transform-box:fill-box;transform-origin:center;animation:tfxin 1.5s var(--d,0s) ease-out both}
-@keyframes tfxin{0%{opacity:0;transform:scale(.6)}28%{opacity:1;transform:none}72%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.08)}}
-.tfx .moon{fill:#c9a6ff;filter:drop-shadow(0 0 5px #8a4dff)}
-.tfx .gust{fill:none;stroke:#c9f5da;stroke-width:3.5;stroke-linecap:round;filter:drop-shadow(0 0 4px #49d48b)}
-.tfx .fly{fill:#c58bff;filter:drop-shadow(0 0 4px #9b5cff);animation:flyin 1.3s var(--d) ease-in both}
-@keyframes flyin{0%{opacity:0;transform:translateY(-16px)}30%{opacity:1}75%{opacity:1;transform:translateY(26px)}100%{opacity:0;transform:translateY(34px)}}
-.tfx .sash{fill:none;stroke:#f06aa6;stroke-width:6;stroke-dasharray:90 30;filter:drop-shadow(0 0 3px #000)}
-.tfx .pflame{fill:#ff6fb5;opacity:.9;filter:drop-shadow(0 0 6px #ff2f92)}
-.tfx .thr{stroke:#f4f4f4;stroke-width:1.2;filter:drop-shadow(0 0 2px #fff)}
-/* Yoriichi: everything stops, one clean gold cut */
-.sdark{position:absolute;inset:0;background:#000;animation:sdark 1.7s ease-in-out both}
-.sline{position:absolute;top:50%;left:-10%;width:120%;height:5px;background:linear-gradient(90deg,transparent,#ffe9a8,#fff,#ffe9a8,transparent);box-shadow:0 0 26px 6px #ffc24a;transform:rotate(-12deg) scaleX(0);animation:sline 1.7s ease-out both}
-@keyframes sdark{0%{opacity:0}22%,58%{opacity:.86}100%{opacity:0}}
-@keyframes sline{0%,52%{transform:rotate(-12deg) scaleX(0);opacity:1}62%{transform:rotate(-12deg) scaleX(1);opacity:1}100%{transform:rotate(-12deg) scaleX(1);opacity:0}}
 /* Muzan's whips */
-.sfx-whips path,.sfx-whips2 path{fill:none;stroke:#b0132a;stroke-width:6;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 5px #ff2a44);stroke-dasharray:600;stroke-dashoffset:600;animation:whip 1.15s var(--d) cubic-bezier(.2,.8,.3,1) both}
-@keyframes whip{0%{stroke-dashoffset:600;opacity:1}38%{stroke-dashoffset:0;opacity:1}72%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
-/* Gyomei's flail */
-.fball{inset:auto!important;top:50%!important;left:50%!important;width:34vmin!important;height:34vmin!important;margin:-17vmin;fill:#8d9098;stroke:#2c2d31;stroke-width:1.5;animation:flail 1.2s cubic-bezier(.6,0,.9,.5) both}
-.fchain{position:absolute;top:0;left:50%;width:6px;height:50%;margin-left:-3px;background:repeating-linear-gradient(#a7aab0 0 8px,#3b3c40 8px 12px);transform-origin:top;animation:chain 1.2s cubic-bezier(.6,0,.9,.5) both}
-@keyframes flail{0%{transform:translateY(-90vh) rotate(-30deg)}45%{transform:none}52%{transform:scale(1.08)}82%{transform:none;opacity:1}100%{opacity:0}}
-@keyframes chain{0%{transform:scaleY(0)}45%{transform:none}82%{opacity:1}100%{opacity:0}}
-:has(> .sfx-flail) .reswide,:has(> .sfx-flail) .board{animation:drumshake .5s .5s ease-in-out}
-/* Mitsuri's ribbon blade, Obanai's snake */
-.sfx-ribbon path{fill:none;stroke:#ff8ec7;stroke-width:7;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px #ff4f9e);stroke-dasharray:500;stroke-dashoffset:500;animation:whip 1.3s var(--d) ease-out both}
-.sfx-snake path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;stroke-dasharray:60 1000;stroke-dashoffset:60;animation:slither 1.3s ease-in-out both}
-.sfx-snake .body{stroke:#d9d9e6;stroke-width:15;filter:drop-shadow(0 0 5px #7a7ad0)}
-.sfx-snake .scale{stroke:#4c4c8a;stroke-width:5}
-@keyframes slither{0%{stroke-dashoffset:60;opacity:1}85%{opacity:1}100%{stroke-dashoffset:-150;opacity:0}}
-/* Enmu's sleep: eyelids close over the screen */
-.lid{position:absolute;left:0;right:0;height:52%;background:#07060c;animation:lidt 2s ease-in-out both}
-.lid.t{top:0;transform-origin:top}.lid.b{bottom:0;transform-origin:bottom}
-@keyframes lidt{0%,100%{transform:scaleY(0)}38%,62%{transform:scaleY(1)}}
-.sfx-sleep .spiral{inset:auto;top:50%;left:50%;width:44vmin;height:44vmin;margin:-22vmin;fill:none;stroke:#b28cff;stroke-width:2.2;animation:sleepspin 2s ease-in-out both}
-@keyframes sleepspin{0%,22%{opacity:0;transform:rotate(0)}45%,62%{opacity:1}85%,100%{opacity:0;transform:rotate(300deg)}}
-/* Hantengu breaks into his emotions */
-.sfx-crack polyline{fill:none;stroke:#fff;stroke-width:3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px #ff4a2c);stroke-dasharray:300;stroke-dashoffset:300;animation:whip 1.5s ease-out both}
-.sfx-crack b{position:absolute;top:50%;left:50%;font-family:var(--display);font-size:15vmin;color:#ff7a5c;text-shadow:0 0 14px #000;margin:-.6em;animation:emotion 1.6s .25s ease-out both}
-@keyframes emotion{0%{transform:none;opacity:0}40%{transform:translate(var(--x),var(--y));opacity:1}78%{opacity:1;transform:translate(var(--x),var(--y))}100%{opacity:0;transform:translate(var(--x),var(--y))}}
-/* The blow that ends the match, and a team's last fighter */
 .sfx-final{animation:finalflash 2.2s ease-out both}
 .sfx-final i{position:absolute;left:0;right:0;height:13vh;background:#000;animation:barin 2.2s ease-out both}
 .sfx-final i:first-child{top:0}.sfx-final i:nth-child(2){bottom:0}
@@ -2322,13 +1798,15 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 /* Nakime: the biwa note, and shoji doors sliding shut once the fighter is gone */
 .sfx-biwa i{position:absolute;top:50%;left:50%;width:24vmin;height:24vmin;margin:-12vmin;border-radius:50%;border:3px solid rgba(210,170,255,.8);animation:drumring 1s var(--d) ease-out both}
 .sfx-biwa b{position:absolute;top:50%;left:50%;font-size:3rem;color:#e3ccff;transform:translate(-50%,-50%);text-shadow:0 0 14px #9b5cff;animation:rise 1s ease-out both}
-.sfx-shoji .door{position:absolute;top:0;bottom:0;width:50.5%;background:repeating-linear-gradient(90deg,#3a2a1c 0 5px,transparent 5px 25%),repeating-linear-gradient(0deg,#3a2a1c 0 5px,#efe6d2 5px 25%);animation:doorl 2.1s .9s ease-in-out both}
-.sfx-shoji .door.l{left:0}.sfx-shoji .door.r{right:0;animation-name:doorr}
-@keyframes doorl{0%{transform:translateX(-100%)}30%,62%{transform:none}100%{transform:translateX(-100%)}}
-@keyframes doorr{0%{transform:translateX(100%)}30%,62%{transform:none}100%{transform:translateX(100%)}}
+/* Shoji doors slide shut over the one fighter, then they're gone */
+.kdoor{position:absolute;top:0;bottom:20px;width:51%;z-index:4;background:repeating-linear-gradient(90deg,#3a2a1c 0 3px,transparent 3px 33%),repeating-linear-gradient(0deg,#3a2a1c 0 3px,#efe6d2 3px 25%);animation:kdoorl .6s .25s ease-in both}
+.kdoor.l{left:0}.kdoor.r{right:0;animation-name:kdoorr}
+.acard .kdoor{bottom:0;z-index:6}
+@keyframes kdoorl{0%{transform:translateX(-105%);opacity:0}25%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes kdoorr{0%{transform:translateX(105%);opacity:0}25%{opacity:1}100%{transform:none;opacity:1}}
 /* Rui's threads and Gyokko's vase stay on a fighter until their turn comes back */
 .gl{position:relative}
-.gl.boundthread::after,.acard.boundthread::after{content:'';position:absolute;inset:-3px;z-index:3;pointer-events:none;background:repeating-linear-gradient(32deg,transparent 0 9px,rgba(245,245,245,.85) 9px 10.5px),repeating-linear-gradient(-28deg,transparent 0 13px,rgba(245,245,245,.7) 13px 14.5px)}
+.gl.boundthread::after,.acard.boundthread::after{content:'';position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(34deg,transparent 47%,#d3122c 47% 49%,transparent 49%),linear-gradient(-26deg,transparent 58%,#d3122c 58% 60%,transparent 60%),linear-gradient(8deg,transparent 30%,#d3122c 30% 32%,transparent 32%)}
 .gl.boundpot::after,.acard.boundpot::after{content:'';position:absolute;left:0;right:0;bottom:0;height:58%;z-index:3;pointer-events:none;border-radius:40% 40% 12% 12%;background:linear-gradient(180deg,#6f8fa0,#37505e);box-shadow:inset 0 3px 0 rgba(255,255,255,.3)}
 .tfx .pot{fill:#5d7f90;stroke:#27404d;stroke-width:1.5}
 .tfx .potl{fill:none;stroke:#c9dbe3;stroke-width:1.5}
@@ -2358,4 +1836,6 @@ body.tvmode .wrap{min-height:calc(100dvh / var(--tvz,1))}
 @keyframes slambot{0%{transform:translateY(120px);opacity:0}100%{transform:none;opacity:1}}
 /* The match's star steps forward */
 .winseals .star{position:relative;z-index:2;transform:scale(1.28) translateY(-6px);filter:drop-shadow(0 0 16px var(--wc))}
-@media (prefers-reduced-motion:reduce){.reswide.opener .rcol,.board.opener .arow,.sfx-shoji .door{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.reswide.opener .rcol,.board.opener .arow,.kdoor{animation:none!important}}
+/* A picture still decoding shows dark, not a paper-white blank */
+.gl:has(img){background:#17130f}

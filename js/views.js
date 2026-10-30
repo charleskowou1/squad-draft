@@ -12,7 +12,7 @@ const ART = {};
 const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${u.uid}" aria-label="About ${esc(u.name)}">${seal(u,cls)}</button>`;
 // A fighter's picture: Mark Tanjiro shows his Selfless State picture while he's in it (img/tanjiro_selfless.jpg)
 const artOf = c => (c.uid && c.ate && ART.genya_demon) || (c.uid && c.tw && ART.tanjiro_transparent) || (c.uid && (c.selfless || c.unblock) && ART.tanjiro_selfless) || ART[c.id];   // until his unblockable Hinokami lands
-const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${artOf(c)?`<img src="${artOf(c)}" alt="">`:c.g}</span>`;
+const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${artOf(c)?`<img decoding="sync" src="${artOf(c)}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
 // First-time tips: a small banner the first time a player reaches each screen. "Got it" hides it for good (TIPS_KEY).
@@ -202,7 +202,7 @@ function vCodex(){
     ${seg('codexf',f,CODEX_GROUPS)}
     <div class="grid codex">${cards.map(c=>{ const lock=!isUnlocked(c.id);
       return `<button class="card ${glyphCls(c)}${lock?' locked':''}" data-a="codexsel" data-v="${c.id}">
-        <span class="cart">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
+        <span class="cart">${ART[c.id]?`<img decoding="sync" src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
         <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>${lock?'<span class="lockbadge">🔒</span>':''}
         <span class="cbody"><span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>${c.helper?`<span class="ct">${esc(c.sig.tag)}</span>`:statCells(c)}</span>
 </button>`; }).join('')}</div>`;
@@ -238,7 +238,7 @@ function dailyCard(){
   if(!ch) return `<div class="daily loading"><div><div class="eyebrow">Daily challenge</div><div class="muted">Preparing today's battle…</div></div></div>`;
   const lead=ch.enemy.slice().sort((a,b)=>BYID[b].cost-BYID[a].cost)[0], date=new Date().toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
   return `<div class="daily${done?' done':''}">
-    ${ART[lead]?`<span class="dart" aria-hidden="true"><img src="${ART[lead]}" alt=""></span>`:''}
+    ${ART[lead]?`<span class="dart" aria-hidden="true"><img decoding="sync" src="${ART[lead]}" alt=""></span>`:''}
     <div class="dtop"><div><div class="eyebrow">Daily challenge · ${esc(date)}</div>
       ${streak?`<span class="dstreak">🔥 ${plural(streak,'day')} in a row</span>`:''}</div></div>
     <div class="dgoal">${esc(DAILY_GOALS[ch.goal.type](ch.goal))}</div>
@@ -258,7 +258,7 @@ function vModeSet(){
   const [,kj,title,sub]=MODE_CARDS.find(m=>m[0]===S.mode), art=(MODE_ART[S.mode]||[]).filter(id=>ART[id]);
   return `<header class="top"><div><div class="eyebrow">${esc(sub)}</div><div class="title">${esc(title)}</div></div>
       <div class="topbtns"><button class="btn ghost small gearmini" data-a="settings" aria-label="Settings">⚙</button><button class="btn ghost small" data-a="home">Back</button></div></header>
-    ${art.length?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</div>`:''}
+    ${art.length?`<div class="modehero" aria-hidden="true"><span class="mk">${kj}</span>${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</div>`:''}
     <div class="panel modepanel">${modeSettings()}</div>`;
 }
 // "Add to Home Screen": installed, the game keeps its saved progress (iPhone Safari deletes website data after 7 days
@@ -296,7 +296,7 @@ function vSetup(){
   ${dailyCard()}
   ${storyHome()}
   <div class="modes">${MODE_CARDS.map(([k,kj,t,sub])=>{ const art=(MODE_ART[k]||[]).filter(id=>ART[id]);
-    return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
+    return `<button class="mode${S.mode===k?' on':''}${art.length?' hasart':''}" data-a="openmode" data-v="${k}">${art.length?`<span class="mart n${art.length}" aria-hidden="true">${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</span>`:''}<span class="mk">${kj}</span><b>${t}</b><small>${sub}</small></button>`; }).join('')}</div>
   <details class="panel" id="howto"><summary>How to play</summary>
     <ol class="steps">
       <li><span class="sk">選</span><div><b>Pick a mode</b>Quickplay vs the computer, Online or Local with friends, or the Story.</div></li>
@@ -332,7 +332,7 @@ function vSpin(){
   const host=BYID[g.host], waiting=players().filter(q=>!g.picks[q]);
   const card=(id,i)=>{ const n=i+1, o=g.picks.indexOf(n), c=BYID[id], win=done && o===g.r;
     return `<button class="gcard${o>=0?' taken':''}${done&&n===g.secret?' secret':''}${win?' win':''}" data-a="guess" data-v="${n}" ${mine&&o<0?'':'disabled'} style="--tc:${o>=0?pc(o):'var(--line-2)'};--i:${i}">
-      <span class="gart">${ART[id]?`<img src="${ART[id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span><span class="gnum">${n}</span>
+      <span class="gart">${ART[id]?`<img decoding="sync" src="${ART[id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span><span class="gnum">${n}</span>
       ${done&&n===g.secret?'<span class="gis">The number!</span>':''}${o>=0?`<span class="gtag" style="background:${pc(o)}">${nm(o)}</span>`:''}</button>`; };
   const say = done ? `It was <b>${g.secret}</b>: <b>${esc(BYID[g.cards[g.secret-1]].short)}</b>!` : 'I’m thinking of a number from 1 to 9.';
   const dist = q => Math.abs(g.picks[q]-g.secret);
@@ -353,7 +353,7 @@ function cardHTML(c,p){
   const badge = c.legend?'Legend':c.mark?'✦ Mark':'';
   // picture-first card: art on top (kanji if no picture), name and type over its lower edge, stats below
   return `<button class="card ${glyphCls(c)}${ok?'':' off'}${S.sel===c.id?' sel':''}${owner>=0?' taken':''}" data-a="sel" data-v="${c.id}" ${ok?'':'aria-disabled="true"'}>
-    <span class="cart">${ART[c.id]?`<img src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
+    <span class="cart">${ART[c.id]?`<img decoding="sync" src="${ART[c.id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span>
     <span class="cost${c.cost>=12?' big':''}">${c.cost}<small>pts</small></span>
     ${badge?`<span class="badge">${badge}</span>`:''}
     <span class="cbody"><span class="cn">${esc(c.name)}</span><span class="ct">${esc(c.type)}</span>${statCells(c)}</span>
@@ -587,9 +587,9 @@ function vSettings(){
     ${S.setTab==='stats'?statsTab():S.setTab==='save'?saveTab():`<div class="setgroup"><div class="tlabel">Your name</div>
       <div class="namerow"><input id="pname" type="text" maxlength="14" value="${esc(playerName())}" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="pname">${S.nameSaved?'Saved ✓':'Save'}</button></div>
       <div class="hint">Shown when you win, in story mode and online. Each phone keeps its own name.</div></div>
-    <div class="setgroup placeset"><div class="tlabel">Battle background</div>
+    ${inMatch()?'':`<div class="setgroup placeset"><div class="tlabel">Battle background</div>
       ${seg('placecfg',placeChoice(),[['random','Random'],['off','Off'],...Object.keys(PLACE_ART).filter(id=>!/^(dr_|dream|six)/.test(id)).map(id=>[id,placeName(id)])])}
-      <div class="hint">Quickplay, Local, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>
+      <div class="hint">Quickplay, Local, Online and Practice games are fought in front of one of the story places. Story battles always use their own.</div></div>`}
     <div class="setgroup"><div class="tlabel">Playback speed</div>
       ${seg('speed',S.speed||'normal',[['slow','Slow'],['normal','Normal'],['fast','Fast']])}
       <div class="hint">How long each action stays on screen during a round.</div></div>
@@ -607,12 +607,12 @@ function vSettings(){
   </div></div>`;
 }
 // Wide picture across the top of a detail card (only when the character has a picture)
-const banner = c => ART[c.id] ? `<div class="mbanner" aria-hidden="true"><img src="${ART[c.id]}" alt=""></div>` : '';
+const banner = c => ART[c.id] ? `<div class="mbanner" aria-hidden="true"><img decoding="sync" src="${ART[c.id]}" alt=""></div>` : '';
 // Main menu: a slowly scrolling strip of character art (only once pictures have loaded)
 function artStrip(){
   const ids=['tanjiro','nezuko','zenitsu','inosuke','rengoku','giyu','shinobu','mitsuri','tengen','muichiro','akaza','doma','kokushibo','muzan','yoriichi','kanao'].filter(id=>ART[id]);
   if(ids.length<6) return '';
-  const row=ids.map(id=>`<img src="${ART[id]}" alt="">`).join('');
+  const row=ids.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('');
   return `<div class="artstrip" aria-hidden="true"><div class="track">${row}${row}</div></div>`;
 }
 // Card detail, centred on screen, when a card is tapped during the draft (or a fighter's info card in battle)
@@ -733,7 +733,7 @@ function stage(line){
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
   const calm=calmSides(), ring=u=>calm.has(u.p)?waterRing():'';
   const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line);
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u)}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u)}${role==='on'&&line.gone?kDoors:''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
@@ -767,7 +767,6 @@ function momentOf(lines, to, cur){
   if(lines.some(l=>l.merged)) return {k:'merge'};
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
   if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
-  if(lines.some(l=>l.gone)) return {k:'shoji'};
   if(lines.some(l=>l.fx==='stun' && l.move==='attack' && l.by && (findU(l.by)||{}).sk==='nakime')) return {k:'biwa'};
   if(lines.some(l=>l.fx==='spawn' && l.on && findU(l.on) && findU(l.on).sk==='hantengu')) return {k:'crack'};
   const ko=lines.filter(l=>l.fx==='ko'); if(!ko.length) return null;
@@ -803,6 +802,7 @@ function calmSides(){
   S.log.slice(0,p.steps[p.k][1]+1).forEach(l=>{ const b=l.calm&&findU(l.by); if(b) players().filter(q=>sameSide(q,b.p)).forEach(q=>s.add(q)); });
   return s;
 }
+const kDoors = '<span class="kdoor l"></span><span class="kdoor r"></span>';   // Nakime's Castle Shift: doors close over the one fighter
 // Dead Calm: a ring of still water closes around Giyu and everyone on his side
 const waterRing = () => `<span class="waterring" aria-hidden="true"><i></i><i></i><i></i></span>`;
 function stageCalm(by){
@@ -833,7 +833,7 @@ function cutin(u, clip, line){
   const style=styleOf(u,'special'), right=u.p!==leftSide();
   return `<div class="cutin sty sty-${style}${right?' right':''}${clip?' hasclip':''}" style="--tc:${pc(u.p)}" aria-hidden="true">${line&&line.flare?'<span class="markflare2"><b>痣</b></span>':''}
     ${clip?clipVideo(clip)+'<span class="cbars"></span><span class="lines"></span><span class="cflash"></span>':'<span class="lines"></span>'}
-    <div class="band"><span class="cimg">${ART[u.id]?`<img src="${ART[u.id]}" alt="">`:`<span class="ck">${u.g}</span>`}</span>
+    <div class="band"><span class="cimg">${ART[u.id]?`<img decoding="sync" src="${ART[u.id]}" alt="">`:`<span class="ck">${u.g}</span>`}</span>
       <div class="ctext"><span class="cwho" style="color:${pc(u.p)}">${esc(u.name)}</span><span class="cmove">${esc(sg.name)}</span>${(sg.quote||BYID[u.id].sig.quote)?`<span class="cquote">“${esc(sg.quote||BYID[u.id].sig.quote)}”</span>`:''}</div></div>
     <span class="ckanji">${STYLE_KANJI[style]||'技'}</span></div>`;
 }
@@ -984,7 +984,7 @@ function vStory(){
       const mine=STAGES.map((x,k)=>[x,k]).filter(([x,k])=>k>=i && k<=end), wonHere=mine.filter(([x,k])=>stageCleared(k)).length;
       const pick=CHAPTER_ART[arc]&&CHAPTER_ART[arc][part-1], current=mine.some(([x,k])=>k===next), art=(pick?[pick]:ARC_ART[st.arc]||[]).filter(id=>ART[id]);
       html+=`<section class="chap arc-${st.arc}${current?' current':''}${wonHere===mine.length?' done':''}">
-        ${art.length?`<span class="chapart" aria-hidden="true">${art.map(id=>`<img src="${ART[id]}" alt="">`).join('')}</span>`:''}
+        ${art.length?`<span class="chapart" aria-hidden="true">${art.map(id=>`<img decoding="sync" src="${ART[id]}" alt="">`).join('')}</span>`:''}
         <div class="chaphead"><span class="chapk">${ARCS[st.arc].g}</span><b>${esc(ARCS[st.arc].title)}${many?` · Part ${part}`:''}</b>
           <span class="chapprog">${wonHere===mine.length?'✓ Complete':current?'Now playing':`${wonHere} of ${mine.length} won`}</span></div><div class="chaprows">`; }
     const open=stageUnlocked(i), clear=stageCleared(i), sel=S.storySel===i, unl=STAGE_UNLOCKS[st.id]||[];
@@ -1076,8 +1076,8 @@ function vScene(){
     ${tip('scene','Tap anywhere to continue the story. <b>Skip</b> jumps to the fight.')}
     ${opt.clip&&(CLIPS[opt.clip]||{}).special&&S.clipsOn!==false?`<div class="scenevid" key="${S.sceneAt}"><video data-k="scene-${S.stage}-${S.sceneAt}" src="${esc(clipSrc(CLIPS[opt.clip].special))}"${ART[opt.clip]?` poster="${ART[opt.clip]}"`:''} muted playsinline autoplay loop preload="auto" disablepictureinpicture></video></div>`:''}
     <div class="stagecast">${cast.map(id=>`<span class="extra ${S.sceneFinale?(side==='l'?'r':'l'):sceneSide(st,id)}">${seal(BYID[id],'lg')}</span>`).join('')}
-      ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame
-      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${opt.pic&&ART[opt.pic]?`<span class="gl lg"><img src="${ART[opt.pic]}" alt=""></span>`:seal(c,'lg')}${opt.awaken?`<span class="markstamp" aria-hidden="true">${typeof opt.awaken==='string'?opt.awaken:'痣'}</span><span class="markburst" aria-hidden="true"></span>`:''}</span>`:''}</div>
+      ${pic?`<span class="lead ${c?side:'l'} scenepor" key="${S.sceneAt}"><span class="gl lg"><img decoding="sync" src="${pic}" alt=""></span></span>`   // a scene picture takes the speaker's portrait frame
+      :c?`<span class="lead ${side}${opt.awaken?' awaken':''}" key="${S.sceneAt}">${opt.pic&&ART[opt.pic]?`<span class="gl lg"><img decoding="sync" src="${ART[opt.pic]}" alt=""></span>`:seal(c,'lg')}${opt.awaken?`<span class="markstamp" aria-hidden="true">${typeof opt.awaken==='string'?opt.awaken:'痣'}</span><span class="markburst" aria-hidden="true"></span>`:''}</span>`:''}</div>
     <div class="sceneline ${side}${S.sceneInstant?' instant':''}" aria-live="polite">${c?`<span class="sname">${esc(c.short)}</span>`:''}
       <p class="popline" key="${S.sceneAt}">${typed}</p></div>
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>

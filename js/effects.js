@@ -53,7 +53,7 @@ const FX_ART = {
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
-const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', akaza:'annihil', yoriichi:'thirteen', yoriichi_old:'thirteen',
+const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
   muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep'};
 const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
 const SFX_ART = {
@@ -63,7 +63,7 @@ const SFX_ART = {
   claws: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(3, i=>`<line class="c1" style="--d:${i*.05}s" x1="${8+i*24}" y1="-4" x2="${38+i*24}" y2="104"/>`)}${rep(3, i=>`<line class="c2" style="--d:${.26+i*.05}s" x1="${92-i*24}" y1="-4" x2="${62-i*24}" y2="104"/>`)}</svg>`,
   tiger: () => `<span class="tband"><b>炎虎</b></span>`,
   ninth: () => `<span class="nburst"></span><span class="nspin"></span><b class="nk">煉獄</b>`,
-  thirteen: () => `<svg class="sunwheel" viewBox="0 0 100 100">${rep(13, i=>`<path style="--d:${i*.05}s" transform="rotate(${i*360/13} 50 50)" d="M50 6 A44 44 0 0 1 69 10"/><line style="--d:${.68+i*.01}s" class="ray" transform="rotate(${i*360/13} 50 50)" x1="50" y1="4" x2="50" y2="-26"/>`)}</svg>`,
+  sunform: () => `<span class="sunglow"></span>${rep(13, i=>`<i class="blade" style="--a:${-66+i*11}deg;--d:${.1+i*.05}s"></i>`)}<b class="hi">日</b>`,
   whips: () => whipArt(5),
   whips2: () => whipArt(9),
   flail: () => `<span class="fchain"></span><svg class="fball" viewBox="0 0 100 100"><circle cx="50" cy="50" r="27"/>${rep(10, i=>`<polygon points="50,6 57,26 43,26" transform="rotate(${i*36} 50 50)"/>`)}</svg>`,
@@ -75,7 +75,6 @@ const SFX_ART = {
   dragons: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(4, i=>`<path style="--d:${i*.12}s" d="M${10+i*27} 108 C${i%2?34+i*14:i*14} 70 ${i%2?i*18:30+i*18} 50 ${20+i*20} ${16+(i%2)*12}"/>`)}</svg>`,
   annihil: () => `<svg class="annring" viewBox="0 0 100 100"><g>${rep(16, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/8)}" y2="${50+48*Math.sin(i*Math.PI/8)}"/>`)}${rep(8, i=>`<polygon points="50,2 54,14 50,26 46,14" transform="rotate(${i*45} 50 50)"/>`)}<circle cx="50" cy="50" r="26"/><circle cx="50" cy="50" r="47"/></g></svg>`,
   merge: () => ['怒','楽','哀','喜'].map((k,i)=>`<b style="--x:${[-40,40,-40,40][i]}vmin;--y:${[-34,-34,34,34][i]}vmin">${k}</b>`).join('')+'<i class="mflash"></i>',
-  shoji: () => '<span class="door l"></span><span class="door r"></span>',
   biwa: () => rep(3, i=>`<i style="--d:${i*.14}s"></i>`)+'<b>♪</b>',
   tilt: () => '',
   sunsweep: () => '<i></i>',
@@ -95,7 +94,7 @@ const TARGET_ART = {
   shinobu: () => rep(5, i=>`<g transform="rotate(${i*72} 50 50)"><g class="fly" style="--d:${i*.08}s"><ellipse cx="44" cy="10" rx="7" ry="5" transform="rotate(-24 44 10)"/><ellipse cx="56" cy="10" rx="7" ry="5" transform="rotate(24 56 10)"/></g></g>`),
   daki: () => rep(3, i=>`<g transform="rotate(${i*14-14} 50 50)"><ellipse class="tfi sash" style="--d:${i*.1}s" cx="50" cy="${28+i*22}" rx="48" ry="9"/></g>`),
   nezuko: () => rep(7, i=>`<path class="tfi pflame" style="--d:${i*.05}s" d="M${14+i*12} 92 C${6+i*12} 66 ${24+i*12} 54 ${14+i*12} ${26+(i%3)*12} C${32+i*12} 48 ${30+i*12} 72 ${22+i*12} 92 Z"/>`),
-  rui: () => rep(4, i=>`<line class="tfi thr" style="--d:${i*.06}s" x1="${i%2?100:0}" y1="${14+i*22}" x2="${i%2?0:100}" y2="${34+i*16}"/>`),
+  rui: () => rep(3, i=>`<line class="tfi thr" style="--d:${i*.06}s" x1="${i%2?100:0}" y1="${14+i*22}" x2="${i%2?0:100}" y2="${34+i*16}"/>`),
 };
 // Doma's Frozen Lotus: ice petals open around each fighter it hits, leaving the middle clear for the damage
 const lotusFx = () => `<svg class="lotusfx" viewBox="0 0 100 100" aria-hidden="true">${rep(8, i=>`<g transform="rotate(${i*45} 50 50)"><path style="--d:${i*.05}s" d="M50 2 C60 10 60 20 50 28 C40 20 40 10 50 2 Z"/></g>`)}</svg>`;

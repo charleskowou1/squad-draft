@@ -1,6 +1,6 @@
 // Offline support. Keeps a copy of the game on the phone so it opens without a connection.
 // When online it always fetches the newest files first, so updates show up on the next open.
-const CACHE = 'squad-draft-v95';
+const CACHE = 'squad-draft-v96';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/roster.js', 'js/engine.js', 'js/story.js', 'js/daily.js', 'js/online.js', 'js/firebase-config.js', 'js/notes.js', 'js/effects.js', 'js/clips.js', 'js/views.js', 'js/sound.js', 'js/app.js', 'js/tv.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
@@ -17,6 +17,16 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   const keep = url.origin === location.origin || FONT_HOSTS.includes(url.hostname);
   if (!keep) return;
+  // Pictures, clips and sounds never wait on the network: the game redraws on every beat, and asking the server for
+  // each picture made them all blink out for a second on phones (CK). The saved copy shows at once and is refreshed behind it.
+  if (/\.(jpe?g|png|webp|mp3|mp4)$/i.test(url.pathname)) {
+    e.respondWith(caches.open(CACHE).then(c => c.match(e.request, {ignoreSearch: true}).then(hit => {
+      const fresh = fetch(e.request).then(res => { if (res.ok) c.put(e.request, res.clone()); return res; });
+      if (hit) { e.waitUntil(fresh.catch(() => {})); return hit; }
+      return fresh;
+    })));
+    return;
+  }
   e.respondWith(
     fetch(e.request, {cache: 'no-cache'})   // ask the server every time, so a fresh push isn't hidden by the browser's own cache
       .then(res => {

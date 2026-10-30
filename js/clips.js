@@ -62,10 +62,14 @@ const CLIPS = {
   zohakuten:     {special: 'https://media.tenor.com/c97RTCFc8kkAAAPo/zohakuten-kimetsu-no-yaiba.mp4'},   // Wood Dragons
   hand:          {special: 'clips/hand-special.mp4'},          // Grasping Arms: first 4 s
   kyogai:        {special: 'clips/kyogai-special.mp4'},        // Drum Room Spin: first 4 s
-  muzan:         {regen: 'clips/muzan-regen.mp4'},             // head growing back (YouTube, 0:06-0:09, no sound)
+  muzan:         {special: 'https://media.tenor.com/-rE33m3Gk6cAAAPo/demon-slayer-demon-slayer-season-4.mp4',   // Blood Whips
+                  regen: 'clips/muzan-regen.mp4'},             // head growing back (YouTube, 0:06-0:09, no sound)
   muzan_final:   {special: 'clips/muzan_final-special.jpg',    // Thorned Flesh Whips: a manga panel, no video exists
                   regen: 'clips/muzan-regen.mp4'},
   yoriichi_old:  {special: 'clips/yoriichi_old-special.jpg'},  // The Last Strike: a single manga panel
+  kaigaku:       {special: 'clips/kaigaku-special.mp4'},       // Black Thunder: first 4 s
+  gyomei_mark:   {special: 'https://media.tenor.com/bHhJrzZO3LMAAAPo/himejima-gyomei-kimetsu-no-yaiba.mp4'},
+  michikatsu:    {},   // not Kokushibo's demon clip: he's still human
   hakuji:        {special: 'https://media.tenor.com/JOGk6f__jd4AAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},
   tanjuro:       {special: 'https://media.tenor.com/FjuEaNP16-AAAAPo/demon-slayer-tanjiro.mp4'},       // the Hinokami dance in the snow
   aoi:           {use: 'https://media.tenor.com/t61s6eT3YwoAAAPo/aoi-kanzaki-aoi.mp4'},
@@ -82,7 +86,22 @@ const CLIPS = {
 // A clip's sound plays instead of the usual effect for that moment.
 const CLIP_SOUNDS = {
   akaza:   {special: 'sounds/akaza-special.mp3'},     // "Destructive Death: Compass Needle"
-  gyomei:  {special: 'sounds/gyomei-special.mp3'},    // "Stone Breathing!"
+  gyomei:  {special: 'sounds/gyomei-special.mp3'},    // "Stone Breathing! Third Form!"
+  genya:   {special: 'sounds/genya-special.mp3'},     // "I ate demon flesh earlier"
+  gyutaro: {special: 'sounds/gyutaro-special.mp3'},   // "Blood Demon Art: Flying Blood Sickles"
+  inosuke: {special: 'sounds/inosuke-special.mp3'},   // "Beast Breathing, Fourth Form! Slice and Dice!"
+  kagaya:  {special: 'sounds/kagaya-special.mp3'},    // "True eternity is the human will"
+  mitsuri: {special: 'sounds/mitsuri-special.mp3'},   // "Love Breathing, Fifth Form, Swaying Love"
+  muichiro:{special: 'sounds/muichiro-special.mp3'},  // "Mist Breathing, Seventh Form: Obscuring Clouds"
+  nakime:  {special: 'sounds/nakime-special.mp3'},    // her biwa
+  nezuko:  {special: 'sounds/nezuko-special.mp3'},    // "Blood Demon Art: Exploding Blood"
+  rui:     {special: 'sounds/rui-special.mp3'},       // "Blood Demon Art: Cutting Thread Cage"
+  sabito:  {special: 'sounds/sabito-special.mp3'},    // "You look like you finally belong"
+  sanemi:  {special: 'sounds/sanemi-special.mp3'},    // "Wind Breathing! Rising Dust Storm!"
+  shinobu: {special: 'sounds/shinobu-special.mp3'},   // "Insect Breathing: Dance of the Bee Sting, True Flutter"
+  tanjiro: {special: 'sounds/tanjiro-special.mp3'},   // "Hinokami Kagura! Dance!"
+  zenitsu: {special: 'sounds/zenitsu-special.mp3'},   // "Thunder Breathing, First Form: Thunderclap and Flash"
+  zohakuten:{special: 'sounds/zohakuten-special.mp3'},// "You brutal fiends who torment the weak"
   rengoku: {special: 'sounds/rengoku-special.mp3',    // "Fifth Form! Flame Tiger!"
             ninth:   'sounds/rengoku-ninth.mp3'},     // "The Ninth Form! Rengoku!"
   giyu: {special: 'sounds/giyu-special.mp3'},   // "Dead Calm" (CK's YouTube pick, 0:18.2-0:22.9; covers Giyu ✦)

@@ -915,6 +915,7 @@ function storyBeats(when){
     if(hit){ S.said[i]=true; say(who, b.text); } });
   (S.phases||[]).forEach(ph=>{ const u=S.teams[1].find(x=>x.id===ph.id); if(!u || !u.alive || u.phased || u.hp>u.max*ph.at) return;
     u.phased=true; if(ph.line) say(u, ph.line); if(ph.rally) while(S.waveQ && S.waveQ.length) nextWave();
+    if(ph.reply){ const r=allUnits().find(x=>x.alive && x.p===0 && x.fam===ph.reply.id) || alive(0)[0]; if(r) say(r, ph.reply.text); }
     u.pow+=ph.pow||0; u.spd+=ph.spd||0; u.def+=ph.def||0; if(ph.ready) u.cd=0; if(ph.second && BYID[u.id].sig2) u.sig=BYID[u.id].sig2;
     L(`${u.name} changes: ${ph.label}.`,'k',fx('buff',null,u)); });
   if(tw.protect && !S.failed){ const u=S.teams[0].find(x=>x.id===tw.protect); if(u && !u.alive){ S.failed=true; L(`${u.name} has fallen. You had to protect ${u.name}.`,'k',fx('ko',null,u)); } }

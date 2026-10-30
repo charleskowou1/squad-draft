@@ -92,7 +92,7 @@ function playRound(){
     const noise=()=>{ if(flurry) lines.forEach((l,i)=>setTimeout(()=>sfxForLine(l),i*280)); else if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line); };
     noise();
     render();
-    const extra=(special==='thirteen'?350:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
+    const extra=(special==='sunform'?500:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
     const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
     const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
     S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
@@ -339,6 +339,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||
 // Pictures that aren't a card's own: Mark Tanjiro in the Selfless State, and in the Transparent World while he strikes from it. (Rengoku's bloodied last smile is only in
 // his ending cutscene, scenes/rengoku-heart.jpg, not on his card: CK, Oct 28, 2026)
 const EXTRA_ART = ['tanjiro_selfless','tanjiro_transparent','genya_demon'];
+const ART_KEEP = [];   // holding the loaded pictures keeps them decoded, so redraws don't blink on phones
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
   let waiting=ids.length;
@@ -349,7 +350,7 @@ function findArt(){
   ids.forEach(id=>{
     const exts=['jpg','png','webp'];
     const tryNext=()=>{ const ext=exts.shift(); if(!ext) return finish();
-      const im=new Image(); im.onload=()=>{ found[id]=im.src; finish(); }; im.onerror=tryNext; im.src=`img/${id}.${ext}`; };
+      const im=new Image(); im.onload=()=>{ found[id]=im.src; ART_KEEP.push(im); if(im.decode) im.decode().catch(()=>{}); finish(); }; im.onerror=tryNext; im.src=`img/${id}.${ext}`; };
     tryNext();
   });
 }
@@ -650,6 +651,8 @@ function cloudApply(){
   location.reload();
 }
 S.vol=loadVolumes(); S.speed=loadSpeed(); try{ S.vibeOn=localStorage.getItem('squad-draft-vibe')!=='off'; S.clipsOn=localStorage.getItem('squad-draft-clips')!=='off' }catch(e){}
+// One-time reset of The Endless Dream only (CK, Oct 30, 2026, after it changed): the main story and stars stay
+try{ if(localStorage.getItem('squad-draft-dream-reset')!=='1'){ const st=loadStory(); st.cleared=(st.cleared||[]).filter(id=>!/^dr_/.test(id)); writeStory(st); localStorage.setItem('squad-draft-dream-reset','1'); } }catch(e){}
 useModeCfg(S.mode); S.names=localNames(); if(S.mode!=='local') S.names[0]=playerName()||'Player 1';   // solo modes: this phone's name
 // Add to Home Screen: what this phone can do (shown on the home screen until the game is installed)
 let INSTALL_EVENT=null;
