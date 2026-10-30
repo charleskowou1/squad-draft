@@ -102,6 +102,7 @@ function tvAct(m){
   if(m.a==='choose'){ tvChoose(m.key); render(); return; }
   if(m.a==='stage'){ const i=m.i|0; if(m.draft ? stageCleared(i) : stageUnlocked(i)){ ACTIONS[m.draft?'stagedraft':'stage'](i); } render(); return; }
   if(seat<0) return;   // a third phone only watches
+  if(m.a==='cfg' && ['budget','poolType','level'].includes(m.k)){ tvCfgSet(m.k,m.v); render(); return; }
   const myDraft = S.phase==='draft' && turn()===seat && (S.tvDuo ? seat<2 : seat===0 && (S.mode==='cpu'||S.mode==='story'));
   if(m.a==='pick' && myDraft){ S.sel=m.id; ACTIONS.confirmPick(); render(); return; }
   if(m.a==='lockteam' && myDraft){ ACTIONS.lock(); render(); return; }
@@ -155,6 +156,15 @@ function tvChoices(view){
   }
   return null;
 }
+// The match settings on the TV's lobby (from the laptop or a phone): Quickplay and 2-player games both use them
+function tvCfgSet(k,v){
+  if(S.ctl) return ctlSend({a:'cfg', k, v});
+  ['cpu','local'].forEach(m=>{ const c=loadModeCfg(m); c[k]=k==='budget'?+v:v; saveModeCfg(m,c); });
+}
+const tvCfgNow = () => { const c=loadModeCfg('cpu'); return {budget:c.budget, poolType:c.poolType, level:c.level}; };
+const tvCfgRows = c => `<div class="tvcfg"><div class="setline"><span class="tlabel">Points per team</span>${seg('tvcfgbudget',c.budget,BUDGETS.map(b=>[b,budgetName(b)]))}</div>
+  <div class="setline"><span class="tlabel">Character pool</span>${seg('tvcfgpool',c.poolType,POOL_OPTS)}</div>
+  <div class="setline"><span class="tlabel">Computer</span>${seg('tvcfglevel',c.level,Object.entries(LEVELS).map(([k,l])=>[k,l.label]))}</div></div>`;
 function tvChoose(key){
   if(key==='story' || key==='map') return ACTIONS.storymap();
   if(key==='quickplay'){ ACTIONS.mode('cpu'); S.names=[playerName()||'Player 1', S.names[1]||'Computer']; return startDraft(); }
@@ -186,7 +196,7 @@ function tvSeatView(q, view){
 // After every redraw on the TV: send the controllers the current game (only when it changed)
 function tvPublish(view){
   if(!isTV() || !TV.room) return;
-  const o={views:[0,1].map(q=>tvSeatView(q,view)), seats:S.tv.seats, next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view, wait:tvWaiting()};
+  const o={views:[0,1].map(q=>tvSeatView(q,view)), seats:S.tv.seats, next:tvNextLabel(), choices:tvChoices(view), story: view==='story' ? tvStoryList() : null, tvView:view, wait:tvWaiting(), tvCfg: view==='tvhome' ? tvCfgNow() : null};
   TV_FIELDS.forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; });
   // the crow's owner sees the other side's moves (never the owner's own, so the other phone learns nothing new)
   if(S.phase==='scout' && S.plans){ o.scoutPlans=S.plans.map((p,q)=>q===S.scoutP?{}:p); o.scoutHelpers=S.helperPlan.map((h,q)=>q===S.scoutP?[]:h); }
@@ -250,12 +260,16 @@ function sizeBoard(n){
 }
 const tvBoardOK = () => isTV() && !!S.teams && nPlayers()===2;
 // the move screen is a waiting board while a phone picks (unless the laptop chose to pick this round)
+// with a phone in hand the summaries go there (CK), and the TV stays a clean picture
+const tvPhonesShow = () => isTV() && (S.tvDuo || tvAnyPhone());
 const tvBoardWait = () => tvBoardOK() && ['plan','scout'].includes(S.phase) && !S.scouting && S.tvMouse!==S.round && (S.tvDuo || tvAnyPhone());
 if(typeof VIEWS!=='undefined'){
   const base={plan:VIEWS.plan, scout:VIEWS.scout, result:VIEWS.result};
   VIEWS.plan = () => tvBoardWait() ? vTvBoard(null) : base.plan();
   VIEWS.scout = () => tvBoardWait() ? vTvBoard(null) : base.scout();
-  VIEWS.result = () => tvBoardOK() && S.play && !S.play.done ? vTvBoard(playBeat()) : base.result();
+  VIEWS.result = () => !tvBoardOK() || !S.play ? base.result() : !S.play.done ? vTvBoard(playBeat()) : tvPhonesShow() ? vTvBoard(null) : base.result();
+  const baseOver=VIEWS.over;
+  VIEWS.over = () => tvPhonesShow() ? `${winHero()}${overUnlocks()}${overBar()}` : baseOver();
   const baseDraft=VIEWS.draft;
   VIEWS.draft = () => isTV() && (S.tvDuo || tvAnyPhone()) ? vTvDraft() : baseDraft();
 }
@@ -280,9 +294,10 @@ function boardRoles(b, pos){
   const fly=(u,to,dist)=>{ const a=pos.get(u.uid); if(a && to) add(u,'fly','',{dx:Math.round((to.x-a.x)*dist), dy:Math.round((to.ri-a.ri)*rowStep()*dist)}); };
   const struck=(l,style)=>{ const t=findU(l.on); if(!t) return;
     const mark=l.fx==='miss'?'避':l.fx==='block'?'防':STYLE_KANJI[style]||'斬';
-    add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+`<span class="amark">${mark}</span>`+popHTML(l)); };
+    add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+targetFx(l)+`<span class="amark">${mark}</span>`+popHTML(l)); };
   const first=b.lines[0], by=first.by&&findU(first.by), type=first.fx||'';
   b.lines.forEach(l=>{ if(l.ko) add(findU(l.ko),'kod'); });
+  if(first.gone){ add(findU(first.on),'pulled'); return roles; }   // Nakime's biwa: dropped through the floor, off the screen
   if(b.group && by){   // a special that hits a whole team: the attacker dives at the middle of that row
     const style=styleOf(by,'special'), t=findU((b.lines.find(l=>l.on)||{}).on);
     if(t && pos.get(t.uid)) fly(by, {x:0, ri:pos.get(t.uid).ri}, .7);
@@ -309,10 +324,12 @@ function vTvBoard(b){
   // beats that play over the board: the round intro, a special's cut-in, a move clip, a fighter's line
   const over = !playing ? '' : !beat ? `<div class="now intro"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`
     : b.group ? ''
+    : cur.fx==='awaken' ? `<div class="now awakebeat">${awakenBeat(cur)}</div>`
     : cur.fx==='special' && by ? `<div class="now cut${b.clip?' clip':''}">${cutin(by,b.clip,cur)}</div>`
     : b.clip ? `<div class="now clipbeat">${clipBeat(b.clip,cur)}</div>`
     : cur.fx==='say' && by ? `<div class="now saybeat" style="--tc:${pc(by.p)}">${seal(by,'stg')}<div><span class="sayn">${esc(by.name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>` : '';
   const roles = beat && !over ? boardRoles(b, pos) : new Map();
+  const calmRow = r => playing && r.some(u=>b.moment(u).calm) ? ' calm' : '';   // Dead Calm's water around the whole team, for the rest of the round
   const card=u=>{
     const o=playing?b.moment(u):{}, hp=o.hp===undefined?u.hp:o.hp;
     // a fighter hit down to 0 stays standing at 0% this beat; it falls on its own "falls!" beat (flash 'ko')
@@ -320,28 +337,30 @@ function vTvBoard(b){
     const h=hp>0?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from)), r=roles.get(u.uid)||{cls:'',fx:''};
     const state = r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
     const back = beat && !over && !b.involved.has(u.uid) && !r.cls && !state ? ' back' : '';
-    return `<div class="acard${state}${r.cls}${back}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">
+    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">
       <div class="aart">${artOf(u)?`<img src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
       <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
       ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}</div>`; };
   const big = beat && !over && b.lines.some(bigHit), kos = beat && !over && b.lines.some(l=>l.fx==='ko'||l.ko);
   const wait=tvWaiting(), goal=S.mode==='story'&&STAGES[S.stage]?twistText(STAGES[S.stage]):'';
-  const band = !playing ? `<div class="await"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${wait||'Choose your moves'}</b>${goal?`<small>${esc(goal)}</small>`:''}</div>`
+  const roundOver = !playing && S.phase==='result';
+  const band = roundOver ? `<div class="await"><b>${S.final?'The battle is over':`Round ${S.round} is over`}</b><small>The full round is on your phone</small></div>`
+    : !playing ? `<div class="await"><span class="adots" aria-hidden="true"><i></i><i></i><i></i></span><b>${wait||'Choose your moves'}</b>${goal?`<small>${esc(goal)}</small>`:''}</div>`
     : over ? '' : `<div class="aline ${cur.c||''}">${first.helper?stage(first):''}<span>${b.group?groupSummary(b.lines):fmtLog(cur.t)}</span></div>`;
   // the laptop can still pick: for player 1 against the computer, or for a player whose phone has dropped out
   const offSeat = S.tvDuo ? players().find(q=>tvChooser(q) && !tvLocked(q) && !tvSeatOn(q)) : undefined;
   const mouse = S.phase!=='plan' ? '' : S.tvDuo ? (offSeat!==undefined ? `<button class="btn ghost" data-a="tvmouse" data-v="${offSeat}">Choose ${esc(S.names[offSeat])}’s moves here</button>` : '')
     : '<button class="btn ghost" data-a="tvmouse" data-v="0">Choose on this screen</button>';
-  const heading = playing ? [`Round ${S.round}${b.total?` · ${b.step} of ${b.total}`:''}`, 'The clash'] : [`Round ${S.round}`, S.phase==='scout' ? 'The crow is back' : 'Choose your moves'];
+  const heading = playing ? [`Round ${S.round}${b.total?` · ${b.step} of ${b.total}`:''}`, 'The clash'] : [`Round ${S.round}`, roundOver ? 'Round over' : S.phase==='scout' ? 'The crow is back' : 'Choose your moves'];
   return `${topbar(heading[0], heading[1], false)}
     ${strengthBar(me, playing?u=>b.cur.hp[u.uid]:undefined, playing?u=>b.prev.hp[u.uid]:undefined)}
     <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}" style="--w:${W}px;--ch:${BOARD.ch}px">
-      <div class="arow top">${rowU[0].map(card).join('')}</div>
+      <div class="arow top${calmRow(rowU[0])}">${rowU[0].map(card).join('')}${calmRow(rowU[0])?waterRing():''}</div>
       <div class="aband">${band}</div>
-      <div class="arow bot">${rowU[1].map(card).join('')}</div>
+      <div class="arow bot${calmRow(rowU[1])}">${rowU[1].map(card).join('')}${calmRow(rowU[1])?waterRing():''}</div>
       ${over?`<div class="aover" aria-live="polite">${over}</div>`:''}
-    </div>
-    ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : mouse ? actionbar(mouse) : ''}`;
+    </div>${beat&&!over?beatFx(b.lines,b.from):''}
+    ${playing ? actionbar('<button class="btn ghost" data-a="skip">Skip</button>') : roundOver ? actionbar(S.final?'<button class="btn" data-a="finish">See who won</button>':'<button class="btn" data-a="next">Next round</button>') : mouse ? actionbar(mouse) : ''}`;
 }
 // The TV's lobby (TV mode opens here, and Main menu comes back here): the code, who has joined, what to play
 function vTvHome(){
@@ -352,6 +371,7 @@ function vTvHome(){
     <div class="hero"><span class="kanji" aria-hidden="true">滅</span><div class="eyebrow">TV mode</div><h1>Slayer Squad</h1></div>
     <div class="tvjoin"><p>On your phones, open Slayer Squad, tap <b>📺 Join a TV</b> and type</p><div class="tvcode">${esc(t.code)}</div></div>
     <div class="tvslots">${seat(0)}${seat(1)}</div>
+    ${tvCfgRows(tvCfgNow())}
     <div class="tvmodes">${ch.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="tvchoose" data-v="${k}">${esc(l)}</button>`).join('')}</div>
     <p class="hint">Pick from either phone, or here. Story mode and unlocks use the players’ own saves from their phones, and story wins are saved back to Player 1’s phone.</p>
     <div class="tvhomebar"><button class="btn ghost small" data-a="tvfull">Full screen</button><button class="btn ghost small" data-a="tvexit">Exit TV mode</button></div>
@@ -441,6 +461,12 @@ function ctlStoryList(list){
     ${b.open?`<button class="btn small" data-a="ctlstage" data-v="${b.i}">${b.won?'Play again':'Play'}</button>`:'<span class="muted">🔒</span>'}
     ${b.won?`<button class="btn ghost small" data-a="ctlstage" data-v="${b.i}" data-d="1">Draft</button>`:''}</div>`).join('')}</div>`;
 }
+// The numbers live on the phone so the TV can stay clean: the round's log, then the match summary when it ends
+function ctlSummary(){
+  if(S.tvView==='over' && S.teams) return `${mvpPanel()}<div class="overteams">${players().map(q=>teamBlock(q)).join('')}</div>${matchLogPanel()}`;
+  if(S.tvView==='result' && S.teams && S.next && S.next!=='Skip' && S.log) return `<div class="panel ctlround"><div class="tlabel">Round ${S.round}</div>${logHTML()}</div>`;
+  return '';
+}
 function vCtlWatch(){
   const live=!!S.teams && !['setup','story','modeset','credits'].includes(S.phase) && !S.story;
   const seat=S.ctlSeat, who = seat>=0 && S.tvDuo ? `<p class="ctlwho" style="color:${pc(seat)}">You’re ${esc(S.names[seat]||'Player '+(seat+1))}</p>` : seat<0 && (S.seats||[]).length>=2 ? '<p class="ctlwho muted">Watching: two phones are already playing</p>' : '';
@@ -452,7 +478,9 @@ function vCtlWatch(){
     ${S.wait&&live?`<p class="ctlwaitline">${S.wait}</p>`:''}
     ${S.next?`<button class="btn big" data-a="ctlnext">${esc(S.next)}</button>`:''}
     ${(S.choices||[]).length?`<div class="ctlchoices">${S.choices.map(([k,l],i)=>`<button class="btn${i?' ghost':''}" data-a="ctlpick" data-v="${esc(k)}">${esc(l)}</button>`).join('')}</div>`:''}
+    ${S.tvCfg?tvCfgRows(S.tvCfg):''}
     ${S.story?ctlStoryList(S.story):''}
+    ${ctlSummary()}
     <p class="hint">Code ${esc(S.ctl.code)}</p>
     <button class="btn ghost" data-a="ctlexit">Leave controller mode</button></div>`;
 }

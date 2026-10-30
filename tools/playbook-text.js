@@ -35,14 +35,14 @@ cards: {
         'With Tanjiro: Siblings, they counterattack when the other is hit.',
         'Weak on her own: take her for the pair, not alone.'],
   beat: ['Low HP; she drops fast. Kill her before Tanjiro to stop the Siblings counter.',
-         'She is a demon: from round 10 the sun burns her.'] },
+         'She is a demon, but the sun only burns her on the first morning (round 10): after that she has conquered it, and she regenerates again.'] },
  nezuko_awakened: {
   win: ['Exploding Blood doubles to 10 to every enemy, ignoring DEF, and cures her team\'s poison: great against Gyutaro, Shinobu and Doma.',
         'She can\'t Defend (berserk), so always have her attacking or using her special.',
         'A strong 9-pt card at both budgets.'],
   beat: ['She can never Defend: focus her and every hit lands in full.',
          'Doma beats her most often in the sim.',
-         'She\'s a demon: drag the game to sunrise and she burns.'] },
+         'She\'s a demon, but sunrise only burns her once: don\'t count on the sun to finish her.'] },
  zenitsu: {
   win: ['Always moves first, so Thunderclap and Flash (PWR×2) finishes a hurt enemy before it acts.',
         'After story battle Senior Brother his second special, Seventh Form (PWR×3, ignores DEF), alternates with it.',
@@ -70,6 +70,7 @@ cards: {
   win: ['Dead Calm moves first and makes your whole team take no damage that round: use it on the round you expect their big special.',
         'With Urokodaki he gets +1 DEF; with another Hashira, +1 PWR. Best at 30 pts.'],
   beat: ['Watch his cooldown: Dead Calm is ready every few rounds. Hold your big special until it\'s recharging.',
+         'Nakime\'s Biwa Strum makes him act last, so his Dead Calm lands after your attacks. Shoot for that on the round it\'s ready.',
          'Poison and Shinobu\'s wisteria still tick on a Dead Calm round; only hits are stopped.'] },
  giyu_mark: {
   win: ['Same Dead Calm, recharges a round faster, with Mark stats. Among the best cards at 30 pts.',
@@ -103,7 +104,7 @@ cards: {
   beat: ['Average HP and DEF: focus her and the healing stops.',
          'Doma is her nightmare in the story for a reason: big area damage overwhelms the heal.'] },
  mitsuri: {
-  win: ['Catlove Shower hits every enemy for PWR−3: best against many fragile fighters.',
+  win: ['Catlove Shower hits every enemy for PWR−3 and goes straight through Defend, so guarding doesn\'t help against it: best against many fragile fighters.',
         'Weak at 20 pts: her Mark version is the better pick.'],
   beat: ['Her area damage is small per target: stack DEF and ignore her until the end.'] },
  mitsuri_mark: {
@@ -165,7 +166,8 @@ cards: {
  typezero: {
   win: ['Strikes three times every Attack (PWR 4 each): great with Muscle Mice (+2 on every strike).',
         'Training Drill: an ally gets +2 SPD for the match. With Muichiro: Muichiro +1 PWR.'],
-  beat: ['Three small hits are weak against high DEF: armour beats him.'] },
+  beat: ['Three small hits are weak against high DEF: armour beats him.',
+         'Poison does nothing to him: he\'s a puppet, so don\'t aim Shinobu here.'] },
  tamayo: {
   win: ['Healing Blood Art: heal an ally (or herself) 10 and cure poison.',
         'Against Muzan she cuts his regeneration by 2. With Yushiro: Yushiro +2 PWR.',
@@ -182,10 +184,10 @@ cards: {
         'Corps Master: Hashira get +1 DEF. With two Mark-able Hashira on the team he is at his best.',
         'Fire Final Resolve early, before they can kill him.'],
   beat: ['Kill him before his special: if an enemy knocks him out first, nobody awakens.',
-         'He has 14 HP and SPD 5: one hit in round 1 usually does it.'] },
+         'He has 18 HP and SPD 5: two hits in round 1 usually do it.'] },
  hand: {
   win: ['2 pts, Grasping Arms PWR+3: cheap filler next to a big card.'],
-  beat: ['14 HP: anything kills him. Don\'t spend a special on him.'] },
+  beat: ['18 HP: two hits kill him. Don\'t spend a special on him.'] },
  swamp: {
   win: ['3 pts. Swamp Dive moves early: he sinks out of reach (can\'t be hit) and strikes PWR+1.',
         'The best partner for a 17-pt giant at 20 pts, especially Old Yoriichi.'],
@@ -302,7 +304,7 @@ module.exports.fundamentals = [
   ['Track cooldowns. ', 'Tap any picture to see when an enemy special is ready (a gold Special ready tag shows it on the move screen). Defend or hide on the round it comes back.'],
   ['Repeat saves time, not thinking. ', '↻ Repeat copies last round\'s moves; recharging specials turn into Attack.']]],
  ['The sun', [
-  ['From round 10 the sun rises. ', 'Every demon (except sun-proof Demon King Tanjiro) burns 10% of its max HP, then 15%, 20%, 25%… and stops regenerating. The sky starts glowing from round 7.'],
+  ['From round 10 the sun rises. ', 'Every demon (except sun-proof Demon King Tanjiro, and Nezuko after the first morning) burns 10% of its max HP, then 15%, 20%, 25%… and stops regenerating. The sky starts glowing from round 7.'],
   ['Slayers: play for time. ', 'Against a demon team that out-damages you, Defend and heal to drag it past round 10.'],
   ['Demons: win early. ', 'A demon team should go all-in before round 10; after that every round costs it more.']]],
  ['Helpers', [

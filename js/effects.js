@@ -50,5 +50,17 @@ const FX_ART = {
   dream: () => `<path class="draw" d="M50 50 m0 -6 a6 6 0 1 1 -6 6 a12 12 0 1 1 12 12 a18 18 0 1 1 -18 -18 a26 26 0 1 1 26 26"/>`,
   slash: () => `<line class="draw" x1="10" y1="16" x2="90" y2="84"/>`,
 };
+// Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
+// Akaza's is drawn under his target instead. Tengen's plays on every hit, like a drum.
+const SPECIAL_FX = {zenitsu:'bolt', doma:'frost', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering'};
+const SFX_ART = {
+  bolt: () => `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline class="b1" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/><polyline class="b2" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/></svg>`,
+  frost: () => rep(4, i=>`<svg class="fc c${i}" viewBox="0 0 100 100"><polygon points="0,0 100,0 70,12 86,26 52,24 60,48 34,34 28,62 16,40 0,100"/></svg>`),
+  mist: () => rep(5, i=>`<i style="--d:${i*.09}s;--y:${8+i*19}%"></i>`),
+  drum: () => rep(3, i=>`<i style="--d:${i*.16}s"></i>`),
+  claws: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(3, i=>`<line class="c1" style="--d:${i*.05}s" x1="${8+i*24}" y1="-4" x2="${38+i*24}" y2="104"/>`)}${rep(3, i=>`<line class="c2" style="--d:${.26+i*.05}s" x1="${92-i*24}" y1="-4" x2="${62-i*24}" y2="104"/>`)}</svg>`,
+  firering: () => `<span class="firering"><i></i><i></i><i></i></span>`,
+};
+const compassFx = () => `<svg class="compassfx" viewBox="0 0 100 100" aria-hidden="true"><g>${rep(8, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/4)}" y2="${50+48*Math.sin(i*Math.PI/4)}"/>`)}${rep(6, i=>`<polygon points="50,6 54,16 50,26 46,16" transform="rotate(${i*60} 50 50)"/>`)}<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="46"/></g></svg>`;
 // The effect drawn over a fighter: style art plus the style's colour class
 const fxArt = (style, extra='') => `<svg class="fxl sty-${style} ${extra}" viewBox="0 0 100 100" aria-hidden="true">${(FX_ART[style]||FX_ART.slash)()}</svg>`;

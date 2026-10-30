@@ -23,8 +23,9 @@ const CLIPS = {
   rui:          {special: 'https://media.tenor.com/8F1cpYMAkQoAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Cutting Thread Cage
   shinobu:      {special: 'https://media.tenor.com/ows-n9TDResAAAPo/shinobu-kocho-demon-slayer.mp4'},     // Wisteria Poison (butterfly sting)
   tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4',        // Hinokami Kagura (Mark)
-                 selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4'},   // Selfless State
-  tanjiro_demon:{},                                                                           // not Hinokami: no clip yet
+                 selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4',
+                 transparent:'clips/tanjiro-transparent.mp4'},   // attacking from the Selfless State: the Transparent World   // Selfless State
+  tanjiro_demon:{special: 'clips/tanjiro_demon-special.mp4'},   // Demon King's Rampage: CK's Tenor clip, first 4 s
   akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4',  // Destructive Death: Compass Needle
                  annihilation: 'clips/akaza-annihilation.mp4',   // Annihilation Type: CK's GIF, converted, served with the game
                  regen:   'https://media.tenor.com/cEpW6MV9Z_YAAAPo/akaza-gif-headless.mp4'},  // head growing back
@@ -41,6 +42,31 @@ const CLIPS = {
   obanai:       {special: 'https://media.tenor.com/3jBPI8_vMfcAAAPo/obanai-obanai-iguro.mp4'},     // Serpent Breathing
   genya:        {special: 'https://media.tenor.com/YXctE3HEatcAAAPo/demon-slayer.mp4'},            // Genya's special
   sabito:       {special: 'https://media.tenor.com/S98rvMkpd9kAAAPo/sabito.mp4'},                  // Spirit Training
+  // Friday drop (Oct 30, 2026)
+  daki:          {special: 'https://media.tenor.com/3dTXBpeK1EwAAAPo/kimetsu-no-yaiba-demon-slayer.mp4'},   // Obi Sashes
+  enmu:          {special: 'https://media.tenor.com/KwNbxtAZ7rwAAAPo/kimetsu-no-yaiba-mugen-train.mp4'},   // Forced Sleep
+  gyokko:        {special: 'https://media.tenor.com/WhSFVAa0eE8AAAPo/gyokko-pot.mp4'},   // Water Prison Pot
+  gyutaro:       {special: 'https://media.tenor.com/0ViOIVwIBOgAAAPo/demon-slayer-demon-slayer-s2.mp4'},   // Flying Blood Sickles
+  hantengu:      {special: 'https://media.giphy.com/media/wiNn6bskDVY4SvE3kf/giphy.mp4'},   // Cowering Hide
+  kanae:         {special: 'https://media.giphy.com/media/xWIklyBVywrEjcMKWJ/giphy.mp4'},   // Crimson Hanagoromo
+  murata:        {special: 'https://media.tenor.com/wtlDk3glPlEAAAPo/sm32-murata.mp4'},   // Water Surface Slash
+  susamaru:      {special: 'https://media.tenor.com/iYH7ipY5zkMAAAPo/susamaru-temari-balls.mp4'},   // Temari Barrage
+  tamayo:        {special: 'https://media.tenor.com/wt1vTr1tT5UAAAPo/tamayo-demon-slayer.mp4'},   // Healing Blood Art
+  yahaba:        {special: 'https://media.tenor.com/Sq2F7l-bgycAAAPo/yahaba-arrow-demon.mp4'},   // Vector Arrows
+  typezero:      {special: 'https://media.tenor.com/pf7yjToDMCUAAAPo/yoriichi-yoriichi-type-zero.mp4'},   // Training Drill
+  yushiro:       {special: 'https://media.tenor.com/w6sfVjjE_ycAAAPo/yushiro.mp4'},   // Concealment Talisman
+  aizetsu:       {special: 'https://media.tenor.com/TypGxKxx9mgAAAPo/aizetsu-aizetsu-demon-slayer.mp4'},   // Cross Spear
+  karaku:        {special: 'https://media.tenor.com/9ZJNvODaQxoAAAPo/karaku-karaku-demon-slayer.mp4'},   // Gale Fan
+  nezuko_awakened:{special: 'https://media.tenor.com/TuhJqffeM7sAAAPo/demon-slayer-demon-slayer-s2.mp4'},   // Exploding Blood
+  sekido:        {special: 'https://media.tenor.com/-G6Nc83GotcAAAPo/hantengu-demon-slayer.mp4'},   // Lightning Staff
+  urogi:         {special: 'https://media.tenor.com/gg4FjAQPjpcAAAPo/urogi-urogi-demon-slayer.mp4'},   // Sky Dive
+  zohakuten:     {special: 'https://media.tenor.com/c97RTCFc8kkAAAPo/zohakuten-kimetsu-no-yaiba.mp4'},   // Wood Dragons
+  hand:          {special: 'clips/hand-special.mp4'},          // Grasping Arms: first 4 s
+  kyogai:        {special: 'clips/kyogai-special.mp4'},        // Drum Room Spin: first 4 s
+  muzan:         {regen: 'clips/muzan-regen.mp4'},             // head growing back (YouTube, 0:06-0:09, no sound)
+  muzan_final:   {special: 'clips/muzan_final-special.jpg',    // Thorned Flesh Whips: a manga panel, no video exists
+                  regen: 'clips/muzan-regen.mp4'},
+  yoriichi_old:  {special: 'clips/yoriichi_old-special.jpg'},  // The Last Strike: a single manga panel
   // back-pocket helpers: `use` plays when the helper is used (start of the round)
   chachamaru:   {use: 'https://media.tenor.com/_WSjCdYJ3QoAAAPo/chachamaru-kimetsu-no-yaiba.mp4'},
   crow:         {use: 'https://media.tenor.com/Rec9bEkDErUAAAPo/kasugai.mp4'},
@@ -52,13 +78,17 @@ const CLIPS = {
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.
 const CLIP_SOUNDS = {
+  akaza:   {special: 'sounds/akaza-special.mp3'},     // "Destructive Death: Compass Needle"
+  gyomei:  {special: 'sounds/gyomei-special.mp3'},    // "Stone Breathing! Third Form! Stone Skin!"
+  rengoku: {special: 'sounds/rengoku-special.mp3',    // "Fifth Form! Flame Tiger!"
+            ninth:   'sounds/rengoku-ninth.mp3'},     // "The Ninth Form! Rengoku!"
   giyu: {special: 'sounds/giyu-special.mp3'},   // "Dead Calm" (CK's YouTube pick, 0:18.2-0:22.9; covers Giyu ✦)
 };
 // What each moment is called (shown on the clip box)
-const CLIP_ACTS = {use:'Back pocket', poison:'Poisoned', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
+const CLIP_ACTS = {transparent:'Transparent World', use:'Back pocket', poison:'Poisoned', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
 // Moments that repeat every round (attacks, guarding, regenerating) show their clip at most once every few rounds
 // per fighter, so long matches don't drag. Specials and one-off moments always play.
-const CLIP_REPEAT = ['attack','defend','regen','poison'], CLIP_GAP = 3;
+const CLIP_REPEAT = ['attack','defend','regen','poison','transparent'], CLIP_GAP = 3;
 // Moments that play every time for a character instead of every CLIP_GAP rounds (CK: Doma's regen and poison)
 const CLIP_ALWAYS = {doma:['regen','poison']};
 
@@ -66,6 +96,7 @@ const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && src[BYID[u.id].fam
 // The moment a log line shows and whose it is: {act, u}
 function clipMoment(line){
   // a back-pocket helper isn't on the battlefield: it gets a stand-in with its card id, name and owner
+  if(line.transparent) return {act:'transparent', u:findU(line.on)};
   if(line.helper) return {act:'use', u:{uid:`h-${line.hp}-${line.helper}`, id:line.helper, sk:line.helper, name:BYID[line.helper].short, p:line.hp, helper:true}};
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), has=(u,a)=>!!(clipSet(CLIPS,u)||{})[a];
   switch(line.fx){
@@ -89,6 +120,8 @@ function clipStep(line){
   if(CLIP_REPEAT.includes(m.act) && !(CLIP_ALWAYS[m.u.fam||m.u.id]||[]).includes(m.act)){ if(seen[key]!==undefined && S.round-seen[key]<CLIP_GAP) return null; seen[key]=S.round; }
   return {src, act:m.act, uid:m.u.uid, who:m.u.helper?m.u:null, sound:(clipSet(CLIP_SOUNDS,m.u)||{})[m.act]||null, key:`${S.round}-${S.play?S.play.k:0}-${m.u.uid}`};
 }
+// A clip can be a still picture (no video exists): drawn as an <img> for the same beat
+const clipIsPic = url => /\.(jpe?g|png|webp)$/i.test(url);
 // Downloaded copies (app.js fills this), so a clip starts instantly and isn't fetched again
 const CLIP_BLOB = {};
 const clipSrc = url => CLIP_BLOB[url] || url;

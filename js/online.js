@@ -160,13 +160,14 @@ function onlineRematch(){ if(iAmHost()) hostRematch(); else send({a:'rematch'});
 const ASYNC_EXTRA = ['bansOn','async','first','matchNo'];
 const isAsync = () => isOnline() && !!S.async;
 const asyncJSON = () => { const o={}; SHARED.concat(ASYNC_EXTRA).forEach(k=>{ if(S[k]!==undefined) o[k]=S[k]; }); return JSON.stringify(o); };
-// A new match in an own-pace game: no wheel, a fair coin flip decides who picks first
+// A new match in a 2-player game: the number game decides who picks first
 function asyncBegin(){
   Object.assign(S,{final:false, localOver:false, winner:undefined, spin:null, matchLog:[], roundId:0, matchNo:(S.matchNo||0)+1});
-  newDraft(spinWheel().r);
+  Object.assign(S,{phase:'spin', spin:newGuess()});   // the number game, one phone at a time; a tie is a coin flip
 }
 // Who has to do something now (seats), from the shared state in S
 function asyncTurnOf(){
+  if(S.phase==='spin') return S.spin.state==='done' ? [S.spin.r] : players().filter(p=>!S.spin.picks[p]);
   if(S.phase==='draft') return [turn()];
   if(S.phase==='plan') return players().filter(p=>alive(p).length && !S.movesLocked[p]);
   if(S.phase==='scout') return [S.scoutP];
@@ -184,6 +185,8 @@ function asyncApply(json, msg){
     const wasFinal=!!S.final;
     if(msg.a==='join'){ if(S.phase!=='lobby' || S.names[1]) return null; S.names=[S.names[0], msg.name]; asyncBegin(); }
     else if(msg.a==='rematch'){ if(!(S.phase==='result' && S.final)) return null; hostRematch(); asyncBegin(); }
+    else if(msg.a==='guess'){ if(S.phase!=='spin' || !guessPick(msg.p, msg.n)) return null; }
+    else if(msg.a==='todraft'){ if(S.phase!=='spin' || S.spin.state!=='done') return null; newDraft(S.spin.r); }
     else {
       const before=JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId]);
       hostHandle(msg);
@@ -221,7 +224,7 @@ function gameStatus(g){
   const unseen=(m.roundId||0) > seenRound(g, m.matchNo);
   if(m.final) return unseen ? {t:'The last round is ready to watch', mine:true} : {t: m.winner===me ? 'You won' : m.winner===null||m.winner<0 ? 'Nobody won' : `${opp} won`};
   if(unseen) return {t:'New round to watch', mine:true};
-  if((m.turn||[]).includes(me)) return {t: m.phase==='draft' ? 'Your pick' : m.phase==='scout' ? 'Your crow is back' : 'Your turn', mine:true};
+  if((m.turn||[]).includes(me)) return {t: m.phase==='spin' ? 'Pick your number' : m.phase==='draft' ? 'Your pick' : m.phase==='scout' ? 'Your crow is back' : 'Your turn', mine:true};
   return {t:`Waiting for ${opp}`};
 }
 const gamesToPlay = () => loadGames().filter(g=>gameStatus(g).mine).length;

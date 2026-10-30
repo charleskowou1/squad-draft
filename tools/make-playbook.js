@@ -1,4 +1,4 @@
-// Builds "Slayer Squad - Roster Playbook.docx" (next to the repo folder): every card and helper, how to win with it
+// Builds "Slayer Squad - Roster Playbook.docx" (in the Slayer Squad Docs folder, next to the repo): every card and helper, how to win with it
 // and how to beat it, plus fundamentals, best pairs, tested squads and a counter table. Numbers come from simulated
 // Hard drafts with the game's own rules; the words come from tools/playbook-text.js.
 // Rebuild with every push (CK, Oct 28, 2026), together with the guide:   node tools/make-playbook.js
@@ -9,7 +9,8 @@ const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table
         LevelFormat, BorderStyle, PageBreak, Footer, PageNumber } = require('docx');
 const TXT = require('./playbook-text');
 const N = +process.env.N || 8000, SQUAD_N = +process.env.SQUAD_N || 600, BUDGETS = [10, 20, 30];
-const OUT = path.join(__dirname, '..', '..', 'Slayer Squad - Roster Playbook.docx');
+const OUT = path.join(__dirname, '..', '..', 'Slayer Squad Docs', 'Slayer Squad - Roster Playbook.docx');
+fs.mkdirSync(path.dirname(OUT), {recursive:true});
 const VERSION = +(fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8').match(/squad-draft-v(\d+)/) || [])[1];
 
 /* ---------- simulation ---------- */

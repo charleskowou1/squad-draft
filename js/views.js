@@ -11,7 +11,7 @@ const ART = {};
 // In battle, a fighter's picture is a button that opens their info card (stats, special, passive, status)
 const sealBtn = (u, cls='') => `<button class="sealbtn" data-a="info" data-v="${u.uid}" aria-label="About ${esc(u.name)}">${seal(u,cls)}</button>`;
 // A fighter's picture: Mark Tanjiro shows his Selfless State picture while he's in it (img/tanjiro_selfless.jpg)
-const artOf = c => (c.uid && (c.selfless || c.unblock) && ART.tanjiro_selfless) || ART[c.id];   // until his unblockable Hinokami lands
+const artOf = c => (c.uid && c.tw && ART.tanjiro_transparent) || (c.uid && (c.selfless || c.unblock) && ART.tanjiro_selfless) || ART[c.id];   // until his unblockable Hinokami lands
 const seal = (c, cls='') => `<span class="gl ${glyphCls(c)} ${cls}">${artOf(c)?`<img src="${artOf(c)}" alt="">`:c.g}</span>`;
 
 /* ---------- shared pieces ---------- */
@@ -146,20 +146,22 @@ const MODE_ART = {local:['zenitsu','inosuke'], online:['tanjiro','nezuko'], cpu:
 // Names for local play: up to four, remembered on this phone
 const localNames = () => { const s=loadNames()||[]; return [playerName()||'Player 1','Player 2','Player 3','Player 4'].map((d,i)=>s[i]||d); };
 const seg = (act, cur, opts) => `<div class="seg">${opts.map(([v,l])=>`<button data-a="${act}" data-v="${v}" class="${String(cur)===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
+const POOL_OPTS = [['random','Random'],['all','All'],['slayers','Slayers'],['demons','Demons']];
+const poolName = t => ({all:'All characters', slayers:'All Slayers', demons:'All Demons'}[t]||'Random pool');
 // Match settings for the selected mode (each mode remembers its own)
 function modeSettings(){
   const c=S.cfg||loadModeCfg(S.mode), n=c.players;
-  const pts=`<div class="setline"><span class="tlabel">Points per team</span>${seg('cfgbudget',c.budget,BUDGETS.map(b=>[b,b]))}</div>`;
+  const pts=`<div class="setline"><span class="tlabel">Points per team</span>${seg('cfgbudget',c.budget,BUDGETS.map(b=>[b,budgetName(b)]))}</div>`;
   // rarely changed options stay folded away so the panel stays simple
   const more=[c.maxTeam!==MAXTEAM?`max ${c.maxTeam} fighters`:'', c.bans?'bans on':''].filter(Boolean).join(' · ');
-  const pool=`<div class="setline"><span class="tlabel">Character pool</span>${seg('cfgpool',c.poolType,[['random','Random'],['all','All']])}</div>
+  const pool=`<div class="setline"><span class="tlabel">Character pool</span>${seg('cfgpool',c.poolType,POOL_OPTS)}</div>
     <details class="subset" id="more-${S.mode}"><summary>More options <span class="muted">${more?'· '+more:''}</span></summary>
       <div class="setline"><span class="tlabel">Max fighters per team</span>${seg('cfgmax',c.maxTeam,[1,2,3,4,5,6].map(k=>[k,k]))}</div>
       <div class="setline"><span class="tlabel">Bans</span>${seg('cfgbans',c.bans?'on':'off',[['off','Off'],['on','1 each']])}
         <span class="hint">Before the draft, each player bans one character. Nobody can pick it.</span></div></details>`;
   const note = n===4 && c.duo ? `<p class="hint">2v2: ${S.mode==='local'?'players 1 &amp; 3 team up against 2 &amp; 4':'you and an allied computer against two computers'}. Heals and shields can go on your partner's fighters; a team wins when the other team has nobody left. Cards over ${FFA_MAX_COST} pts aren't dealt.</p>`
     : n>2 ? `<p class="hint">Free-for-all: every team fights every other team; last one standing wins. Specials that hit “every enemy” hit the whole team you aim at, and cards over ${FFA_MAX_COST} pts aren't dealt.</p>`
-    : `<p class="hint">${{10:'Quick, chaotic games with 2–3 fighters each.',20:'The standard game.',30:'Bigger squads and stronger cards. Yoriichi and Final-Form Muzan stay rare.'}[c.budget]}</p>`;
+    : `<p class="hint">${{10:'Quick, chaotic games with 2–3 fighters each.',20:'The standard game.',30:'Bigger squads and stronger cards. Yoriichi and Final-Form Muzan stay rare.',[UNLIMITED]:'No point limit: anyone can be drafted, and only the fighter limit stops a team.'}[c.budget]}</p>`;
   if(S.mode==='local'){ const names=localNames();
     return `<div class="setline"><span class="tlabel">Players</span>${seg('cfgplayers',n,[[2,'2'],[3,'3 · Triple threat'],[4,'4']])}</div>
       ${n===4?`<div class="setline"><span class="tlabel">With 4 players</span>${seg('cfgduo',c.duo?'on':'off',[['off','Free-for-all'],['on','2v2 teams']])}</div>`:''}
@@ -176,12 +178,12 @@ function modeSettings(){
       <div class="onlinebox">
       ${S.joinOpen?`<div class="joinrow"><input id="ocode" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" placeholder="CODE" value="${esc(S.joinCode||'')}" aria-label="Game code"><button class="btn" data-a="ojoin">Join</button></div>
       <button class="btn ghost" data-a="ojoinopen">Back</button>`
-      :`<button class="btn" data-a="ocreate">Play live</button>
-      <button class="btn" data-a="acreate">Play at your own pace</button>
+      :`<div class="setline"><span class="tlabel">Players</span>${seg('cfgplayers',c.players>2?3:2,[[2,'2'],[3,'3 or 4']])}</div>
+      <button class="btn" data-a="onew">Create a game</button>
       <button class="btn ghost" data-a="ojoinopen">Join a game</button>`}
-      ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:S.joinOpen?'<p class="hint">Type the code from the other phone: 4 letters for a live game, 6 for an own-pace game.</p>'
-        :'<p class="hint"><b>Live:</b> everyone plays at the same time, up to 4 phones. <b>Your own pace:</b> one friend, and you each take your turn whenever you have a minute. Your games wait on the home screen.</p>'}</div>
-      ${S.joinOpen?'':`<details class="subset" id="onlineset"><summary>Room settings <span class="muted">· ${c.budget} pts · ${c.poolType==='all'?'All characters':'Random pool'}${c.duo?' · 2v2':''}</span></summary>${pts}
+      ${S.onlineMsg?`<p class="hint onlinemsg">${esc(S.onlineMsg)}</p>`:S.joinOpen?'<p class="hint">Type the code from the other phone.</p>'
+        :`<p class="hint">${c.players>2?'3 or 4 phones: everyone plays at the same time.':'Play together right now, or take your turns whenever you have a minute. The same game does both: it plays live while you’re both in it, and waits on your home screen when you’re not.'}</p>`}</div>
+      ${S.joinOpen?'':`<details class="subset" id="onlineset"><summary>Room settings <span class="muted">· ${budgetName(c.budget)}${c.budget<UNLIMITED?' pts':' points'} · ${poolName(c.poolType)}${c.duo?' · 2v2':''}</span></summary>${pts}
         <div class="setline"><span class="tlabel">If 4 players join</span>${seg('cfgduo',c.duo?'on':'off',[['off','Free-for-all'],['on','2v2 teams']])}</div>${pool}</details>`}`;
   const won=storyWon();
   return `<div class="storyhead"><div class="sprog" style="--won:${won/STAGES.length*100}"><b>${won}</b><span>of ${STAGES.length} battles won</span></div>
@@ -247,7 +249,7 @@ function dailyCard(){
 function gamesCard(){
   const list=loadGames().slice().sort((a,b)=>(gameStatus(b).mine?1:0)-(gameStatus(a).mine?1:0) || ((b.meta||{}).updated||0)-((a.meta||{}).updated||0));
   if(!list.length) return '';
-  return `<section class="games"><div class="eyebrow">Your games · at your own pace</div>${list.map(g=>{ const st=gameStatus(g), m=g.meta||{}, opp=m.names&&m.names[1-g.seat];
+  return `<section class="games"><div class="eyebrow">Your online games</div>${list.map(g=>{ const st=gameStatus(g), m=g.meta||{}, opp=m.names&&m.names[1-g.seat];
     return `<div class="grow${st.mine?' mine':''}"><button class="gopen" data-a="agame" data-v="${esc(g.code)}"><b>${opp?'vs '+esc(opp):'New game'}</b><span>${esc(st.t)}</span></button>
       <button class="gx" data-a="agamex" data-v="${esc(g.code)}" aria-label="Remove this game">×</button></div>`; }).join('')}</section>`;
 }
@@ -282,7 +284,7 @@ function vSetup(){
     <div class="namerow"><input id="hname" type="text" maxlength="14" placeholder="Your name" aria-label="Your name"><button class="btn small" data-a="savename" data-v="hname">Save</button></div></div>`}
   <div class="setbar">${typeof isTV==='function'&&isTV()?'':'<button class="btn ghost small gear tvbtn" data-a="tvstart"><span aria-hidden="true">📺</span> TV mode</button>'}<button class="btn ghost small gear tvjoinbtn" data-a="tvjoinopen"><span aria-hidden="true">📺</span> Join a TV</button><button class="btn ghost small gear" data-a="codex"><span aria-hidden="true">📖</span> Codex</button><button class="btn ghost small gear" data-a="settings" aria-label="Settings"><span aria-hidden="true">⚙</span> Settings</button></div>
   <div class="hero"><span class="kanji" aria-hidden="true">滅</span>
-    <div class="eyebrow">A Demon Slayer squad battler</div><h1>Slayer Squad</h1>
+    <h1>Slayer Squad</h1>
     <div class="credit">Built by Charles Kowou · Inspired by Amelia Gray</div>
     <p class="muted tagline">Build your squad. Outthink every move.</p></div>
   ${S.tvMsg?`<p class="hint onlinemsg">${esc(S.tvMsg)}</p>`:''}
@@ -323,7 +325,7 @@ const GUESS_SHOWN = new Set();
 function vSpin(){
   const g=S.spin; if(!g || g.game!=='guess') return `${topbar('Before the draft', 'Who picks first?')}`;
   const seenKey=g.cards.join()+'|'+g.state, fresh=!GUESS_SHOWN.has(seenKey); GUESS_SHOWN.add(seenKey);
-  const done=g.state==='done', ctl=typeof isCtl==='function'&&isCtl(), guest=isOnline()&&!iAmHost();
+  const done=g.state==='done', ctl=typeof isCtl==='function'&&isCtl(), guest=isOnline()&&!iAmHost()&&!isAsync();
   const onPhones = typeof isTV==='function' && isTV() && (S.tvDuo || tvAnyPhone());   // the TV: the phones pick
   const me = onPhones ? -1 : isOnline()||ctl ? S.me : S.mode==='cpu' ? 0 : guessTurn();
   const mine = !done && me>=0 && !g.picks[me];
@@ -331,14 +333,14 @@ function vSpin(){
   const card=(id,i)=>{ const n=i+1, o=g.picks.indexOf(n), c=BYID[id], win=done && o===g.r;
     return `<button class="gcard${o>=0?' taken':''}${done&&n===g.secret?' secret':''}${win?' win':''}" data-a="guess" data-v="${n}" ${mine&&o<0?'':'disabled'} style="--tc:${o>=0?pc(o):'var(--line-2)'};--i:${i}">
       <span class="gart">${ART[id]?`<img src="${ART[id]}" alt="">`:`<span class="ck">${c.g}</span>`}</span><span class="gnum">${n}</span>
-      ${o>=0?`<span class="gtag" style="background:${pc(o)}">${nm(o)}</span>`:''}</button>`; };
-  const say = done ? `It was <b>${g.secret}</b>!` : 'I’m thinking of a number from 1 to 9.';
+      ${done&&n===g.secret?'<span class="gis">The number!</span>':''}${o>=0?`<span class="gtag" style="background:${pc(o)}">${nm(o)}</span>`:''}</button>`; };
+  const say = done ? `It was <b>${g.secret}</b>: <b>${esc(BYID[g.cards[g.secret-1]].short)}</b>!` : 'I’m thinking of a number from 1 to 9.';
   const dist = q => Math.abs(g.picks[q]-g.secret);
   const status = done
     ? `<div class="spinres" style="color:${pc(g.r)}">${nm(g.r)} picks first</div>
        <p class="hint gwhy">${g.tie?`A tie at ${plural(dist(g.r),'away')}… a coin flip decided it.`:players().map(q=>`${nm(q)} ${g.picks[q]} (${dist(q)} away)`).join(' · ')}</p>
        ${ctl?'':actionbar(guest?`<button class="btn" disabled>Waiting for ${nm(hostSeat())} to start…</button>`:`<button class="btn team" data-a="toDraft" style="--bc:${pc(g.r)}">Start the draft</button>`)}`
-    : `<div class="spinhint">${mine?`<span style="color:${pc(me)}">${nm(me)}</span>, pick a number`:`Waiting for ${waiting.map(q=>`<span style="color:${pc(q)}">${nm(q)}</span>`).join(' and ')} to pick${onPhones?' on the phone':''}…`}</div>`;
+    : `<div class="spinhint">${mine?`<span style="color:${pc(me)}">${nm(me)}</span>, pick a number`:`Waiting for ${waiting.map(q=>`<span style="color:${pc(q)}">${nm(q)}</span>`).join(' and ')} to pick${onPhones?' on the phone':''}…`}</div>${isAsync()?`<p class="hint">${asyncHint()}</p>`:''}`;
   return `${topbar('Before the draft', 'Who picks first?')}
     <div class="guess${done?' done':''}${fresh?' fresh':''}"><div class="gthink">${seal(host,'stg')}<div class="gsay"><span class="gwho">${esc(host.short||host.name)}</span><span>${say}</span></div></div>
     <div class="ggrid">${g.cards.map(card).join('')}</div>${status}</div>`;
@@ -360,7 +362,7 @@ function cardHTML(c,p){
 function teamBox(q,p){
   const left=budget()-spent(q), study=(S.mode==='story'||S.mode==='daily') && q===1;   // the set enemy team: tap to study it
   return `<${study?`button data-a="theirs" aria-expanded="${!!S.showTheirs}"`:'div'} class="tbox${p===q&&!S.locked[q]?' active':''}${study?' studybox':''}" style="--tc:${pc(q)}">
-    <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${study?(S.showTheirs?'Hide ▴':'Tap to study ▾'):S.locked[q]?'Locked':left+' pts left'}</span></div>
+    <div class="tn"><span>${nm(q)}${q===myP()&&soloView()&&S.mode!=='story'?' <small>(you)</small>':''}${S.duo?` <small class="tside">Team ${sideOf(q)+1}</small>`:''}</span><span>${study?(S.showTheirs?'Hide ▴':'Tap to study ▾'):S.locked[q]?'Locked':budget()>=UNLIMITED?`${spent(q)} pts`:left+' pts left'}</span></div>
     <div class="meter" role="img" aria-label="${spent(q)} of ${budget()} points spent"><i style="width:${Math.min(100,spent(q)/budget()*100)}%"></i></div>
     <div class="slots">${S.picks[q].map(id=>seal(BYID[id],'xs')).join('')}${!S.locked[q]&&fighterIds(q).length<teamCap()?'<span class="slot empty"></span>':''}</div></${study?'button':'div'}>`;
 }
@@ -373,7 +375,7 @@ function vDraft(){
   const again = S.lastPicker===p && !restLocked;
   const verb = restLocked && others(p).some(q=>S.picks[q].length) ? 'keeps picking' : again ? 'picks again' : cpuTurn ? 'is picking' : 'picks';
   const daily=S.mode==='daily', fixed=story||daily;   // one side drafts, the other team is already set
-  const lockbar = !cpuTurn && !S.banning && fighterIds(p).length ? `<div class="lockbar"><span>${fixed?'Ready to fight?':forCpu?`Done picking for ${nm(p)}?`:'Done picking?'}${left?` ${left} pts go unused.`:''}</span>
+  const lockbar = !cpuTurn && !S.banning && fighterIds(p).length ? `<div class="lockbar"><span>${fixed?'Ready to fight?':forCpu?`Done picking for ${nm(p)}?`:'Done picking?'}${left&&budget()<UNLIMITED?` ${left} pts go unused.`:''}</span>
     <button class="btn team small" data-a="lock" style="--bc:${pc(p)}">${fixed?'Fight':forCpu?`Lock ${nm(p)}`:'Lock team'}</button></div>` : '';
   // Undo the latest pick (2 players: either player's; vs computer: only your own)
   const un=!S.banning && undoable(), undo = un && (S.mode==='local' || isPractice() || un.p===myP())
@@ -386,11 +388,11 @@ function vDraft(){
     ${S.banning?`<p class="hint">Tap a card and ban it: nobody can pick that character this match.${S.bans.length?` Banned so far: ${S.bans.map(b=>esc(BYID[b.id].short)).join(', ')}.`:''}</p>`:''}
     ${story?`<p class="hint">${esc(st.blurb)} You have ${budget()} points. Only the Corps and its allies fight for you.</p>`:''}
     ${daily?`<p class="hint">Their team is set. Draft a squad to beat it with ${budget()} points, from the characters you've unlocked.</p>`:''}
-    ${awayBanner()}${isAsync()&&cpuTurn?`<p class="hint asynchint">${asyncHintText}</p>`:''}${S.banning||cpuTurn?'':tip('draft','Tap a card to read it, then <b>Confirm</b> to pick it. Stay within your points (up to 6 fighters), and tap <b>Lock team</b> when you’re done.')}
+    ${awayBanner()}${isAsync()&&cpuTurn?`<p class="hint asynchint">${asyncHint()}</p>`:''}${S.banning||cpuTurn?'':tip('draft','Tap a card to read it, then <b>Confirm</b> to pick it. Stay within your points (up to 6 fighters), and tap <b>Lock team</b> when you’re done.')}
     ${S.banning?'':orderStrip(p)}
     <div class="teams${nPlayers()>2?' many':''}">${players().map(q=>teamBox(q,p)).join('')}</div>
     ${lockbar}
-    <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:daily?`Your unlocked characters · ${n}`:S.poolType==='all'?`All ${n} characters`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!fixed&&S.poolType!=='all'&&(!isOnline()||iAmHost())?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div>
+    <div class="dealt"><span>${(n=>story?`The Corps · ${n} characters`:daily?`Your unlocked characters · ${n}`:fullPool()?`${poolName(S.poolType)} · ${n}`:`${n} characters dealt`)(S.pool.filter(id=>!isHelper(id)).length)} · tap one to see it</span>${undo}${fresh&&!cpuTurn&&!fixed&&S.poolType!=='all'&&(!isOnline()||iAmHost())?'<button class="btn ghost small" data-a="redeal">Re-deal</button>':''}</div>
     ${fixed&&S.showTheirs?`<section class="theirs"><div class="tlabel">Their team · tap a card to study it</div><div class="grid">${S.picks[1].map(id=>cardHTML(BYID[id],p)).join('')}</div></section>`:''}</div>
     ${notesPanel()}
     <div class="grid">${S.pool.filter(id=>!isHelper(id)).map(id=>cardHTML(BYID[id],p)).join('')}</div>
@@ -443,13 +445,14 @@ function awayBanner(){
   return `<div class="netnote">${nm(h)} has stepped away. The game waits for them${next!==undefined?`; if they’re not back in about ${plural(mins,'minute')}, ${next===S.me?'you take':nm(next)+' takes'} over hosting so the game can go on`:''}.</div>`;
 }
 const asyncHintText = 'You can close the game. It waits on your home screen and says when it’s your turn.';
+const asyncHint = () => S.oppHere ? `${esc(nm(1-S.me))} is here too, so this is playing live.` : `${esc(nm(1-S.me)||'They')} isn’t in the game right now. ${asyncHintText}`;
 // A simple "waiting for the other phone" screen (online play)
 function waitScreen(eyebrow, title, line){
-  return `${topbar(eyebrow, title)}${awayBanner()}<div class="waiting"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><p class="muted">${line}</p>${isAsync()?`<p class="hint">${asyncHintText}</p>`:''}</div>`;
+  return `${topbar(eyebrow, title)}${awayBanner()}<div class="waiting"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><p class="muted">${line}</p>${isAsync()?`<p class="hint">${asyncHint()}</p>`:''}</div>`;
 }
 // Online lobby: the host shares the room code; up to three guests take seats 2–4. The host starts when ready.
 function vLobby(){
-  if(isAsync()) return `${topbar('Own-pace game', 'Your game')}
+  if(isAsync()) return `${topbar('Online game', 'Your game')}
     <div class="lobby"><div class="tlabel">Game code</div><div class="roomcode">${esc(S.asyncCode||'······')}</div>
       <p class="muted">Send this code to your friend. They tap Online → Join a game and type it.</p>
       <p class="hint">${asyncHintText}</p></div>
@@ -486,9 +489,13 @@ function noteHTML(n, self){
   const status = n.state==='on' ? (n.kind==='team' ? `<span class="nst" style="color:${pc(n.p)}">${nm(n.p)} has it</span>` : '<span class="nst live">In play</span>')
     : n.state==='off' ? '<span class="nst">No longer possible</span>' : '';
   const who=n.ids.filter(id=>id!==self);
+  const chip=id=>`<button class="nc" data-a="sel" data-v="${id}">${seal(BYID[id],'sm')}${esc(BYID[id].short)}</button>`;
+  // Opponents: who's on which side, with a vs between them (on a card's own panel, just the side it faces)
+  const vsChips=()=>{ const a=n.ids.filter(id=>n.side.includes(id)), b=n.ids.filter(id=>!n.side.includes(id)), mine=a.includes(self)?a:b.includes(self)?b:null, them=mine===a?b:a;
+    return mine ? (them.length?`<div class="nwho"><span class="tlabel">vs</span>${them.map(chip).join('')}</div>`:'') : `<div class="nwho"><span class="nside">${a.map(chip).join('')}</span><span class="nvs">vs</span><span class="nside">${b.map(chip).join('')}</span></div>`; };
   return `<div class="note ${n.state}"><div class="nh"><span class="nk ${n.kind}">${n.kind==='team'?'Same team':'Opponents'}</span>${status}</div>
     <div class="nt">${esc(n.title)}</div><div class="nx">${esc(n.text)}</div>
-    ${who.length?`<div class="nwho">${self?'<span class="tlabel">With</span>':''}${who.map(id=>`<button class="nc" data-a="sel" data-v="${id}">${seal(BYID[id],'sm')}${esc(BYID[id].short)}</button>`).join('')}</div>`:''}</div>`;
+    ${n.kind==='vs'?vsChips():who.length?`<div class="nwho">${self?'<span class="tlabel">With</span>':''}${who.map(chip).join('')}</div>`:''}</div>`;
 }
 // Hantengu's split forms, shown on his card: each form, what it becomes when it falls, and the form they merge into
 function splitTree(c){
@@ -719,13 +726,46 @@ function stage(line){
   const rev = duo && by.p!==on.p && by.p!==leftSide();
   const amt=line.t.match(/\[([+-])(\d+%)\]/);
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
-  const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?art+pop:''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const who=(u,role)=>`<div class="st-${role}">${seal(u,'stg')}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
   const solo=on||by;
-  return `<div class="stage fx-${type||'none'} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
+  if(line.calm && by) return stageCalm(by);
+  return `<div class="stage fx-${type||'none'}${line.gone?' goneaway':''} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
     ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
+}
+// A special's big moment for this beat (effects.js): over the whole screen, on its first hit (every hit for Tengen)
+const SPECIAL_HITS = ['hit','ko','miss','block'];
+function beatFx(lines, from){
+  const l=lines.find(x=>x.by && x.move==='special' && SPECIAL_HITS.includes(x.fx)), by=l&&findU(l.by), name=by&&SPECIAL_FX[by.sk];
+  if(!name) return '';
+  if(name!=='drum') for(let i=from-1;i>=0;i--){ const m=S.log[i]; if(m.by!==l.by) continue; if(m.fx==='special') break; if(m.move==='special' && SPECIAL_HITS.includes(m.fx)) return ''; }
+  return `<div class="sfx sfx-${name}" aria-hidden="true">${SFX_ART[name]()}</div>`;
+}
+// Akaza's Compass Needle: the compass opens under his target
+const targetFx = l => { const by=l.by&&findU(l.by); return by && by.sk==='akaza' && l.move==='special' && l.fx==='hit' ? compassFx() : ''; };
+// Dead Calm: a ring of still water closes around Giyu and everyone on his side
+const waterRing = () => `<span class="waterring" aria-hidden="true"><i></i><i></i><i></i></span>`;
+function stageCalm(by){
+  const team=players().filter(q=>sameSide(q,by.p)).flatMap(q=>alive(q));
+  return `<div class="stage calmstage" aria-hidden="true">${waterRing()}<div class="calmteam">${team.map(u=>seal(u,'stg')).join('')}</div></div>`;
+}
+// Kagaya's Final Resolve: one beat for everyone who awakens, the old picture burning away into the Mark
+function awakenBeat(line){
+  const us=line.was.map(w=>({w, u:findU(w.uid)})).filter(x=>x.u);
+  return `<div class="awaken${us.length>3?' many':''}"><span class="awk" aria-hidden="true">痣</span>
+    <div class="awrow">${us.map(({w,u},i)=>`<span class="awc" style="--i:${i}"><span class="awpic">${ART[w.id]?`<img class="old" src="${ART[w.id]}" alt="">`:''}${ART[u.id]?`<img class="new" src="${ART[u.id]}" alt="">`:`<i>${u.g}</i>`}</span>${us.length>3?'':`<small>${esc(u.name)}</small>`}</span>`).join('')}</div>
+    <b class="awt">${fmtLog(line.t)}</b></div>`;
+}
+// Fighters change card when the round resolves, but playback draws them as they were until their awakening beat
+function beforeAwake(draw){
+  const p=S.play, undo=[];
+  if(p && !p.done && p.steps && S.log) S.log.slice(p.steps[p.k][1]+1).forEach(l=>(l.was||[]).forEach(w=>{ const u=findU(w.uid); if(!u) return;
+    undo.push([u,{id:u.id, name:u.name, g:u.g, sk:u.sk, mark:u.mark, max:u.max}]); Object.assign(u,w); }));
+  // Mark Tanjiro shows his Transparent World picture from the moment he strikes until the round ends
+  if(p && !p.done && p.steps && S.log) S.log.slice(0,p.steps[p.k][1]+1).forEach(l=>{ const u=l.transparent&&findU(l.on); if(u){ undo.push([u,{tw:false}]); u.tw=true; } });
+  try{ return draw(); } finally { undo.reverse().forEach(([u,o])=>Object.assign(u,o)); }
 }
 // Special-move cut-in: the fighter's art slides across a slanted band with the move's name and their line,
 // from the left for the team on the left of the stage, from the right for everyone else
@@ -740,8 +780,8 @@ function cutin(u, clip, line){
 }
 // A move clip: muted, plays once inline (app.js keeps the same element across redraws of the beat, using data-k)
 const clipWho = c => c.who || findU(c.uid);   // a fighter, or a helper's stand-in
-const clipVideo = c => `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[clipWho(c).id]?` poster="${ART[clipWho(c).id]}"`:''} muted playsinline webkit-playsinline autoplay preload="auto" disablepictureinpicture></video>`;
-const CLIP_KANJI = {regen:'再', heal:'癒', poison:'毒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
+const clipVideo = c => clipIsPic(c.src) ? `<img class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}" alt="">` : `<video class="cvid" data-k="${esc(c.key)}" src="${esc(clipSrc(c.src))}"${ART[clipWho(c).id]?` poster="${ART[clipWho(c).id]}"`:''} muted playsinline webkit-playsinline autoplay preload="auto" disablepictureinpicture></video>`;
+const CLIP_KANJI = {transparent:'透', regen:'再', heal:'癒', poison:'毒', defend:'守', ko:'討', fall:'倒', revive:'蘇', split:'分'};
 // A beat with a move clip that isn't a special (regen, heal, guard, knockout…): the clip with who and what over it
 function clipBeat(c, line){
   const u=clipWho(c);
@@ -756,7 +796,7 @@ function stageGroup(lines){
   const by=findU(lines[0].by), style=styleOf(by,'special'), rev=by.p!==leftSide();
   const hits=lines.filter(l=>GROUP_FX.includes(l.fx));
   const target=l=>{ const t=findU(l.on), amt=l.t.match(/\[([+-])(\d+%)\]/), ko=lines.some(m=>m.fx==='ko'&&m.on===l.on);
-    return `<div class="st-on${ko?' koed':''}${l.fx!=='hit'?' missed':''}">${seal(t,'stg')}${l.fx==='hit'?fxArt(style):''}${amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
+    return `<div class="st-on${ko?' koed':''}${l.fx!=='hit'?' missed':''}">${seal(t,'stg')}${targetFx(l)}${l.fx==='hit'?fxArt(style):''}${amt?`<span class="pop dmg">−${amt[2]}</span>`:l.fx!=='hit'?`<span class="pop">${l.fx==='miss'?'miss':'blocked'}</span>`:''}<span class="st-nm" style="color:${pc(t.p)}">${esc(t.name)}</span></div>`; };
   const attacker=`<div class="st-by">${seal(by,'stg')}<span class="st-nm" style="color:${pc(by.p)}">${esc(by.name)}</span></div>`;
   const row=`<div class="st-targets">${hits.map(target).join('')}</div>`, mark=`<span class="st-mark">${STYLE_KANJI[style]}</span>`;
   return `<div class="stage group duo fx-hit sty sty-${style}${rev?' rev':''}" aria-hidden="true">${rev?row+mark+attacker:attacker+mark+row}</div>`;
@@ -767,7 +807,7 @@ function miniTeam(p, moment, involved){
   const us=S.teams[p].map(u=>({u,o:moment(u)})).filter(x=>!x.o.hidden);
   return `<div class="mini" style="--tc:${pc(p)}">${us.map(({u,o})=>{
     const hp=o.hp===undefined?u.hp:o.hp, up=hp>0, h=up?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from));
-    return `<div class="m${up?'':' dead'}${involved.has(u.uid)?' inv':''}${o.flash?' '+o.flash:''}">${sealBtn(u,'mini')}
+    return `<div class="m${up?'':' dead'}${involved.has(u.uid)?' inv':''}${o.flash?' '+o.flash:''}${o.calm?' calm':''}${o.lost?' lost':''}">${sealBtn(u,'mini')}
       <span class="mb${up&&h<=LOW?' low':''}"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span></div>`; }).join('')}</div>`;
 }
 // One line for a group attack: "Frozen Lotus hits 4 enemies · 1 knocked out"
@@ -798,14 +838,17 @@ function playBeat(){
   const lines=S.log.slice(from,to+1), group=to>from, clip=!done&&!group&&S.play.clip&&clipWho(S.play.clip)?S.play.clip:null;
   // the fighter acting: the line's attacker, or the one whose name starts it
   const actor=done?null:(cur.by&&findU(lines[0].by))||allUnits().filter(u=>cur.t.startsWith(u.name)).sort((a,b)=>b.name.length-a.name.length)[0];
-  const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
+  // what stays on screen for the rest of the round: Dead Calm's water around a team, fighters Nakime has sent away
+  const calm=new Set(), lost=new Set();
+  if(!done) S.log.slice(0,to+1).forEach((l,i)=>{ if(l.calm){ const b=findU(l.by); if(b) players().filter(q=>sameSide(q,b.p)).forEach(q=>calm.add(q)); } if(l.gone && i<from) lost.add(l.on); });
+  const moment = u => done ? {} : cur.hp[u.uid]===undefined ? {hidden:true} : {calm:calm.has(u.p), lost:lost.has(u.uid), hp:cur.hp[u.uid], from:prev.hp[u.uid]??cur.hp[u.uid],
     flash: lines.some(l=>l.ko===u.uid) ? 'ko' : prev.hp[u.uid]===undefined ? 'spawn' : cur.hp[u.uid]<prev.hp[u.uid] ? 'hit' : cur.hp[u.uid]>prev.hp[u.uid] ? 'heal' : actor===u ? 'acting' : ''};
   // fighters in this beat (attacker and targets) stay bright in the slim team rows; the rest fade back
   const involved=new Set(lines.flatMap(l=>[l.by,l.on,l.ko]).filter(Boolean));
-  return {done, k, cur, prev, lines, group, clip, actor, moment, involved, step:done?0:S.play.k, total:done?0:steps.length-1};
+  return {done, k, from, cur, prev, lines, group, clip, actor, moment, involved, step:done?0:S.play.k, total:done?0:steps.length-1};
 }
 function vResult(){
-  const {done, k, cur, prev, lines, group, clip, moment, involved, step, total}=playBeat();
+  const {done, k, from, cur, prev, lines, group, clip, moment, involved, step, total}=playBeat();
   // vs computer the screen is yours, so label the teams from your side; two players share it, so keep names
   const solo=soloView(), me=myP(), them=[...enemiesOf(me), ...partnersOf(me)], multi=nPlayers()>2;
   const waiting = isOnline() && S.readyNext && S.readyNext[me] && !S.final;
@@ -818,13 +861,14 @@ function vResult(){
     <div class="reswide${done?' done':''}"><div class="rcol">${them.map(q=>done?teamBlock(q,solo&&!multi?'Opponent':null,moment):miniTeam(q,moment,involved)).join('')}</div>
     ${done?vsDivider():group?`<div class="now${lines.some(bigHit)?' big':''}${lines.some(l=>l.fx==='ko')?' k':''}" aria-live="polite">${stageGroup(lines)}<span>${groupSummary(lines)}</span></div>`
       :k&&cur.fx==='say'&&findU(cur.by)?`<div class="now saybeat" aria-live="polite" style="--tc:${pc(findU(cur.by).p)}">${seal(findU(cur.by),'stg')}<div><span class="sayn">${esc(findU(cur.by).name)}</span><span class="sayq">“${esc(cur.t)}”</span></div></div>`
+      :k&&cur.fx==='awaken'?`<div class="now awakebeat" aria-live="polite">${awakenBeat(cur)}</div>`
       :k&&cur.fx==='special'&&findU(cur.by)?`<div class="now cut${clip?' clip':''}" aria-live="polite">${cutin(findU(cur.by),clip,cur)}<span class="sr">${fmtLog(cur.t)}</span></div>`
       :k&&clip?`<div class="now clipbeat${bigHit(cur)?' big':''}" aria-live="polite">${clipBeat(clip,cur)}</div>`
       :k?`<div class="now ${cur.c}${bigHit(cur)?' big':''}" aria-live="polite">${stage(cur)}<span>${fmtLog(cur.t)}</span></div>`
       :`<div class="now intro" aria-live="polite"><span class="ir">Round ${S.round}</span><span class="ig">Fight!</span></div>`}
     <div class="rcol">${done?teamBlock(me,solo?'Your team':null,moment):miniTeam(me,moment,involved)}</div></div>
     ${done?`<div class="panel"><div class="mlhead"><span class="tlabel">Round log</span>${(S.matchLog||[]).length?`<button class="btn ghost small copylog" data-a="copyround" aria-label="Copy this round's log">${COPY_ICON}${S.logCopied?'Copied ✓':'Copy'}</button>`:''}</div>${logHTML()}</div>`:''}
-    ${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
+    ${done||!k?'':beatFx(lines,from)}${actionbar(done ? next : '<button class="btn ghost" data-a="skip">Skip</button>')}`;
 }
 // MVP of the match plus a few awards, from S.stats (see tallyRound in engine.js)
 function mvpPanel(){
@@ -955,7 +999,8 @@ function vScene(){
     <div class="scenefoot"><span class="dots">${shown.map((_,i)=>`<i class="${i===S.sceneAt?'on':i<S.sceneAt?'done':''}"></i>`).join('')}</span>
       <span class="muted">Tap to continue</span></div><span class="lbox b" aria-hidden="true"></span></div>`;
 }
-function vOver(){
+// The winner: who won and how, without the numbers (the TV shows only this; the phone has the rest)
+function winHero(){
   const w=S.winner;
   return `<div class="win${w<0?'':' victory'}" style="--wc:${w<0?'var(--muted)':pc(w)}"><span class="burst" aria-hidden="true"></span>
     ${w<0?'':`<div class="winseals" aria-hidden="true">${S.teams[w].map((u,i)=>`<span style="--i:${i}">${seal(u,'lg')}</span>`).join('')}</div>`}
@@ -964,14 +1009,18 @@ function vOver(){
     ${nPlayers()>2&&!S.duo?`<div class="places">${placings().map((g,i)=>g.map(q=>`<span class="place" style="--tc:${pc(q)}"><b>${['1st','2nd','3rd','4th'][w<0?i+1:i]}</b>${nm(q)}</span>`).join('')).join('')}</div>`:''}
     ${S.mode==='daily' ? `<p class="dres ${S.dailyMet?'ok':''}">${S.dailyMet?'Challenge complete!':'Challenge not met.'} <span class="muted">${esc(DAILY_GOALS[S.daily.goal.type](S.daily.goal))}</span></p>` : ''}
     <p class="muted">${S.mode==='daily' ? (S.dailyMet?`Come back tomorrow for a new one.${dailyStreak()>1?` Streak: ${plural(dailyStreak(),'day')}.`:''}`:'Try again: same squads, same goal.') : S.mode==='story' ? (w===0 ? (S.survived?'You held out until dawn. ':'')+(S.stage+1<STAGES.length?`Battle ${S.stage+1} won. ${esc(STAGES[S.stage+1].title)} is unlocked.`:'The sun rises. The story is complete!') : S.storyDraft ? 'Defeated. Rethink your squad and try again.' : 'Defeated. Try a different plan.')
-      : w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>
-    ${S.mode==='story' && S.newUnlocks && S.newUnlocks.length ? `<section class="unlocked"><div class="tlabel">Unlocked this battle</div>
-      <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</div></section>` : ''}
+      : w<0?'Nobody is left standing at dawn.':'Win and character records saved on this phone.'}</p></div>`;
+}
+const overUnlocks = () => S.mode==='story' && S.newUnlocks && S.newUnlocks.length ? `<section class="unlocked"><div class="tlabel">Unlocked this battle</div>
+      <div class="ulist">${S.newUnlocks.map((id,i)=>`<span class="ucard" style="--i:${i}">${seal(BYID[id],'lg')}<b>${esc(BYID[id].short)}</b></span>`).join('')}</div></section>` : '';
+const overBar = () => { const w=S.winner; return actionbar(S.mode==='daily' ? `<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="daily">${S.dailyMet?'Play again':'Try again'}</button>` : S.mode==='story'
+      ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next battle</button>`:w===0?'<button class="btn" data-a="finale">Finish the story</button>':`<button class="btn" data-a="${S.storyDraft?'stagedraft':'stage'}" data-v="${S.stage}">Try again</button>`}`
+      : isOnline() ? '<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch">Rematch</button>'
+      : '<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>'); };
+function vOver(){
+  return `${winHero()}${overUnlocks()}
     ${mvpPanel()}
     <div class="overteams${nPlayers()>2?' many':''}">${players().map(q=>teamBlock(q)).join('')}</div>
     ${matchLogPanel()}
-    ${actionbar(S.mode==='daily' ? `<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="daily">${S.dailyMet?'Play again':'Try again'}</button>` : S.mode==='story'
-      ? `<button class="btn ghost" data-a="storymap">Story map</button>${w===0&&S.stage+1<STAGES.length?`<button class="btn" data-a="stage" data-v="${S.stage+1}">Next battle</button>`:w===0?'<button class="btn" data-a="finale">Finish the story</button>':`<button class="btn" data-a="${S.storyDraft?'stagedraft':'stage'}" data-v="${S.stage}">Try again</button>`}`
-      : isOnline() ? '<button class="btn ghost" data-a="home">Leave room</button><button class="btn" data-a="rematch">Rematch</button>'
-      : '<button class="btn ghost" data-a="home">Main menu</button><button class="btn" data-a="rematch">Rematch</button>')}`;
+    ${overBar()}`;
 }

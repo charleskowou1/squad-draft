@@ -59,7 +59,7 @@ function poolNotes(){
   }
 
   const N=[];
-  const add=(kind, fams, title, text, st) => { if(st.state!=='never') N.push(Object.assign({kind, ids:fams.flatMap(f=>versions[f]), title, text}, st)); };
+  const add=(kind, fams, title, text, st) => { if(st.state!=='never') N.push(Object.assign({kind, ids:fams.flatMap(f=>versions[f]), side:kind==='vs'?versions[fams[0]]:null, title, text}, st)); };
 
   // same team
   const kama=['tanjiro','zenitsu','inosuke'];

@@ -159,6 +159,7 @@ function clipSound(url){
 function sfxForLine(line){
   if(line.c==='r') return sfx('gong');
   if(line.fx==='say') return sfx('page');
+  if(line.fx==='awaken') return sfx('unlock');
   const big=/\[-(\d+)%\]/.exec(line.t), hard=big && +big[1]>=30, by=line.by && typeof findU==='function' && findU(line.by);
   const style = by && typeof styleOf==='function' ? styleOf(by, line.move) : null;
   if(line.fx==='special'){ sfx('cutin'); if(style) setTimeout(()=>styleSfx(style, 1), 250); return; }

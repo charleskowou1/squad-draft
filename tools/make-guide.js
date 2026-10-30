@@ -38,8 +38,8 @@ hr('1. THE GAME IN ONE MINUTE');
 out(`- Two sides draft a squad of fighters on a points budget, then battle in rounds.
 - Each round, every fighter secretly picks ATTACK, DEFEND or their SPECIAL. Then everything resolves.
 - Last side with anyone standing wins. A match stopped at round 40 is a draw.
-- Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (live: 2–4 phones, 4-letter room code; or
-  at your own pace: 2 phones, 6-letter code, each player takes their turn whenever they like),
+- Modes: Local Multiplayer (one phone passed around, 2–4 players), Online (2 players: one game that plays live while both
+  are in it and waits when one isn't, 6-letter code; 3 or 4 players: everyone at once, 4-letter room code),
   Quickplay (you vs 1–3 computers: Easy/Normal/Hard), Practice (you draft every team, the computers' too, then fight
   them; doesn't count toward records) and Story Mode (${STAGES.length} battles with preset squads).
 - Each mode (not Story) also sets MAX FIGHTERS PER TEAM, 1–6 (default 6). 1 = one-on-one duels.
@@ -48,7 +48,7 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
   Calm covers both squads; a side wins when the other side has nobody left. The 12-pt card cap applies.
 - OPTIONAL BANS (off by default, under "More options"): before the draft each player bans one character.
 - SUNRISE: from round ${SUNRISE_ROUND} (not in Story) demons burn 10% of their max HP that round, 5% more every round after (15%, 20%, 25%…), and stop regenerating
-  (Demon King Tanjiro is sun-proof). Long games end; Final Muzan got weaker in long fights.
+  (Demon King Tanjiro is sun-proof; Nezuko burns only on the first morning, then she has conquered the sun). Long games end; Final Muzan got weaker in long fights.
 - STORY UNLOCKS: winning a story battle unlocks the demons, Marks, Legends and alternate versions it introduces for
   every other mode. Base slayers, allies, Hand/Swamp Demon and helpers are always available.
 - DAILY CHALLENGE: one preset battle per day with a goal (win / win within N rounds / keep X standing / no losses),
@@ -59,14 +59,14 @@ out(`- Two sides draft a squad of fighters on a points budget, then battle in ro
   The computer gangs up on whichever team is ahead. Draft is snake order through all players (A B C C B A A B C…).`);
 
 hr('2. THE DRAFT');
-out(`- Budget: 10, 20 (default) or 30 points per side (set per mode on the main menu).
+out(`- Budget: 10, 20 (default), 30 or Unlimited points per side (set per mode on the main menu). With Unlimited only the fighter limit stops a team.
 - Team size: 1 to 6 fighters. You can lock your team at any time ("Lock team"); you auto-lock if nothing is affordable.
 - Who picks first: a character thinks of a number from 1 to 9; each player takes a different number (the computer picks at random); the closest picks first (a tie is a coin flip). Then snake order: A, B, B, A, A, B, B, A…
   Once one side locks, the other keeps picking until they lock or can't afford anything.
 - Each character has versions (base, Mark ✦, or Yoriichi prime/age 85, Tengen/Retired Tengen, Muzan/Final Form).
   Only ONE version of a character can be drafted per match, by either side. Taking Giyu rules out Giyu ✦ for everyone.
 - POOL (Settings): "Random" (default) deals 12 characters (14 at 30 points), always at least 3 costing 4 or less;
-  "All" offers every character. Re-deal is allowed before the first pick (Random pool only).
+  "All" offers every character; "Slayers" and "Demons" offer every character on that side (Nezuko, Tamayo and Yushiro count as Slayers). The 10-point 6-pt card cap applies only to Random deals with 2+ fighters. Re-deal is allowed before the first pick (Random pool only).
 - Big cards come with a rival: any card costing 9+ is always dealt with another character within 3 points of it
   (a mid-priced card is swapped out for one if needed), so one giant isn't simply decided by who picks first.
 - 10-point games only deal cards costing 6 or less. 30-point games favour pricier characters and Mark versions.
@@ -135,6 +135,7 @@ Special rules on single cards:
   kill him first. Alone on his team he falls, like Nakime.
 - Yahaba's Vector Arrows (moves first): every hit the chosen enemy throws this round misses.
 - Awakened Nezuko can't Defend (berserk).
+- Yoriichi Type Zero can't be poisoned: it's a puppet.
 - Yoriichi Type Zero strikes three times per Attack at low PWR (great vs low DEF, poor vs tanks). It's a puppet:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),
@@ -180,10 +181,10 @@ Chachamaru ~61%, Kiriya ~59%, Hotaru ~58%, Muscle Mice ~54%, Kasugai Crow ~54% (
 hr('8. MODES AND SETTINGS');
 out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but sloppy), Hard (goes for knockouts, spreads
   damage, saves specials, uses helpers well). Hard beats Normal ~59%, Normal beats Easy ~57%.
-- Settings: points (10/20/30), pool (Random/All), playback speed, sound.
-- Online at your own pace: 2 players, no need to be on at the same time. Each phone drafts or locks in moves when it's
-  that player's turn; a resolved round plays back the next time each player opens the game. The home screen lists
-  these games and says whose turn it is. The first pick is a coin flip (no wheel).
+- Settings: points (10/20/30/Unlimited), pool (Random/All/Slayers/Demons), playback speed, sound.
+- Online with 2 players: no need to be on at the same time, but it plays live if you are. Each phone drafts or locks in
+  moves when it's that player's turn; a resolved round plays back right away, or the next time that player opens the game. The home screen lists
+  these games and says whose turn it is. Both phones play the number game to decide who picks first; a tie is a coin flip.
 - Daily challenge: the same set enemy team, points and goal for everyone that day; you draft from your unlocked
   characters. Goals: win, win within N rounds, or win with a named character still standing. For that last goal the
   named character is already on your squad when the draft opens (its points already spent).
@@ -260,6 +261,7 @@ EXAMPLE ROUND (teams above): Zenitsu uses Thunderclap and Flash (priority 2), so
   Tanjiro is hit, but Siblings counters don't trigger on area specials, so Nezuko doesn't strike back this time.
   End of round: Doma regenerates 3 (demons heal every round, so finish them rather than chip at them).`);
 
-const file = path.join(__dirname, '..', 'Slayer-Squad-Guide.txt');
+const file = path.join(__dirname, '..', '..', 'Slayer Squad Docs', 'Slayer-Squad-Guide.txt');   // CK keeps the guide and the playbook together, outside the repo
+fs.mkdirSync(path.dirname(file), {recursive:true});
 fs.writeFileSync(file, T.join('\n') + '\n');
 console.log('Wrote ' + file + ' (' + T.join('\n').length + ' characters)');

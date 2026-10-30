@@ -22,9 +22,24 @@ function match(seed) {
   });
   const st = () => JSON.parse(db.s);
   phones[1].OL().net.send({ a: 'join', p: 1, name: names[1] });
-  if (st().phase !== 'draft') problems.push('join did not start the draft');
+  if (st().phase !== 'spin') problems.push('join did not start the number game');
+  // the number game: each phone takes a different number, then either phone starts the draft
+  const numbers = () => {
+    const b4 = db.s; phones[0].OL().net.send({ a: 'todraft', p: 0 }); if (db.s !== b4) problems.push('draft started before the numbers were in');
+    phones[0].onlineGuess(4);
+    const after = db.s; phones[1].OL().net.send({ a: 'guess', p: 1, n: 4 }); if (db.s !== after) problems.push('two players took the same number');
+    phones[0].OL().net.send({ a: 'guess', p: 0, n: 6 }); if (db.s !== after) problems.push('a player changed their number');
+    const q = db.meta.turn; if (q.length !== 1 || q[0] !== 1) problems.push('home-screen summary missed whose number it is');
+    phones[1].onlineGuess(6);
+    const g = st().spin; if (g.state !== 'done' || g.r === undefined) problems.push('the number game did not finish');
+    const d = g.picks.map(n => Math.abs(n - g.secret));
+    if (d[0] === d[1] ? !g.tie : g.tie || d[g.r] !== Math.min(...d)) problems.push('the wrong player won the number game');
+    phones[1].OL().net.send({ a: 'todraft', p: 1 });
+    if (st().phase !== 'draft' || st().first !== g.r) problems.push('the number game\'s winner does not pick first');
+  };
   phones[1].OL().net.send({ a: 'join', p: 1, name: 'Third' });   // a second join must do nothing
   if (st().names[1] !== names[1]) problems.push('a second join replaced the player');
+  numbers();
 
   for (let game = 0; game < 2; game++) {
     // bans and draft: only the phone whose turn it is acts; the other one tries and must change nothing
@@ -66,7 +81,7 @@ function match(seed) {
     if (!st().final) { problems.push('match did not finish'); break; }
     if ((st().matchLog || []).length !== st().roundId) problems.push('battle log is missing rounds');
     if (JSON.stringify(phones[0].S_().teams) !== JSON.stringify(phones[1].S_().teams)) problems.push('phones disagree at the end');
-    if (game === 0) { phones[1].onlineRematch(); if (st().phase !== 'draft' || st().final) problems.push('rematch did not start a new draft'); }
+    if (game === 0) { phones[1].onlineRematch(); if (st().phase !== 'spin' || st().final) problems.push('rematch did not start a new number game'); else numbers(); }
   }
   if (ended !== 2) problems.push('finished matches reported ' + ended + ' times (want 2)');
   return { problems, leaks, rounds };

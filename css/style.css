@@ -237,6 +237,8 @@ details ul b{color:var(--fg)}
 .mnotes{display:flex;flex-direction:column;gap:8px;padding-top:4px;border-top:1px solid var(--line)}
 .mnotes .tlabel{padding-top:8px;color:var(--gold)}
 .nwho .tlabel{align-self:center;margin-right:2px}
+.nside{display:flex;flex-wrap:wrap;gap:5px}
+.nvs{align-self:center;padding:0 4px;font-family:var(--display);font-weight:800;color:var(--gold)}
 .sig{font-size:.9rem;background:var(--bg-2);border-left:3px solid var(--accent);border-radius:4px 10px 10px 4px;padding:10px 12px}
 .sig .sname{font-weight:700;color:var(--accent)}
 .sig .sname .muted{font-weight:500;font-size:.8rem}
@@ -1483,11 +1485,16 @@ body.tvmode.tvscene #tvbadge{opacity:.45;transition:opacity .3s} body.tvmode.tvs
 .gcard[disabled]{cursor:default}
 .guess:not(.done) .gcard[disabled]:not(.taken){filter:saturate(.7) brightness(.8)}
 .guess.done .gcard:not(.secret):not(.taken){filter:grayscale(.8) brightness(.45)}
-.gcard.secret{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 34px rgba(214,165,77,.7);transform:scale(1.04);z-index:2}
+.gcard.secret{border-color:var(--gold);box-shadow:0 0 0 4px var(--gold),0 0 44px rgba(214,165,77,.95);transform:scale(1.14);z-index:2;animation:gpulse 1.6s .8s ease-in-out infinite}
+.guess.done .gcard.taken:not(.secret){filter:brightness(.6)}
+.gcard .gis{position:absolute;left:0;right:0;top:50%;transform:translateY(-70%) rotate(-4deg);padding:5px 2px;background:var(--gold);color:#111;font-family:var(--display);font-weight:800;font-size:.86rem;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.6)}
+.gcard.secret .gnum{width:50px;height:50px;font-size:1.5rem}
+@keyframes gpulse{50%{box-shadow:0 0 0 6px var(--gold),0 0 70px rgba(214,165,77,1)}}
+@media (prefers-reduced-motion:reduce){.gcard.secret{animation:none!important}}
 .guess.fresh .gcard.secret{animation:greveal .8s ease-out both}
 .gcard.secret .gnum{background:var(--gold);color:#111}
 .gcard.win{box-shadow:0 0 0 3px var(--tc),0 0 30px var(--tc)}
-@keyframes greveal{0%{transform:rotateY(90deg) scale(.9)}60%{transform:rotateY(0) scale(1.08)}100%{transform:scale(1.04)}}
+@keyframes greveal{0%{transform:rotateY(90deg) scale(.9)}60%{transform:rotateY(0) scale(1.08)}100%{transform:scale(1.14)}}
 .gwhy{margin:0;text-align:center}
 body.tvmode .ggrid{max-width:560px;grid-template-columns:repeat(9,1fr);max-width:none}
 body.tvmode .gthink{max-width:560px}
@@ -1525,3 +1532,87 @@ body.tvmode .guess{padding-top:20px}
 @keyframes spflare{0%{text-shadow:none}30%{text-shadow:0 0 28px rgba(214,165,77,.9),0 0 60px rgba(224,87,59,.5);transform:scale(1.04)}100%{text-shadow:0 0 12px rgba(214,165,77,.25);transform:none}}
 @keyframes spstamp{0%{transform:rotate(-4deg) scale(1.6);opacity:.4}100%{transform:rotate(-4deg) scale(1);opacity:1}}
 @media (prefers-reduced-motion:reduce){.splash *{animation:none!important}.splash.go .sp-line{transform:none}}
+
+/* Dead Calm (CK): a ring of still water around Giyu's whole team, kept up for the rest of the round */
+.waterring{position:absolute;inset:-8px -14px;pointer-events:none;z-index:3}
+.waterring i{position:absolute;inset:0;border-radius:50%;border:4px solid rgba(120,200,255,.85);box-shadow:0 0 18px rgba(90,180,255,.8),inset 0 0 18px rgba(90,180,255,.55);animation:calmin .9s cubic-bezier(.2,.7,.3,1) both,calmwave 3.4s .9s ease-in-out infinite}
+.waterring i:nth-child(2){inset:7px;border-width:2px;border-style:dashed;border-color:rgba(190,232,255,.8);box-shadow:none;animation:calmin .9s .1s cubic-bezier(.2,.7,.3,1) both,calmspin 7s linear infinite}
+.waterring i:nth-child(3){inset:-7px;border-width:2px;border-color:rgba(120,200,255,.4);box-shadow:none;animation:calmin .9s .2s cubic-bezier(.2,.7,.3,1) both,calmspin 11s linear infinite reverse}
+@keyframes calmin{0%{transform:scale(1.5);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes calmwave{50%{transform:scale(1.025,.975)}}
+@keyframes calmspin{to{transform:rotate(360deg)}}
+.stage.calmstage{height:128px}
+.calmteam{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:12px 26px;z-index:2}
+.calmstage .waterring{inset:0 4%}
+.calmstage .gl.stg{width:58px;height:70px}
+.mini .m.calm .gl.mini{box-shadow:0 0 0 2px rgba(120,200,255,.95),0 0 14px rgba(90,180,255,.95)}
+.mini:has(.m.calm){position:relative}
+.arow.calm{position:relative}
+.arow.calm .waterring{inset:-10px 3%}
+/* Nakime (CK): the biwa drops a fighter through the floor; for the rest of the round they're an empty place */
+.stage.goneaway{z-index:20}
+.stage.goneaway .st-on{animation:pulled 1.5s .3s cubic-bezier(.55,0,.85,.35) both!important;z-index:20}
+.stage.goneaway .st-mark{color:#d9b3ff;text-shadow:0 0 16px rgba(190,130,255,.8)}
+@keyframes pulled{0%{transform:none;opacity:1}18%{transform:translateY(-12px) rotate(-3deg)}75%{opacity:1}100%{transform:translateY(62vh) rotate(16deg) scale(.82);opacity:0}}
+.acard.pulled{animation:pulledtv 1.5s .25s cubic-bezier(.55,0,.85,.35) both!important;z-index:30}
+.acard.bot.pulled{z-index:30}
+@keyframes pulledtv{0%{transform:none;opacity:1}18%{transform:translateY(-16px) rotate(-3deg)}80%{opacity:1}100%{transform:translateY(120vh) rotate(14deg) scale(.85);opacity:0}}
+.acard.lost{opacity:.14;filter:grayscale(1);border-style:dashed}
+.mini .m.lost{opacity:.14;filter:grayscale(1)}
+/* Kagaya's Final Resolve (CK): one big beat for everyone who awakens */
+.now.awakebeat{border-color:rgba(214,70,60,.7);background:radial-gradient(circle at 50% 45%,rgba(214,60,50,.3),rgba(0,0,0,.55));overflow:hidden;padding:18px 12px;animation:awakeshake .6s cubic-bezier(.36,.07,.19,.97) both}
+.awaken{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.awk{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--display);font-size:9rem;line-height:1;color:rgba(214,60,50,.26);pointer-events:none;animation:awstamp .7s ease-out both}
+.awrow{position:relative;display:flex;justify-content:center;flex-wrap:wrap;gap:12px}
+.awc{display:flex;flex-direction:column;align-items:center;gap:5px;animation:popin .4s calc(var(--i) * .1s) ease-out both}
+.awc small{font-weight:800;color:var(--fg)}
+.awpic{position:relative;display:block;width:92px;height:116px;border-radius:12px;overflow:hidden;background:#000;border:2px solid var(--gold);box-shadow:0 0 22px rgba(214,70,60,.75)}
+.awaken.many .awpic{width:58px;height:74px}
+.awpic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%}
+.awpic img.old{animation:awold 1s calc(.5s + var(--i) * .14s) ease-in both}
+.awpic img.new{animation:awnew 1s calc(.5s + var(--i) * .14s) ease-out both}
+.awt{position:relative;font-family:var(--display);font-size:1.25rem;color:var(--gold);text-shadow:0 0 14px rgba(214,70,60,.8);animation:rise .8s .9s ease-out both}
+@keyframes awold{to{opacity:0;filter:brightness(3) saturate(0)}}
+@keyframes awnew{0%{opacity:0;filter:brightness(3.4)}100%{opacity:1;filter:none}}
+@keyframes awstamp{0%{transform:translate(-50%,-50%) scale(2.2);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+body.tvmode .awpic{width:150px;height:190px}
+body.tvmode .awaken.many .awpic{width:120px;height:152px}
+body.tvmode .awt{font-size:2rem}
+.tvcfg{width:100%;max-width:640px;margin:0 auto 12px;display:flex;flex-direction:column;gap:6px}
+.ctlround,.ctlwatch .overteams,.ctlwatch .mvp{text-align:left;width:100%}
+@media (prefers-reduced-motion:reduce){.waterring i,.acard.pulled,.stage.goneaway .st-on,.now.awakebeat,.awaken *{animation:none!important}.awpic img.old{opacity:0}}
+
+/* Big moments for a few specials (CK): over the whole screen for a beat (effects.js SFX_ART) */
+.sfx{position:fixed;inset:0;z-index:70;pointer-events:none;overflow:hidden}
+.sfx svg{position:absolute;inset:0;width:100%;height:100%}
+.sfx-bolt{animation:boltflash .7s ease-out both}
+.sfx-bolt polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;stroke-dasharray:400;stroke-dashoffset:400;animation:boltdraw .9s cubic-bezier(.2,.9,.2,1) both}
+.sfx-bolt .b1{stroke:#ffd84d;stroke-width:16;filter:blur(6px)}
+.sfx-bolt .b2{stroke:#fff;stroke-width:5}
+@keyframes boltdraw{0%{stroke-dashoffset:400;opacity:1}35%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes boltflash{0%,18%{background:transparent}26%{background:rgba(255,245,190,.75)}100%{background:transparent}}
+:has(> .sfx-bolt) .stage .pop,:has(> .sfx-bolt) .apop{animation-delay:.65s!important}
+.sfx-frost{animation:frostin 2.2s ease-out both}
+.sfx-frost svg{width:46vmin;height:46vmin;inset:auto;fill:rgba(205,238,255,.5);filter:drop-shadow(0 0 10px rgba(150,215,255,.7));animation:frostgrow 2.2s ease-out both}
+.sfx-frost .c0{top:0;left:0;--r:0deg}.sfx-frost .c1{top:0;right:0;--r:90deg}.sfx-frost .c2{bottom:0;right:0;--r:180deg}.sfx-frost .c3{bottom:0;left:0;--r:270deg}
+@keyframes frostin{0%{box-shadow:inset 0 0 0 0 rgba(170,225,255,0)}30%,70%{box-shadow:inset 0 0 90px 10px rgba(170,225,255,.5)}100%{box-shadow:inset 0 0 0 0 rgba(170,225,255,0)}}
+@keyframes frostgrow{0%{transform:rotate(var(--r)) scale(0);opacity:0}30%,70%{transform:rotate(var(--r)) scale(1);opacity:1}100%{transform:rotate(var(--r)) scale(1.05);opacity:0}}
+.sfx-mist i{position:absolute;left:-30%;top:var(--y);width:160%;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(225,235,245,.92),rgba(225,235,245,0) 70%);filter:blur(10px);animation:mistpass 2.2s var(--d) ease-in-out both}
+@keyframes mistpass{0%{transform:translateX(-45%);opacity:0}35%,62%{transform:translateX(0);opacity:1}100%{transform:translateX(45%);opacity:0}}
+.sfx-drum i{position:absolute;top:50%;left:50%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:6px solid rgba(214,165,77,.85);animation:drumring .8s var(--d) ease-out both}
+@keyframes drumring{0%{transform:scale(.3);opacity:1}100%{transform:scale(3.4);opacity:0}}
+:has(> .sfx-drum) .reswide,:has(> .sfx-drum) .board{animation:drumshake .6s ease-in-out}
+@keyframes drumshake{0%,100%{transform:none}15%{transform:translateY(7px)}30%{transform:translateY(-5px)}50%{transform:translateY(6px)}65%{transform:translateY(-4px)}82%{transform:translateY(3px)}}
+.sfx-claws line{stroke:#fff;stroke-width:7;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 7px #ff5d4c);stroke-dasharray:400;stroke-dashoffset:400;animation:clawcut 1.1s var(--d) cubic-bezier(.2,.8,.3,1) both}
+@keyframes clawcut{0%{stroke-dashoffset:400;opacity:1}30%{stroke-dashoffset:0;opacity:1}70%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.firering{position:absolute;top:50%;left:50%;width:min(86vw,62vh);height:min(86vw,62vh);transform:translate(-50%,-50%)}
+.firering i{position:absolute;inset:0;border-radius:50%;border:10px solid #ff8a2b;box-shadow:0 0 30px 8px #ff5d1f,inset 0 0 30px 8px #ffb347;animation:firein 1.8s ease-out both,calmspin 3s linear infinite}
+.firering i:nth-child(2){inset:12px;border:4px dashed #ffe08a;box-shadow:none;animation-direction:normal,reverse}
+.firering i:nth-child(3){inset:-14px;border:5px dotted #ff5d1f;box-shadow:0 0 22px #ff5d1f}
+@keyframes firein{0%{opacity:0;scale:.4}22%{opacity:1;scale:1}70%{opacity:1;scale:1}100%{opacity:0;scale:1.14}}
+.compassfx{position:absolute;top:50%;left:50%;width:190%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:-1;overflow:visible;pointer-events:none}
+.compassfx g{transform-origin:50% 50%;animation:compassopen 1.5s ease-out both}
+.compassfx line,.compassfx circle{fill:none;stroke:#7fd8ff;stroke-width:1.1;filter:drop-shadow(0 0 3px #ff7ad9)}
+.compassfx polygon{fill:#ff9be3}
+@keyframes compassopen{0%{transform:scale(.2) rotate(-90deg);opacity:0}35%{transform:scale(1) rotate(0);opacity:1}75%{opacity:1}100%{transform:scale(1.1) rotate(30deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.sfx,.compassfx{display:none}}

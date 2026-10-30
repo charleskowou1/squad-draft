@@ -42,7 +42,7 @@ add({id:'gyutaro',name:'Gyutaro',short:'Gyutaro',g:'鎌',type:'Upper Moon 6',dem
   sig:{name:'Flying Blood Sickles',desc:'Every enemy takes 4 and is poisoned 2/round for 2 rounds.',cd:3,kind:'all'}});
 add({id:'daki',name:'Daki',short:'Daki',g:'帯',type:'Upper Moon 6',demon:true,upper:true,cost:6,hp:30,pow:10,spd:9,def:4,regen:2,
   passive:'Two as One: with Gyutaro on her team, if one of them falls while the other is still standing, they get back up at the end of the round with 30% health (once each).',
-  sig:{name:'Obi Sashes',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
+  sig:{name:'Obi Sashes',desc:'Every enemy takes PWR−3, even through Defend: her blade bends around any guard.',cd:3,kind:'all'}});
 // Nakime never attacks: her basic move (in place of Attack) is Biwa Strum. See resolve() in engine.js.
 add({id:'nakime',name:'Nakime',short:'Nakime',g:'琵',type:'Upper Moon 4 · Infinity Castle',demon:true,upper:true,cost:4,hp:32,pow:0,spd:9,def:4,regen:2,
   basic:{name:'Biwa Strum',tag:'enemy acts last',k:'琵',flee:'Nakime is alone. She flees into the castle.',desc:'Instead of attacking: pick an enemy. They act last this round. Always goes first.'},
@@ -107,7 +107,7 @@ const muichiro = add({id:'muichiro',name:'Muichiro Tokito',short:'Muichiro',g:'�
   sig:{name:'Obscuring Clouds',desc:'Moves early. Vanishes into mist (attacks miss him this round) and strikes for PWR+2.',cd:3,kind:'single',prio:1}});
 markOf(muichiro,{cost:10});
 const mitsuri = add({id:'mitsuri',name:'Mitsuri Kanroji',short:'Mitsuri',g:'恋',type:'Love Hashira',hashira:true,cost:5,hp:28,pow:9,spd:9,def:4,
-  sig:{name:'Catlove Shower',desc:'Every enemy takes PWR−3.',cd:3,kind:'all'}});
+  sig:{name:'Catlove Shower',desc:'Every enemy takes PWR−3, even through Defend: her blade bends around any guard.',cd:3,kind:'all'}});
 markOf(mitsuri,{cost:8});
 const obanai = add({id:'obanai',name:'Obanai Iguro',short:'Obanai',g:'蛇',type:'Serpent Hashira',hashira:true,cost:5,hp:26,pow:9,spd:10,def:4,
   sig:{name:'Twin-Headed Reptile',desc:'Strike for PWR+4. Slips past guards (Defend does nothing).',cd:3,kind:'single'}});
@@ -143,11 +143,12 @@ add({id:'tanjiro_demon',fam:'tanjiro',sk:'tanjiro_demon',name:'Tanjiro Kamado (D
   passive:"Sun-proof: Yoriichi's sun can't stop his regeneration. Still Tanjiro: Siblings, Kamaboko Squad and Mentor bonuses all apply.",
   sig:{name:"Demon King's Rampage",desc:'Every enemy takes PWR−4, ignores DEF.',cd:3,kind:'all'}});
 add({id:'nezuko',name:'Nezuko Kamado',short:'Nezuko',g:'血',type:'Demon ally',demon:true,cost:4,hp:24,pow:7,spd:7,def:3,regen:1,
+  passive:"Conquers the sun: the first sunrise burns her, then the sun never hurts her again.",
   sig:{name:'Exploding Blood',desc:'Every enemy takes 5, ignores DEF.',cd:3,kind:'all'}});
 // Awakened Nezuko: the other version of Nezuko (one or the other is dealt)
 add({id:'nezuko_awakened',fam:'nezuko',sk:'nezuko_awakened',name:'Nezuko Kamado (Awakened)',short:'Awakened Nezuko',g:'覚',type:'Demon ally · Awakened',demon:true,cost:9,hp:44,pow:12,spd:10,def:5,regen:3,
   noDefend:true,
-  passive:"Berserk: she can't Defend.",
+  passive:"Berserk: she can't Defend. Conquers the sun: the first sunrise burns her, then the sun never hurts her again.",
   sig:{name:'Exploding Blood',desc:'Every enemy takes 10, ignores DEF, and poison burns off your whole team.',cd:3,kind:'all'}});
 add({id:'zenitsu',name:'Zenitsu Agatsuma',short:'Zenitsu',g:'雷',type:'Thunder',cost:4,hp:26,pow:7,spd:10,def:2,
   sig:{name:'Thunderclap and Flash',desc:'Always moves first. Strike for PWR×2.',cd:3,kind:'single',prio:2},
@@ -167,14 +168,15 @@ add({id:'sabito',name:'Sabito',short:'Sabito',g:'錆',type:'Spirit · Urokodaki\
   passive:"Urokodaki's student: he gets the Mentor bonus too.",
   sig:{name:'Spirit Training',desc:'Train an ally (or himself): +2 PWR for the rest of the match.',cd:3,kind:'ally'}});
 add({id:'typezero',name:'Yoriichi Type Zero',short:'Type Zero',g:'傀',type:'Training puppet',cost:4,hp:28,pow:4,spd:8,def:4,strikes:3,
-  passive:"Six Arms: strikes three times every Attack. Only a puppet: it doesn't count as Yoriichi, so Muzan isn't scared of it. Training partner: Muichiro gets +1 PWR on its team.",
+  passive:"Six Arms: strikes three times every Attack. Only a puppet: it doesn't count as Yoriichi, so Muzan isn't scared of it. Training partner: Muichiro gets +1 PWR on its team. Poison does nothing to a puppet.",
+  noPoison:true,
   sig:{name:'Training Drill',desc:'Drill an ally (or itself): +2 SPD for the rest of the match.',cd:3,kind:'ally'}});
 add({id:'urokodaki',name:'Sakonji Urokodaki',short:'Urokodaki',g:'師',type:'Former Water Hashira',cost:4,hp:26,pow:7,spd:7,def:4,
   passive:'Mentor: Tanjiro, Giyu and Sabito on his team get +1 DEF.',
   sig:{name:'Water Wheel',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
 // Kagaya never attacks: his basic move (in place of Attack) heals the team. His special sacrifices him so the Hashira
 // awaken their Marks (awakenMark() in engine.js). Killed by an enemy first, nobody awakens.
-add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:14,pow:2,spd:5,def:1,
+add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:18,pow:2,spd:5,def:1,
   basic:{name:'Words of Resolve',tag:'team heals 2',k:'癒',kind:'self',desc:'Instead of attacking: every ally, himself included, heals 2.',flee:'Kagaya is alone. With no one left to lead, he falls.'},
   passive:"Master of the Corps: every Hashira on his team gets +1 DEF. He never attacks. If he's the last one standing on his team, he falls.",
   sig:{name:'Final Resolve',desc:"Kagaya gives his life (he's knocked out). Every Hashira on his team who has a Mark awakens it for the rest of the match. If an enemy knocks him out first, nobody awakens.",cd:3,kind:'self'}});
@@ -274,7 +276,7 @@ const LORE = {
   shinobu: ['Ara ara.', 'The Insect Hashira, too small to cut a demon’s head, so she poisons them. She made her own body a trap for Doma.'],
   kanae: ['I want demons and humans to get along.', 'The former Flower Hashira, older sister to Shinobu and Kanao, killed by Doma.'],
   tanjiro: ['Nezuko, I’ll turn you back into a human!', 'A charcoal seller’s son who can smell the gap in any guard. Water Breathing and his family’s Hinokami Kagura.'],
-  tanjiro_mark: ['I can see everything now.', 'Tanjiro with the Demon Slayer Mark, and later the Selfless State of the Transparent World.'],
+  tanjiro_mark: ['I can see everything now.', 'Tanjiro with the Demon Slayer Mark. He learns the Transparent World, seeing inside his enemies’ bodies, then the Selfless State, where even Akaza can’t sense him.'],
   tanjiro_demon: ['Get away… I can’t stop…', 'Muzan’s last trick: Tanjiro as the King of Demons, immune to the sun.'],
   nezuko: ['Mmph!', 'Tanjiro’s sister, a demon who never ate a human and learned to walk in the sun.'],
   nezuko_awakened: ['Grrrrr…!', 'Nezuko’s awakened form, horned and vined, burning poison away with her blood.'],

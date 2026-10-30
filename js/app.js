@@ -45,9 +45,9 @@ function render(){
   if(place) document.body.style.setProperty('--placebg', `url('${place}')`);
   cloudCheck();   // back up saved progress a few seconds after it changes
   music(ctl ? null : musicFor(view));   // the TV plays the music, not the controller phone   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
-  const vids=new Map([...app.querySelectorAll('video[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
-  app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet();
-  app.querySelectorAll('video[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else { v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
+  const vids=new Map([...app.querySelectorAll('video[data-k],img[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
+  beforeAwake(()=>{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); });
+  app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
   if(view==='story' && S.storyScroll){ S.storyScroll=false; const el=app.querySelector('.srow.sel'); if(el) el.scrollIntoView({block:'center'}); else window.scrollTo(0,0); }
@@ -74,7 +74,7 @@ const CLIP_MIN = 3600, CLIP_MAX = 6000, CLIP_LOOP = 2.2, CLIP_PENDING = new Set(
 function warmClips(){
   if(S.clipsOn===false || !(S.teams||S.picks) || !navigator.onLine) return;
   matchClips().forEach(url=>{ if(CLIP_BLOB[url] || CLIP_PENDING.has(url)) return; CLIP_PENDING.add(url);
-    fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b);
+    fetch(url).then(r=>r.ok?r.blob():Promise.reject()).then(b=>{ CLIP_BLOB[url]=URL.createObjectURL(b); if(clipIsPic(url)) return;
       const v=document.createElement('video'); v.preload='metadata'; v.muted=true; v.onloadedmetadata=()=>{ CLIP_DUR[url]=v.duration; v.removeAttribute('src'); v.load(); }; v.src=CLIP_BLOB[url];
     }).catch(()=>{}).finally(()=>CLIP_PENDING.delete(url)); });
 }
@@ -89,7 +89,7 @@ function playRound(){
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
     if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line);
     render();
-    const t = b>a ? groupTime(lines) : readTime(line);
+    const t = b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line);
     const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
     S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
   };
@@ -184,16 +184,18 @@ const ACTIONS = {
     if(isOnline()) return onlineGuess(+v);
     const p = S.mode==='cpu' ? 0 : guessTurn(); if(p<0 || !guessPick(p,+v)) return; sfx('pick');
     if(S.mode==='cpu') others(0).forEach(q=>cpuGuess(q)); },
-  toDraft(){ if(isOnline() && !iAmHost()) return; if(!S.spin || S.spin.state!=='done') return; newDraft(S.spin.r); },
+  toDraft(){ if(isAsync()) return send({a:'todraft'}); if(isOnline() && !iAmHost()) return; if(!S.spin || S.spin.state!=='done') return; newDraft(S.spin.r); },
   askquit(){ S.quitAsk=true; },
   unquit(){ S.quitAsk=false; },
   redeal(){ if(typeof isCtl==='function' && isCtl()) return ctlSend({a:'redeal'}); if(isOnline() && !iAmHost()) return; S.pool=buildPool(); S.sel=null; },
+  onew(){ loadModeCfg('online').players>2 ? onlineCreate() : asyncCreate(); },   // 2 players: one game for live or your own pace. 3–4: everyone at once
   ocreate(){ onlineCreate(); },
   // TV mode (js/tv.js): this laptop shows the game on the big screen; a phone joins its code as the controller
   tvstart(){ tvStart(); },
   tvexit(){ tvStop(); tvFit(); ACTIONS.home(); },
   tvfull(){ tvFullscreen(); },
   tvmouse(v){ tvMouse(v); },
+  tvcfgbudget(v){ tvCfgSet('budget',v); }, tvcfgpool(v){ tvCfgSet('poolType',v); }, tvcfglevel(v){ tvCfgSet('level',v); },   // the TV lobby's match settings, from the laptop or a phone
   tvchoose(v){ tvChoose(v); },                          // a mode on the TV's lobby, picked on the laptop
   tvjoinopen(){ S.tvJoinOpen=!S.tvJoinOpen; S.tvJoinMsg=''; setTimeout(()=>{ const el=document.getElementById('tvcode'); if(el) el.focus(); }); },
   tvjoin(){ tvJoinCode(); },                           // pick this round's moves on the laptop instead of a phone
@@ -319,9 +321,9 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||
 
 // Character pictures: for each card look for img/<id>.jpg (or .png / .webp). A Mark card without its own picture
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
-// Pictures that aren't a card's own: Mark Tanjiro in the Selfless State. (Rengoku's bloodied last smile is only in
+// Pictures that aren't a card's own: Mark Tanjiro in the Selfless State, and in the Transparent World while he strikes from it. (Rengoku's bloodied last smile is only in
 // his ending cutscene, scenes/rengoku-heart.jpg, not on his card: CK, Oct 28, 2026)
-const EXTRA_ART = ['tanjiro_selfless'];
+const EXTRA_ART = ['tanjiro_selfless','tanjiro_transparent'];
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
   let waiting=ids.length;
@@ -473,6 +475,9 @@ function asyncNet(db, code){
         .then(t=>{ if(t.committed && res && res.ended) postStats({...res.ended, humans:res.ended.humans}); return t.committed && !!res; })
         .catch(e=>{ S.onlineMsg=netError(e); render(); return false; }); },
     onGame(cb){ const f=s=>{ const v=s.val(); if(v && v.s) cb(v); else if(!v){ setGame(code,{gone:true}); } }; ref.on('value',f); offs.push(()=>ref.off('value',f)); },
+    // this phone is in the game right now (the other phone shows it, so a game can play live or wait); the server clears it if the phone drops
+    here(db, seat){ const me=ref.child('here/'+seat), c=db.ref('.info/connected'), f=s=>{ if(s.val()){ me.onDisconnect().remove().catch(()=>{}); me.set(true).catch(()=>{}); } };
+      c.on('value',f); offs.push(()=>{ c.off('value',f); me.onDisconnect().cancel().catch(()=>{}); me.remove().catch(()=>{}); }); },
     leave(){ offs.forEach(f=>f()); offs.length=0; },
   };
 }
@@ -510,8 +515,8 @@ async function openGame(code){
     clearTimeout(S._t);
     Object.assign(S,{mode:'online', async:true, asyncCode:code, me:g.seat, planFor:g.seat, hostSeat:-1, away:{}, phase:'lobby', lobby:{code, seats:[]},
       onlineMsg:'', asyncWatching:false, play:null, final:false, localOver:false, plans:null, helperPlan:null, lastPlans:null, sel:null, info:null});
-    ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null;
-    ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; setGame(code,{meta:v.meta, gone:false});
+    ONLINE.net=asyncNet(db, code); ONLINE.full=null; ONLINE.offActs=ONLINE.offState=null; ONLINE.net.here(db, g.seat);
+    ONLINE.net.onGame(v=>{ if(!isAsync() || S.asyncCode!==code) return; ONLINE.full=v.s; S.oppHere=!!(v.here&&v.here[1-g.seat]); setGame(code,{meta:v.meta, gone:false});
       if(!S.asyncWatching){ asyncShow(); render(); } });
     window.scrollTo(0,0);
   }catch(e){ S.onlineMsg=netError(e); render(); }
@@ -566,7 +571,7 @@ function statsGame(){
 function postStats(g){
   if(!g || !FIREBASE_CONFIG || !navigator.onLine) return;
   firebaseReady().then(db=>{
-    const inc=firebase.database.ServerValue.increment(1), up={games:inc}, add=(id,k)=>{ up[`chars/${id}/${k}`]=inc; }, random=g.poolType!=='all';
+    const inc=firebase.database.ServerValue.increment(1), up={games:inc}, add=(id,k)=>{ up[`chars/${id}/${k}`]=inc; }, random=g.poolType==='random'||!g.poolType;
     if(random) [...new Set(g.pool)].forEach(id=>add(id,'d'));
     g.humans.forEach(p=>[...g.teams[p], ...(g.helpers[p]||[])].forEach(id=>{ add(id,'p'); if(random) add(id,'r'); if(g.won[p]) add(id,'w'); }));
     return db.ref('stats').update(up);
