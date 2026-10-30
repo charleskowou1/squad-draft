@@ -72,6 +72,11 @@ function poolNotes(){
   if(has('kanae')&&has('shinobu')) add('team', ['kanae','shinobu'], 'Kocho Sisters', "Kanae and Shinobu on one team: Shinobu's poison lasts 4 rounds instead of 3.", together(['kanae','shinobu']));
   if(has('kanae')&&has('kanao')) add('team', ['kanae','kanao'], "Kanae's student", 'Kanae and Kanao on one team: Kanao gets +1 PWR.', together(['kanae','kanao']));
   if(has('typezero')&&has('muichiro')) add('team', ['typezero','muichiro'], 'Training partner', 'Yoriichi Type Zero and Muichiro on one team: Muichiro gets +1 PWR.', together(['typezero','muichiro']));
+  const wiveList=['hinatsuru','makio','suma'].filter(has);
+  if(wiveList.length===3) add('team', wiveList, 'The Three Wives', 'Hinatsuru, Makio and Suma on one team: all three get +1 SPD.', together(wiveList));
+  if(has('tengen')&&wiveList.length) add('team', ['tengen',...wiveList], "Tengen's Family", 'Tengen or Retired Tengen plus any of his wives on one team: Tengen gets +1 PWR.', withAnchor('tengen',wiveList));
+  if(has('tanjuro')&&has('tanjiro')) add('team', ['tanjuro','tanjiro'], 'Father and Son', 'Tanjuro and any Tanjiro on one team: Tanjiro gets +2 PWR.', together(['tanjuro','tanjiro']));
+  if(has('makomo')&&has('sabito')) add('team', ['makomo','sabito'], "Urokodaki's Pupils", 'Makomo and Sabito on one team: both get +1 SPD.', together(['makomo','sabito']));
   const hashira=famsWhere(c=>c.hashira);
   if(hashira.length>=2) add('team', hashira, 'Hashira', 'Two or more Hashira on one team: each Hashira gets +1 PWR.', twoOf(hashira));
   const upper=famsWhere(c=>c.upper);

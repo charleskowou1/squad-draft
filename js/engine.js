@@ -51,7 +51,7 @@ function recordMatch(){
 // Character pool: 'random' deals a hand of characters (default), 'all' offers every character, 'slayers' and 'demons'
 // every character on that side. Nezuko, Tamayo and Yushiro are demons who fight for the Corps, so they're Slayers here.
 const POOL_TYPES = ['random','all','slayers','demons'];
-const fullPool = () => S.poolType==='all' || S.poolType==='slayers' || S.poolType==='demons';
+const fullPool = () => S.sideWar || S.poolType==='all' || S.poolType==='slayers' || S.poolType==='demons';
 const slayerSide = c => !c.demon || /Demon ally/.test(c.type);
 const poolSide = c => S.poolType==='slayers' ? slayerSide(c) : S.poolType==='demons' ? !slayerSide(c) : true;
 function loadPoolType(){ try{ const t=localStorage.getItem('squad-draft-pooltype'); return POOL_TYPES.includes(t)?t:'random' }catch(e){ return 'random' } }
@@ -71,7 +71,7 @@ function loadModeCfg(mode){
 function saveModeCfg(mode, c){ try{ localStorage.setItem('squad-draft-mode-'+mode, JSON.stringify(c)) }catch(e){} }
 // Copy a mode's settings into the game state (points, pool, players, level)
 function useModeCfg(mode=S.mode){ const c=loadModeCfg(mode); if(mode==='cpu'||mode==='practice') c.players=2;   // Quickplay and Practice: you vs one computer
-  S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
+  S.cfg=c; S.duo = mode!=='story' && c.players===4 && !!c.duo; S.budget=c.budget; S.poolType=c.poolType; S.level=c.level; S.sideWar=mode==='cpu'&&!!c.demonSide; S.maxTeam=mode==='story'?MAXTEAM:c.maxTeam; S.bansOn=mode!=='story'&&!!c.bans; if(mode!=='online') S.n=c.players; return c; }
 const CPU_NAMES = ['Muzan AI','Kokushibo AI','Doma AI'];
 
 // Saved data reset: when DATA_VERSION changes, every 'squad-draft…' key on this phone is cleared once (story, stats,
@@ -91,6 +91,7 @@ function placeChoice(){ try{ return localStorage.getItem(PLACE_KEY)||'random' }c
 function pickPlace(){
   const have = typeof PLACE_ART!=='undefined' ? Object.keys(PLACE_ART) : [], c=placeChoice();
   if(c==='off' || !have.length) return null;
+  if(c==='random'){ const ok=have.filter(id=>!/^(dr_|dream|six)/.test(id)); return ok.length ? ok[Math.floor(Math.random()*ok.length)] : null; }
   return have.includes(c) ? c : have[Math.floor(Math.random()*have.length)];
 }
 // Players in the match: 2, 3 (triple threat) or 4 (1 v 1 v 1 v 1). Every team fights every other team; last one standing wins.
@@ -122,10 +123,10 @@ const lost = (u,n) => `[-${pct(u,n)}%]`, gained = (u,n) => `[+${pct(u,n)}%]`;
 // How likely a character is to be dealt, relative to 1 for everyone else. Yoriichi is rare (about 1 draft in 8),
 // and when he is dealt, the old version is twice as likely as the prime one.
 const FAMILY_ODDS = {yoriichi:.4};
-const VERSION_ODDS = {yoriichi:.5, muzan_final:.5, tanjiro_demon:.3};   // the stronger version of these comes up less often
+const VERSION_ODDS = {michikatsu:.5, hakuji:.5, yoriichi:.5, muzan_final:.5, tanjiro_demon:.3};   // the stronger version of these comes up less often
 // 30-point games deal more and stronger cards, so the hard pulls get their own odds to stay hard pulls
 const STRONG_FAMILY_ODDS = {yoriichi:.4, kokushibo:1.6};
-const STRONG_VERSION_ODDS = {yoriichi:.5, muzan_final:.2, tanjiro_demon:.2};
+const STRONG_VERSION_ODDS = {michikatsu:.5, hakuji:.5, yoriichi:.5, muzan_final:.2, tanjiro_demon:.2};
 // How likely a family / version is to be dealt in the current mode (relative to 1)
 function familyOdds(fam, cards){
   if(!deal().strong) return FAMILY_ODDS[fam] ?? 1;
@@ -144,10 +145,11 @@ function takeWeighted(list, w){
 // Split-off forms (Hantengu's emotions) are never dealt, nor is anything over maxCardCost().
 // The back-pocket helpers are offered in every draft, on top of the characters dealt
 const HELPERS = ROSTER.filter(c=>c.helper).map(c=>c.id);
+const DREAM_HELPERS = ['aoi','chuntaro','goto','tecchin'];   // unlocked in The Endless Dream; the daily challenge stays on the first five so it's the same for everyone
 // Each draft offers 3 of the back-pocket helpers, picked at random (CK, Oct 26, 2026: there are 5 now). rand: a seeded
 // generator for drafts that must be the same everywhere (the daily challenge).
 const HELPERS_DEALT = 3;
-function dealHelpers(rand=Math.random){ const left=HELPERS.slice(), out=[]; while(out.length<HELPERS_DEALT && left.length) out.push(left.splice(Math.floor(rand()*left.length),1)[0]); return out; }
+function dealHelpers(rand=Math.random){ const left=HELPERS.filter(id=>rand===Math.random ? S.unlockAll || typeof isUnlocked!=='function' || isUnlocked(id) : !DREAM_HELPERS.includes(id)), out=[]; while(out.length<HELPERS_DEALT && left.length) out.push(left.splice(Math.floor(rand()*left.length),1)[0]); return out; }
 const isHelper = id => !!BYID[id].helper;
 const fighterIds = p => S.picks[p].filter(id=>!isHelper(id));
 function buildPool(){
@@ -234,7 +236,8 @@ function doBan(id){ const p=banTurn(); S.bans.push({p,id}); S.sel=null; if(S.ban
 // The computer bans the priciest card still in the pool
 function cpuBan(){ const ok=S.pool.filter(id=>canBan(banTurn(),id)).sort((a,b)=>BYID[b].cost-BYID[a].cost || Math.random()-.5); doBan(ok[0]); }
 // helpers don't take one of the 6 fighter slots, but each player may have only one helper
-function canPick(p,id){ const c=BYID[id]; return !S.banning && !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<teamCap()) && c.cost <= budget()-spent(p); }
+function canPick(p,id){ const c=BYID[id]; if(S.sideWar && !c.helper && slayerSide(c)===(p===0)) return false;   // Demon Side: you draft demons, the computer slayers
+  return !S.banning && !taken(id) && !S.locked[p] && (c.helper ? !S.picks[p].some(isHelper) : fighterIds(p).length<teamCap()) && c.cost <= budget()-spent(p); }
 const canAny = p => S.pool.some(id=>canPick(p,id));
 // Whose pick it is: snake order, skipping a player who has locked
 function turn(){ return S.banning ? banTurn() : turnAt(S.k); }
@@ -262,7 +265,7 @@ function undoPick(){
   S.history.pop(); S.picks[h.p].pop(); S.k--; S.lastPicker=h.lastPicker; S.locked=h.locked; S.sel=null;
 }
 // Two-character synergies the computer drafter looks for
-const PAIRS = [['urokodaki','sabito'],['sabito','tanjiro'],['tanjiro','nezuko'],['tamayo','yushiro'],['yoriichi','tanjiro'],['urokodaki','tanjiro'],['urokodaki','giyu'],
+const PAIRS = [['hinatsuru','makio'],['makio','suma'],['hinatsuru','suma'],['tanjuro','tanjiro'],['makomo','sabito'],['hinatsuru','tengen'],['makio','tengen'],['suma','tengen'],['urokodaki','sabito'],['sabito','tanjiro'],['tanjiro','nezuko'],['tamayo','yushiro'],['yoriichi','tanjiro'],['urokodaki','tanjiro'],['urokodaki','giyu'],
   ['tanjiro','zenitsu'],['tanjiro','inosuke'],['zenitsu','inosuke'],
   ['gyutaro','daki'],['susamaru','yahaba'],['kanae','shinobu'],['kanae','kanao'],['muichiro','typezero']];
 // Computer difficulty. Easy plays like the original simple computer; Normal plays smart but with sloppier choices;
@@ -292,7 +295,7 @@ function cpuDraftStep(level='hard'){
 let UID=0;
 function mkUnit(id,p){ const c=BYID[id]; return {uid:'u'+(UID++),id,fam:c.fam,sk:c.sk,p,name:c.short,g:c.g,hp:c.hp,max:c.hp,pow:c.pow,spd:c.spd,def:c.def,
   regen:c.regen||0,revive:c.revive||0,demon:!!c.demon,mark:!!c.mark,legend:!!c.legend,strikes:c.strikes||1,cap:c.cap||0,taken:0,grit:c.id==='murata',
-  sunproof:!!c.sunproof,noPoison:!!c.noPoison,noDefend:!!c.noDefend,basic:c.basic||null,
+  sunproof:!!c.sunproof,noPoison:!!c.noPoison,vowed:false,noDefend:!!c.noDefend,basic:c.basic||null,
   sig:c.sig,cd:0,alive:true,spawn:!!c.spawn,splits:c.splits||null,merge:c.merge||null,poison:null,stun:false,stunNext:false,defending:false,evade:false,sunburn:false}; }
 // Applies team bonuses to the units and returns their labels ('!' prefix = a penalty)
 function synergies(p){
@@ -309,6 +312,11 @@ function synergies(p){
   if(has('muzan') && e.some(u=>u.fam==='yoriichi')){ t.filter(u=>u.fam==='muzan').forEach(u=>{u.pow-=3; u.spd-=2;}); out.push('!Muzan fears the Sun −3 PWR'); }
   if(has('kokushibo') && e.some(u=>u.fam==='yoriichi')){ t.filter(u=>u.fam==='kokushibo').forEach(u=>u.def-=1); out.push('!Kokushibo shaken −1 DEF'); }
   const pupils=t.filter(u=>u.fam==='tanjiro'||u.fam==='giyu'||u.fam==='sabito'); if(has('urokodaki') && pupils.length){ pupils.forEach(u=>u.def+=1); out.push('Mentor: pupils +1 DEF'); }
+  const wives=t.filter(u=>['hinatsuru','makio','suma'].includes(u.fam));
+  if(wives.length===3){ wives.forEach(u=>u.spd+=1); out.push('The Three Wives: +1 SPD'); }
+  if(wives.length && has('tengen')){ t.filter(u=>u.fam==='tengen').forEach(u=>u.pow+=1); out.push("Tengen's Family: Tengen +1 PWR"); }
+  if(has('tanjuro') && has('tanjiro')){ t.filter(u=>u.fam==='tanjiro').forEach(u=>u.pow+=2); out.push('Father and Son: Tanjiro +2 PWR'); }
+  if(has('makomo') && has('sabito')){ t.filter(u=>u.fam==='makomo'||u.fam==='sabito').forEach(u=>u.spd+=1); out.push("Urokodaki's Pupils: +1 SPD"); }
   if(has('kagaya') && ha.length){ ha.forEach(u=>u.def+=1); out.push('Corps Master: Hashira +1 DEF'); }
   if(has('gyutaro')&&has('daki')){ S.twins[p]=true; t.filter(u=>u.fam==='gyutaro').forEach(u=>u.pow+=2); out.push('Two as One: Gyutaro +2 PWR'); }
   if(has('susamaru')&&has('yahaba')){ t.filter(u=>u.fam==='susamaru').forEach(u=>u.pierceAll=true); out.push('Temari & Arrows: past Defend'); }
@@ -324,7 +332,7 @@ function startBattle(){
   S.helpers=players().map(p=>S.picks[p].filter(isHelper)); S.helperPlan=players().map(()=>[]); S.scoutQueue=[]; S.scouting=false; S.clipSeen={};   // move clips: repeat moments shown this match (js/clips.js)
   S.place = S.mode==='story' ? null : pickPlace();   // the background for this match (story battles use their own)
   if(S.mode!=='story'){ S.twist=null; S.startState=null; S.boosts=null; S.phases=null; S.beats=null; S.awaken=null; }   // story twists never leak into other games
-  S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
+  S.waveQ=null; S.said={}; S.failed=false; S.awoke={}; S.midScene=null; S.pendingAwake=[]; S.chainDone=false; S.chainPending=null;
   S.survived=false;
   S.sib=players().map(()=>false); S.twins=players().map(()=>false); S.syn=players().map(p=>synergies(p)); S.outOrder=[];
   S.round=1; S.plans=players().map(()=>({})); S.lastPlans=players().map(()=>null); S.log=[]; S.matchLog=[]; S.planFor=S.me||0; S.focus=null; S.stats={};
@@ -395,6 +403,7 @@ const SIG_EST = {
   sanemi: u=>({base:u.pow, bonus:1.6}),          // also hits a second enemy
   kaigaku: u=>({base:u.pow+3, bonus:1.3}),
   muichiro: u=>({base:u.pow+2}),
+  makomo: u=>({base:u.pow, bonus:1.3}), makio: u=>({base:u.pow+3}), hakuji: u=>({base:u.pow+3}), michikatsu: u=>({base:u.pow+Math.min(6,S.round)}), hinatsuru: u=>({base:u.pow, bonus:1.5}), suma: u=>({random:1, base:u.pow}), dojo_fighter: u=>({base:u.pow+2}),
   mitsuri: u=>({all:true, base:u.pow-3, o:{pierce:true}}),
   obanai: u=>({base:u.pow+4}),
   rengoku: u=>({base:u.pow+4}),
@@ -488,6 +497,7 @@ function cpuPlan(p, level='hard'){
         switch(u.sk){
           case 'giyu': { const danger=foesNow.filter(f=>f.cd===0).reduce((a,f)=>a+f.pow,0); sp={type:'special', v: danger>=12 || pctHurt(hurt)<.4 ? 30+danger : 0}; break; }
           case 'genya': sp={type:'special', v: S.round<=3 ? 40 : u.hp<u.max*.6 ? 30 : 12}; break;
+          case 'tanjuro': sp={type:'special', v: mine.reduce((a,m)=>a+Math.min(3,m.max-m.hp)/m.max*100,0)}; break;
           case 'tamayo': { const sick=mine.find(m=>m.poison), t=sick||hurt; sp={type:'special', t:t.uid, v:Math.min(10,t.max-t.hp)/t.max*100+(sick?20:0)}; break; }
           case 'yushiro': sp={type:'special', t:hurt.uid, v: pctHurt(hurt)<.4 ? 45 : 0}; break;
           case 'sabito': { const t=mine.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes)[0]; sp={type:'special', t:t.uid, v: S.round<=4 ? 35 : 15}; break; }
@@ -525,6 +535,7 @@ function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
 function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',fx('revive',null,t)); return; }
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ...fx('ko',a,t)});
+  if(t.p===0) nextWave();   // Nine Hashira: the next one steps up
   // Gyutaro and Daki (Two as One): a fallen sibling gets back up (once each) at the end of the round if the other is still standing
   if(S.twins && S.twins[t.p] && (t.fam==='gyutaro'||t.fam==='daki') && !t.rose){ t.rise=true; t.rose=true; }
   // Shinobu's Wisteria Body: the demon who knocks her out devours her and is poisoned. Not Akaza: he never eats women.
@@ -547,13 +558,14 @@ function split(t){
 }
 function hit(a,t,base,o={}){
   if(!t||!t.alive) return 0;
+  if(a && a.tech) o={...o, ignoreDef:true};   // Tecchin's Masterwork Edge
   const ub=!!o.unblockable;   // Hinokami Kagura out of the Selfless State: nothing blocks it
   if(!ub){
     if(S.shield[t.p]){ L(`${t.name} is untouched. Dead Calm blocks it.`,'x',fx('block',a,t)); return 0; }
     if(hidden(t)){ L(`${a.name} strikes at ${t.name}, but he's in the Selfless State. Nothing touches him.`,'x',fx('miss',a,t)); return 0; }
     if(t.saved){ L(`${t.name} is untouched. ${t.saved} stands guard over them.`,'x',fx('block',a,t)); return 0; }
     if(t.evade){ L(`${a.name} strikes at ${t.name}, but hits nothing.`,'x',fx('miss',a,t)); return 0; }
-    if(t.away){ L(`${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
+    if(t.away){ L(t.carried ? `${a.name} can't reach ${t.name}. Goto has them.` : `${a.name} can't find ${t.name}. They're in another room of the castle.`,'x',fx('miss',a,t)); return 0; }
     if(a.astray){ L(`Yahaba's arrows bend ${a.name}'s blow away from ${t.name}.`,'x',fx('miss',a,t)); return 0; }
   } else if(S.shield[t.p]||t.evade||t.away||t.saved||t.defending||a.astray) L(`Nothing can stop it. ${a.name} cuts straight through to ${t.name}.`,'h',fx('special',a,t));
   let d = o.ignoreDef ? base : Math.max(1, base - t.def, Math.ceil(base/2));
@@ -575,7 +587,9 @@ function hit(a,t,base,o={}){
   }
   return d;
 }
-function stunT(t){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.saved){ t.stunNext=true; L(`${t.name} will lose next round.`,'k',fx('stun',null,t)); } }
+const HER_FAMS = ['daki','nakime','susamaru','mitsuri','shinobu','kanae','nezuko','kanao','tamayo'];
+const hisHer = u => u.fam==='typezero' ? 'its' : HER_FAMS.includes(u.fam) ? 'her' : 'his';
+function stunT(t){ if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.saved){ t.stunNext=true; L(`${t.name} will lose ${hisHer(t)} turn next round.`,'k',fx('stun',null,t)); } }
 function special(u,pl){
   const s=u.sig, en=()=>aimsTeam(u) ? aimedTeam(u,pl) : foes(u.p);
   L(`${u.name}: ${s.name}!`,'x',{...fx('special',u,null), sig:s.id||null});
@@ -609,6 +623,14 @@ function special(u,pl){
     case 'mitsuri': en().forEach(e=>hit(u,e,u.pow-3,{counter:false,pierce:true})); break;
     case 'obanai': hit(u,target(u,pl.t),u.pow+4,{pierce:true}); break;
     case 'rengoku': hit(u,target(u,pl.t),u.pow+4); break;   // Fifth Form: Flame Tiger (Ninth Form is his second special)
+    case 'makomo': hit(u,target(u,pl.t),u.pow); break;
+    case 'hinatsuru': { const t=target(u,pl.t); if(t&&t.alive&&!S.shield[t.p]&&!t.evade&&!hidden(t)&&!t.noPoison){ t.poison={dmg:t.demon?4:2,turns:3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } hit(u,t,u.pow); break; }
+    case 'makio': hit(u,target(u,pl.t),u.pow+3); break;
+    case 'suma': { const e=en(); if(e.length) hit(u,rnd(e),u.pow); break; }
+    case 'michikatsu': hit(u,target(u,pl.t),u.pow+Math.min(6,S.round)); break;
+    case 'hakuji': hit(u,target(u,pl.t),u.pow+3); break;
+    case 'dojo_fighter': hit(u,target(u,pl.t),u.pow+2); break;
+    case 'tanjuro': { const healed=alive(u.p).map(m=>{ const h=Math.min(3,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean); L(`Tanjuro dances the Hinokami Kagura.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); break; }
     case 'shinobu': { const t=target(u,pl.t); if(t&&t.alive){ if(S.shield[t.p]||t.evade||hidden(t)){L(`The poison misses.`,'x',fx('miss',u,t));break;} if(t.noPoison){L(`The poison does nothing to ${t.name}. It's only a puppet.`,'x',fx('miss',u,t));break;} t.poison={dmg:t.demon?6:3,turns:u.poisonTurns||3}; L(`${t.name} is poisoned.`,'h',fx('poison',u,t)); } break; }
     case 'tengen': en().forEach(e=>hit(u,e,u.pow-2,{counter:false})); break;
     case 'rui': { const t=target(u,pl.t); hit(u,t,u.pow); stunT(t); break; }
@@ -668,11 +690,15 @@ function aimedTeam(u,pl){ const t=findU(pl.t), q=t && !sameSide(t.p,u.p) && aliv
 // A back-pocket helper's effect, at the start of the round it's used. It then leaves the back pocket.
 function useHelper(p, id){
   S.helpers[p]=S.helpers[p].filter(h=>h!==id);
-  const team=alive(p), tag={fx:id==='chachamaru'?'heal':id==='mice'?'buff':'special', by:null, on:null, helper:id, hp:p};   // hp: whose helper (for its clip)
+  const team=alive(p), tag={fx:id==='chachamaru'||id==='aoi'?'heal':id==='mice'||id==='chuntaro'||id==='tecchin'?'buff':'special', by:null, on:null, helper:id, hp:p};   // hp: whose helper (for its clip)
   if(id==='chachamaru'){   // the most hurt fighter (lowest health %) heals half of their current HP
     const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0];
     if(u){ const h=Math.min(Math.ceil(u.hp/2), u.max-u.hp); u.hp+=h; L(`Chachamaru delivers Tamayo's medicine to ${u.name} ${gained(u,h)}.`,'h',{...tag, on:u.uid}); }
   }
+  if(id==='aoi'){ team.forEach(u=>{ u.poison=null; }); const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(u){ const h=Math.min(4,u.max-u.hp); u.hp+=h; L(`Aoi treats your team. Poison is cured, and ${u.name} recovers ${gained(u,h)}.`,'h',{...tag, on:u.uid}); } }
+  if(id==='chuntaro'){ const u=team.filter(x=>x.stun).sort((a,b)=>b.pow-a.pow)[0]; if(u){ u.stun=false; const t=foes(p)[0]; S.plans[p][u.uid]={type:'attack', t:t&&t.uid}; } team.forEach(x=>{ x.spd+=2; x.chuBoost=(x.chuBoost||0)+2; }); L(`Chuntaro sounds the alarm!${u?` ${u.name} wakes up!`:''} ${S.names[p]}'s team gets +2 SPD this round.`,'h',tag); }
+  if(id==='goto'){ const u=team.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]; if(u){ u.away=true; u.carried=true; L(`Goto carries ${u.name} to safety. They're out of this round.`,'h',{...tag, on:u.uid}); } }
+  if(id==='tecchin'){ const u=team.slice().sort((a,b)=>b.pow*b.strikes-a.pow*a.strikes)[0]; if(u){ u.tech=true; L(`Tecchin hands ${u.name} a masterwork edge. Their attacks ignore DEF this round.`,'h',{...tag, on:u.uid}); } }
   if(id==='mice'){ team.forEach(u=>{ u.pow+=MICE_PWR; u.miceBoost=(u.miceBoost||0)+MICE_PWR; }); L(`The Muscle Mice flex! ${S.names[p]}'s team gets +${MICE_PWR} PWR this round.`,'h',tag); }
   if(id==='hotaru'){   // he works at the END of the round (hotaruForge), so a special used this round can come straight back
     S.hotaru=(S.hotaru||[]).concat(p); L(`Hotaru fires up his forge. He'll reforge a blade at the end of the round.`,'x',tag); }
@@ -701,6 +727,10 @@ function cpuHelpers(p){
     if(have.includes('chachamaru') && team.some(u=>u.hp<=u.max*.5)) use.push('chachamaru');
     if(have.includes('mice') && S.round>=2 && team.length>=2) use.push('mice');
     if(have.includes('crow') && S.round>=2) use.push('crow');
+    if(have.includes('aoi') && (team.some(u=>u.poison) || team.some(u=>u.hp<=u.max*.5))) use.push('aoi');
+    if(have.includes('chuntaro') && (team.some(u=>u.stun) || S.round>=2)) use.push('chuntaro');
+    if(have.includes('goto') && team.length>1 && team.some(u=>u.hp<=u.max*.35)) use.push('goto');
+    if(have.includes('tecchin') && S.round>=2) use.push('tecchin');
     // Hotaru reloads at the end of the round: worth it when a special is fired this round or one has a long wait
     if(have.includes('hotaru') && (team.some(u=>u.cd>=2) || team.some(u=>(S.plans[p][u.uid]||{}).type==='special' && u.sig.id!=='selfless'))) use.push('hotaru');
     // Kiriya: trap the fighter most likely to be attacked (the most hurt one) once someone is in danger
@@ -742,6 +772,11 @@ function playSteps(log){
       }
       if(seen.size>=2){ steps.push([i,j-1]); i=j; continue; }
     }
+    // several strikes from one Attack (Yoriichi, Type Zero) play as one quick flurry, not a slow beat each (CK)
+    if(GROUP_FX.includes(l.fx) && l.by && l.move==='attack'){
+      let j=i+1; while(j<log.length && GROUP_FX.includes(log[j].fx) && log[j].by===l.by && log[j].move==='attack') j++;
+      if(j-i>=2){ steps.push([i,j-1]); i=j; continue; }
+    }
     steps.push([i,i]); i++;
   }
   return steps;
@@ -782,14 +817,14 @@ function resolve(){
     const u=x.u; if(!u.alive || x.done) continue;
     S.curMove=x.pl.type;
     if(x.pl.type==='stunned'){ L(`${u.name} can't move.`,'',fx('stun',null,u)); continue; }
-    if(u.away){ L(`${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
+    if(u.away){ L(u.carried ? `${u.name} is being carried to safety.` : `${u.name} is lost in the Infinity Castle and can't act.`,'',fx('stun',null,u)); continue; }
     if(x.pl.type==='attack' && u.basic && u.basic.kind==='self'){   // Kagaya's Words of Resolve
       const healed=alive(u.p).map(m=>{ const h=Math.min(2,m.max-m.hp); m.hp+=h; return h?`${m.name} ${gained(m,h)}`:''; }).filter(Boolean);
       L(`Kagaya steadies the Corps.${healed.length?' '+healed.join(', ')+'.':''}`,'h',fx('heal',u,null)); continue; }
     if(x.pl.type==='attack' && u.basic) continue;   // Nakime's strum already happened
     if(x.pl.type==='defend'){ L(`${u.name} braces.`,'',fx('guard',null,u)); continue; }
     if(x.pl.type==='save'){ const t=findU(x.pl.t); if(t && t.saved===u.name) L(`${u.name} stands guard over ${t.name}. Nothing will touch them this round.`,'h',fx('guard',u,t)); continue; }
-    if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp')) u.evade=true;
+    if(x.pl.type==='special' && (u.sk==='muichiro'||u.sk==='swamp'||u.sk==='makomo'||u.sk==='suma')) u.evade=true;
     if(x.pl.type==='attack' && u.reveal) L(`${u.name} strikes from the Selfless State, and for a moment he can be seen.`,'x',{...fx('buff',null,u), transparent:true});
     if(x.pl.type==='attack') for(let i=0;i<u.strikes;i++){ if(!foes(u.p).length) break; hit(u,target(u,x.pl.t),u.pow,u.selfless?{ignoreDef:true}:{}); }   // out of the Selfless State: ignores DEF
     if(x.pl.type==='special') special(u,x.pl);
@@ -806,9 +841,11 @@ function resolve(){
     if(sun && u.alive && u.demon && !sunSafe(u)){ const d=Math.ceil(u.max*sunBurn()); u.hp=Math.max(0,u.hp-d); L(`The sun burns ${u.name} ${lost(u,d)}.`,'k',fx('burn',null,u)); fall(u);
       if(u.alive && u.fam==='nezuko') L(`${u.name} endures the sunlight. She has conquered the sun.`,'h',fx('buff',null,u)); }
     if(u.alive && u.regen && u.hp<u.max && !(sun && u.demon && !sunSafe(u))){ const h=Math.min(u.regen,u.max-u.hp); u.hp+=h; L(`${u.name} regenerates ${gained(u,h)}.`,'',Object.assign(fx('heal',null,u),{act:'regen'})); }
+    if(u.sk==='hakuji' && u.alive && !u.vowed && S.teams[p].some(m=>!m.alive)){ u.vowed=true; u.pow+=3; L(`${u.name} remembers his vow: +3 PWR.`,'h',fx('buff',null,u)); }
     if(u.cd>0) u.cd--;
     if(u.selfless && u.alive && u.cd===0){ u.selfless=false; u.unblock=true; L(`${u.name} leaves the Selfless State. Hinokami Kagura is ready, and nothing can stop it.`,'h',fx('buff',null,u)); }
-    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
+    u.stun=u.stunNext; u.stunNext=false; u.defending=false; u.evade=false; u.away=false; u.carried=false; u.tech=false; u.astray=false; u.late=false; u.ambush=null; u.saved=null; u.reveal=false;
+    if(u.chuBoost){ u.spd-=u.chuBoost; u.chuBoost=0; }
     if(u.miceBoost){ u.pow-=u.miceBoost; u.miceBoost=0; }   // Muscle Mice last one round
   }));
   twinsRise(); hotaruForge(); aloneCheck(); storyBeats();
@@ -874,7 +911,7 @@ function storyBeats(when){
       : b.when==='ko' ? u && !u.alive : false;
     if(hit){ S.said[i]=true; say(who, b.text); } });
   (S.phases||[]).forEach(ph=>{ const u=S.teams[1].find(x=>x.id===ph.id); if(!u || !u.alive || u.phased || u.hp>u.max*ph.at) return;
-    u.phased=true; if(ph.line) say(u, ph.line);
+    u.phased=true; if(ph.line) say(u, ph.line); if(ph.rally) while(S.waveQ && S.waveQ.length) nextWave();
     u.pow+=ph.pow||0; u.spd+=ph.spd||0; u.def+=ph.def||0; if(ph.ready) u.cd=0; if(ph.second && BYID[u.id].sig2) u.sig=BYID[u.id].sig2;
     L(`${u.name} changes: ${ph.label}.`,'k',fx('buff',null,u)); });
   if(tw.protect && !S.failed){ const u=S.teams[0].find(x=>x.id===tw.protect); if(u && !u.alive){ S.failed=true; L(`${u.name} has fallen. You had to protect ${u.name}.`,'k',fx('ko',null,u)); } }
@@ -925,5 +962,6 @@ function placings(){ const out=(S.outOrder||[]).slice().reverse(); return S.winn
 function reinforcements(){
   ((S.twist||{}).reinforce||[]).forEach(r=>{ if(r.round===S.round+1 && !r.came) arrive(r); });
 }
+function nextWave(){ if(S.waveQ && S.waveQ.length) arrive({id:S.waveQ.shift()}); }
 function arrive(r){ r.came=true; const u=mkUnit(r.id,0); S.teams[0].push(u);
   L(`${u.name} arrives to fight alongside ${S.names[0]}!`,'h',{spawn:[u.uid], ...fx('spawn',null,u)}); }

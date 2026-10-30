@@ -57,11 +57,12 @@ function check(games){
   }catch(e){ errors++; if(!first) first='daily: '+e.stack; }
   // story mode: every stage's map and scene, the preset battle (with repeat), a draft replay (with undo) and results
   let storyErrors=0, mids=0;
-  for(let i=0;i<STAGES.length;i++){
+  for(const camp of ['main','dream','six']){ setCampaign(camp); for(let i=0;i<STAGES.length;i++){
     try{
-      S={phase:'story',mode:'story',level:'hard',names:['A','B']}; vStory(); vSetup();
+      S={phase:'story',mode:'story',level:'hard',names:['A','B'],campaign:camp}; vStory(); vSetup();
       S.storySel=i; vStory(); S.starsGot=2; S.starsBest=1;
       startStage(i); for(S.sceneAt=0;S.sceneAt<STAGES[i].scene.length;S.sceneAt++) vScene(); S.sceneAt=0; S.sceneVs=true; vScene(); beginStage();
+      if(S.phase==='order'){ S.waveOrder=['rengoku']; vOrder(); S.waveOrder=STAGES[i].mine.slice(); beginStage(); }
       if(S.phase!=='plan') throw new Error('preset stage did not start the battle');
       S.planFor=0; vPlan(); cpuPlan(0); S.lastPlans[0]=JSON.parse(JSON.stringify(S.plans[0])); cpuPlan(1,stageLevel()); resolve();
       if(S.phase==='result'){ S.round++; S.phase='plan'; repeatPlans(0); vPlan(); }
@@ -81,6 +82,7 @@ function check(games){
       vOver();
     }catch(e){ storyErrors++; if(!first) first='story stage '+i+': '+e.stack; errors++; }
   }
+  } setCampaign('main'); try{ S.title='Water'; vCeremony(); S.titleDone=true; vCeremony(); vMemories(); }catch(e){ errors++; first=first||'ceremony: '+e.stack; }
   return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors ('+mids+' Mark awakening scenes, '+(globalThis.TVN||0)+' TV board beats).';
 }
 `);

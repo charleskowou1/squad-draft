@@ -122,7 +122,7 @@ const STYLE_SFX = {
   slash:  v=>{ shing(0,.06*v); },
 };
 // Basic attacks: what the fighter swings. Blades ring; fists, claws and demon arts sound like themselves.
-const WEAPON = {akaza:'fist', typezero:'blade', hand:'claw', swamp:'claw', kyogai:'drum', rui:'thread', enmu:'dream', muzan:'whip', muzan_final:'whip',
+const WEAPON = {akaza:'fist', hakuji:'fist', typezero:'blade', hand:'claw', swamp:'claw', kyogai:'drum', rui:'thread', enmu:'dream', muzan:'whip', muzan_final:'whip',
   doma:'fan', gyutaro:'sickle', daki:'obi', gyokko:'blunt', susamaru:'blunt', yahaba:'arrow', nezuko:'kick', nezuko_awakened:'kick', tanjiro_demon:'claw',
   tamayo:'blood', yushiro:'claw', hantengu:'claw', sekido:'staff', karaku:'fan', aizetsu:'spear', urogi:'claw', zohakuten:'staff', kokushibo:'blade', kaigaku:'blade'};
 const ATTACK_SFX = {
@@ -198,7 +198,7 @@ const THEMES = {
   epic:   {bpm:104, root:50, scale:'miyako', prog:[0,3,4,2], koto:'arp',  flute:.6, pad:.5, taiko:.8, bass:.8, drive:.6, hats:.5, fill:1},
 };
 // story arcs → mood for their scenes and map
-const ARC_MOOD = {prologue:'calm', asakusa:'calm', tsuzumi:'dark', natagumo:'dark', mugen:'epic', district:'epic', swordsmith:'calm', flashback:'epic', castle:'dark', dawn:'epic'};
+const ARC_MOOD = {dream1:'calm', dream2:'calm', dream3:'epic', dream4:'dark', dream5:'epic', six:'epic', prologue:'calm', asakusa:'calm', tsuzumi:'dark', natagumo:'dark', mugen:'epic', district:'epic', swordsmith:'calm', flashback:'epic', castle:'dark', dawn:'epic'};
 const MUSIC = {want:null, playing:null, timer:null, step:0, next:0, theme:null, mel:null, bus:null};
 const midiHz = m => 440*Math.pow(2,(m-69)/12);
 // a note of the theme's scale: degree (can go past one octave) above the root

@@ -168,6 +168,27 @@ cards: {
         'Training Drill: an ally gets +2 SPD for the match. With Muichiro: Muichiro +1 PWR.'],
   beat: ['Three small hits are weak against high DEF: armour beats him.',
          'Poison does nothing to him: he\'s a puppet, so don\'t aim Shinobu here.'] },
+ makomo: {
+  win: ['Flowing Step makes her untouchable for a round while she still lands a hit: time it for their big special.', 'With Sabito: both get +1 SPD.'],
+  beat: ['Very low HP. Hit her on the rounds Flowing Step is recharging.'] },
+ hinatsuru: {
+  win: ['Wisteria Kunai poisons as it hits, and poison is doubled on demons. With Makio and Suma: all three +1 SPD.', 'With Tengen: he gets +1 PWR.'],
+  beat: ['Two hits end her. Cure the poison with Tamayo, Aoi or Awakened Nezuko.'] },
+ makio: {
+  win: ['Cheap, simple damage: Fierce Strike is PWR+3 for 2 pts.', 'The best of the wives on her own.'],
+  beat: ['She is slow for a 2-pt card. Fast fighters reach her first.'] },
+ suma: {
+  win: ['Panic Dodge moves first and dodges everything, so she can bait a big special.', 'She flails at a random enemy, so use her for the dodge, not the damage.'],
+  beat: ['Very low PWR. Ignore her and spend your hits elsewhere.'] },
+ michikatsu: {
+  win: ['Envy of the Sun adds the round number, up to +6: keep him alive and he hits harder every time.', 'He shares a family with Kokushibo, so only one of them can be drafted.'],
+  beat: ['Rush him early, before his special grows.'] },
+ hakuji: {
+  win: ['Soryu Kick is a clean PWR+3, and his Vow adds +3 PWR for the match once a teammate falls.', 'He shares a family with Akaza, so only one of them can be drafted.'],
+  beat: ['Low DEF. Finish his team in one sweep so his Vow comes too late to matter.'] },
+ tanjuro: {
+  win: ['Hinokami Dance heals the whole team 3 every other round: the bigger your team, the better.', 'With any Tanjiro: Tanjiro gets +2 PWR.'],
+  beat: ['Slow and frail. Kill him first.'] },
  tamayo: {
   win: ['Healing Blood Art: heal an ally (or herself) 10 and cure poison.',
         'Against Muzan she cuts his regeneration by 2. With Yushiro: Yushiro +2 PWR.',
@@ -269,6 +290,18 @@ cards: {
          'Yoriichi and Mark Tanjiro beat him almost every time; the sun stops his healing from round 10.'] },
 },
 helpers: {
+ aoi: { what: 'Cures all poison on your team, and your most hurt fighter heals 4.', 
+  win: ['Best against poison teams: Shinobu, Gyutaro, Hinatsuru.'],
+  beat: ['Burst damage beats her small heal.'] },
+ chuntaro: { what: 'Wakes one stunned fighter, and your whole team gets +2 SPD this round.', 
+  win: ['Use it on the round you need to move before their big hitter.'],
+  beat: ['It does little if your team is already faster.'] },
+ goto: { what: "Carries your most hurt fighter off for a round: they can't be hit, and they can't act.", 
+  win: ['Save it for a fighter about to fall.'],
+  beat: ['That fighter still loses their turn, so press your advantage that round.'] },
+ tecchin: { what: "Your hardest hitter's attacks ignore DEF this round.", 
+  win: ['Use it against high-DEF Hashira and Marks.'],
+  beat: ['Defend or dodge that round: it only strengthens one fighter.'] },
  chachamaru: { what: 'Your most hurt fighter heals half of their current health (50% becomes 75%).',
   win: ['It heals half of what\'s LEFT, so use it on a big fighter around half health, not one at 5%.', 'Best on a high-HP carry (Yoriichi, a giant demon) the round before they\'re focused.'],
   beat: ['Burst one fighter down in a single round rather than chipping: the heal can\'t save a fighter that drops in one round.'] },
@@ -384,5 +417,12 @@ module.exports.depth = {
  doma: { role: 'Area damage that ignores DEF, regeneration', draft: ['11 pts; with Hantengu or Akaza at 20.'], plan: ['Frozen Lotus every time it\'s ready; regen keeps him up between.', 'Never be the one to knock Shinobu out.'] },
  kokushibo: { role: 'Giant: area damage that ignores DEF', draft: ['15 pts; strong at 30, mid at 20. Avoid when Yoriichi is in the pool.'], plan: ['Moon Breathing every time it\'s ready; Attack the weakest in between.'] },
  muzan: { role: 'Giant: area damage, heals per hit', draft: ['16 pts; only with demon partners, and not when Tamayo, Shinobu or Mark Tanjiro are in the pool.'], plan: ['Blood Whips on wide teams: he heals 2 per enemy hit.', 'Win before the sun.'] },
+ makomo: { role: 'Fast dodge and hit', draft: ['3 pts; with Sabito.'], plan: ['Flowing Step on the round their special is ready.'] },
+ hinatsuru: { role: 'Cheap poison', draft: ['2 pts; with Makio and Suma, or Tengen.'], plan: ['Wisteria Kunai on a demon.'] },
+ makio: { role: 'Cheap damage', draft: ['2 pts; the best filler of the three wives.'], plan: ['Fierce Strike whenever ready.'] },
+ suma: { role: 'Cheap decoy', draft: ['2 pts; for the Three Wives bonus.'], plan: ['Panic Dodge to waste a big special.'] },
+ michikatsu: { role: 'Late-game damage', draft: ['9 pts; a mid-game anchor who peaks late. One version with Kokushibo.'], plan: ['Keep him alive and fire Envy of the Sun late.'] },
+ hakuji: { role: 'Fast fighter, grows when a teammate falls', draft: ['4 pts; one version with Akaza.'], plan: ['Soryu Kick when ready; he hits harder after his Vow.'] },
+ tanjuro: { role: 'Team healer', draft: ['3 pts; best with any Tanjiro and a big team.'], plan: ['Hinokami Dance every time it recharges.'] },
  muzan_final: { role: 'Giant: two lives, area damage', draft: ['18 pts; better at 30 than 20.'], plan: ['Thorned Flesh Whips whenever ready; he comes back once at 20%, so trade freely early.'] },
 };

@@ -17,7 +17,7 @@ const FIGHT_STYLE = {
   hantengu:'claw', sekido:'thunder', karaku:'wind', aizetsu:'slash', urogi:'sound', enmu:'dream', rui:'thread', kyogai:'drum',
   hand:'claw', swamp:'claw',
   daki:'thread', nakime:'sound', zohakuten:{attack:'thunder', special:'beast'}, susamaru:'compass', yahaba:'wind', kanae:'flower',
-  tanjiro_demon:'blood', nezuko_awakened:'blood', typezero:'slash',
+  tanjiro_demon:'blood', nezuko_awakened:'blood', typezero:'slash', makomo:'water', hinatsuru:'slash', makio:'slash', suma:'slash', michikatsu:'moon', hakuji:'compass', tanjuro:'sun', dojo_fighter:'slash',
 };
 const styleOf = (u, move) => { const s=FIGHT_STYLE[u.sk]||'slash'; return typeof s==='string' ? s : (s[move]||s.attack); };
 
@@ -51,16 +51,39 @@ const FX_ART = {
   slash: () => `<line class="draw" x1="10" y1="16" x2="90" y2="84"/>`,
 };
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
-// Akaza's is drawn under his target instead. Tengen's plays on every hit, like a drum.
-const SPECIAL_FX = {zenitsu:'bolt', doma:'frost', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering'};
+// Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
+// a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
+const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', yoriichi:'sunslash', yoriichi_old:'sunslash',
+  muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep'};
+const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
 const SFX_ART = {
   bolt: () => `<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline class="b1" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/><polyline class="b2" points="-2,12 18,20 30,8 46,24 60,10 76,26 102,14"/></svg>`,
-  frost: () => rep(4, i=>`<svg class="fc c${i}" viewBox="0 0 100 100"><polygon points="0,0 100,0 70,12 86,26 52,24 60,48 34,34 28,62 16,40 0,100"/></svg>`),
   mist: () => rep(5, i=>`<i style="--d:${i*.09}s;--y:${8+i*19}%"></i>`),
   drum: () => rep(3, i=>`<i style="--d:${i*.16}s"></i>`),
   claws: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(3, i=>`<line class="c1" style="--d:${i*.05}s" x1="${8+i*24}" y1="-4" x2="${38+i*24}" y2="104"/>`)}${rep(3, i=>`<line class="c2" style="--d:${.26+i*.05}s" x1="${92-i*24}" y1="-4" x2="${62-i*24}" y2="104"/>`)}</svg>`,
+  tiger: () => `<span class="tband"><b>炎虎</b></span>`,
+  ninth: () => `<span class="nburst"></span><span class="nspin"></span><b class="nk">煉獄</b>`,
+  sunslash: () => `<span class="sdark"></span><i class="sline"></i>`,
+  whips: () => whipArt(5),
+  whips2: () => whipArt(9),
+  flail: () => `<span class="fchain"></span><svg class="fball" viewBox="0 0 100 100"><circle cx="50" cy="50" r="27"/>${rep(10, i=>`<polygon points="50,6 57,26 43,26" transform="rotate(${i*36} 50 50)"/>`)}</svg>`,
+  ribbon: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(3, i=>`<path style="--d:${i*.1}s" d="M-4 ${38+i*10} C18 ${10+i*12} 30 ${80-i*8} 50 ${44+i*6} S82 ${12+i*12} 104 ${52+i*6}"/>`)}</svg>`,
+  snake: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><path class="body" d="M-6 58 C8 30 20 30 32 52 S56 74 68 50 S90 32 106 46"/><path class="scale" d="M-6 58 C8 30 20 30 32 52 S56 74 68 50 S90 32 106 46"/></svg>`,
+  sleep: () => `<span class="lid t"></span><span class="lid b"></span><svg class="spiral" viewBox="0 0 100 100"><path d="M50 50 m0 -6 a6 6 0 1 1 -6 6 a12 12 0 1 1 12 12 a18 18 0 1 1 -18 -18 a26 26 0 1 1 26 26 a34 34 0 1 1 -34 -34"/></svg>`,
+  crack: () => `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="50,0 46,22 54,34 44,52 56,68 48,100"/><polyline points="46,22 26,30 12,24"/><polyline points="54,34 74,40 90,32"/><polyline points="44,52 22,62 8,60"/><polyline points="56,68 78,72 94,84"/></svg>${['怒','楽','哀','喜'].map((k,i)=>`<b style="--x:${[-34,34,-34,34][i]}vmin;--y:${[-30,-30,30,30][i]}vmin">${k}</b>`).join('')}`,
   firering: () => `<span class="firering"><i></i><i></i><i></i></span>`,
 };
 const compassFx = () => `<svg class="compassfx" viewBox="0 0 100 100" aria-hidden="true"><g>${rep(8, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/4)}" y2="${50+48*Math.sin(i*Math.PI/4)}"/>`)}${rep(6, i=>`<polygon points="50,6 54,16 50,26 46,16" transform="rotate(${i*60} 50 50)"/>`)}<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="46"/></g></svg>`;
+// Drawn on each fighter a special lands on, so the eye stays on the damage (views.js targetFx, by character)
+const TARGET_ART = {
+  kokushibo: () => rep(3, i=>`<path class="moon" style="--d:${i*.12}s" transform="rotate(${i*120-20} 50 50)" d="M26 22 A36 36 0 1 0 74 22 A28 28 0 1 1 26 22 Z"/>`),
+  sanemi: () => rep(3, i=>`<path class="gust" style="--d:${i*.08}s" transform="rotate(${i*120} 50 50)" d="M50 4 C86 8 96 44 76 62 C66 70 54 66 52 56"/>`),
+  shinobu: () => rep(5, i=>`<g transform="rotate(${i*72} 50 50)"><g class="fly" style="--d:${i*.08}s"><ellipse cx="44" cy="10" rx="7" ry="5" transform="rotate(-24 44 10)"/><ellipse cx="56" cy="10" rx="7" ry="5" transform="rotate(24 56 10)"/></g></g>`),
+  daki: () => rep(3, i=>`<ellipse class="sash" style="--d:${i*.1}s" cx="50" cy="${28+i*22}" rx="48" ry="9" transform="rotate(${i*14-14} 50 50)"/>`),
+  nezuko: () => rep(7, i=>`<path class="pflame" style="--d:${i*.05}s" d="M${14+i*12} 92 C${6+i*12} 66 ${24+i*12} 54 ${14+i*12} ${26+(i%3)*12} C${32+i*12} 48 ${30+i*12} 72 ${22+i*12} 92 Z"/>`),
+  rui: () => rep(4, i=>`<line class="thr" style="--d:${i*.06}s" x1="${i%2?100:0}" y1="${14+i*22}" x2="${i%2?0:100}" y2="${34+i*16}"/>`),
+};
+// Doma's Frozen Lotus: ice petals open around each fighter it hits, leaving the middle clear for the damage
+const lotusFx = () => `<svg class="lotusfx" viewBox="0 0 100 100" aria-hidden="true">${rep(8, i=>`<g transform="rotate(${i*45} 50 50)"><path style="--d:${i*.05}s" d="M50 2 C60 10 60 20 50 28 C40 20 40 10 50 2 Z"/></g>`)}</svg>`;
 // The effect drawn over a fighter: style art plus the style's colour class
 const fxArt = (style, extra='') => `<svg class="fxl sty-${style} ${extra}" viewBox="0 0 100 100" aria-hidden="true">${(FX_ART[style]||FX_ART.slash)()}</svg>`;

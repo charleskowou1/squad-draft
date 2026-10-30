@@ -1591,12 +1591,9 @@ body.tvmode .awt{font-size:2rem}
 .sfx-bolt .b2{stroke:#fff;stroke-width:5}
 @keyframes boltdraw{0%{stroke-dashoffset:400;opacity:1}35%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
 @keyframes boltflash{0%,18%{background:transparent}26%{background:rgba(255,245,190,.75)}100%{background:transparent}}
-:has(> .sfx-bolt) .stage .pop,:has(> .sfx-bolt) .apop{animation-delay:.65s!important}
-.sfx-frost{animation:frostin 2.2s ease-out both}
-.sfx-frost svg{width:46vmin;height:46vmin;inset:auto;fill:rgba(205,238,255,.5);filter:drop-shadow(0 0 10px rgba(150,215,255,.7));animation:frostgrow 2.2s ease-out both}
-.sfx-frost .c0{top:0;left:0;--r:0deg}.sfx-frost .c1{top:0;right:0;--r:90deg}.sfx-frost .c2{bottom:0;right:0;--r:180deg}.sfx-frost .c3{bottom:0;left:0;--r:270deg}
-@keyframes frostin{0%{box-shadow:inset 0 0 0 0 rgba(170,225,255,0)}30%,70%{box-shadow:inset 0 0 90px 10px rgba(170,225,255,.5)}100%{box-shadow:inset 0 0 0 0 rgba(170,225,255,0)}}
-@keyframes frostgrow{0%{transform:rotate(var(--r)) scale(0);opacity:0}30%,70%{transform:rotate(var(--r)) scale(1);opacity:1}100%{transform:rotate(var(--r)) scale(1.05);opacity:0}}
+:has(> .sfx-bolt) .stage .pop,:has(> .sfx-bolt) .apop,:has(> .sfx-tiger) .stage .pop,:has(> .sfx-tiger) .apop{animation-delay:.65s!important}
+:has(> .sfx-ninth) .stage .pop,:has(> .sfx-ninth) .apop{animation-delay:1s!important}
+:has(> .sfx-sunslash) .stage .pop,:has(> .sfx-sunslash) .apop{animation-delay:1.15s!important}
 .sfx-mist i{position:absolute;left:-30%;top:var(--y);width:160%;height:34%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(225,235,245,.92),rgba(225,235,245,0) 70%);filter:blur(10px);animation:mistpass 2.2s var(--d) ease-in-out both}
 @keyframes mistpass{0%{transform:translateX(-45%);opacity:0}35%,62%{transform:translateX(0);opacity:1}100%{transform:translateX(45%);opacity:0}}
 .sfx-drum i{position:absolute;top:50%;left:50%;width:30vmin;height:30vmin;margin:-15vmin;border-radius:50%;border:6px solid rgba(214,165,77,.85);animation:drumring .8s var(--d) ease-out both}
@@ -1615,4 +1612,105 @@ body.tvmode .awt{font-size:2rem}
 .compassfx line,.compassfx circle{fill:none;stroke:#7fd8ff;stroke-width:1.1;filter:drop-shadow(0 0 3px #ff7ad9)}
 .compassfx polygon{fill:#ff9be3}
 @keyframes compassopen{0%{transform:scale(.2) rotate(-90deg);opacity:0}35%{transform:scale(1) rotate(0);opacity:1}75%{opacity:1}100%{transform:scale(1.1) rotate(30deg);opacity:0}}
-@media (prefers-reduced-motion:reduce){.sfx,.compassfx{display:none}}
+/* Dead Calm stays on any one fighter in the spotlight while their team is under it */
+.st-on .waterring,.st-by .waterring{inset:-12px -14px}
+.acard .waterring{inset:-14px}
+/* Doma: ice petals around the target, the middle stays clear */
+.lotusfx{position:absolute;top:50%;left:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);overflow:visible;pointer-events:none;z-index:2}
+.st-on .lotusfx{top:38%}
+.acard .lotusfx{top:34%;width:112%}
+.lotusfx path{fill:rgba(205,240,255,.9);stroke:#fff;stroke-width:.5;filter:drop-shadow(0 0 4px #7fd0ff);opacity:0;animation:lotusopen 1.7s var(--d) ease-out both}
+@keyframes lotusopen{0%{opacity:0;transform:translateY(14px)}30%{opacity:1;transform:none}72%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-4px)}}
+/* Rengoku: Flame Tiger tears across the screen; Ninth Form swallows it in fire */
+.tband{position:absolute;left:0;right:0;top:calc(50% - 21vmin);height:42vmin;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,rgba(255,80,20,0),#ff5a1c 22%,#ffc24a 50%,#ff5a1c 78%,rgba(255,80,20,0));filter:drop-shadow(0 0 26px #ff6a1f);animation:tigerrun .95s cubic-bezier(.3,.7,.5,1) both}
+.tband b{font-family:var(--display);font-size:30vmin;line-height:1;color:#fff6dc;text-shadow:0 0 24px #ff3b12}
+@keyframes tigerrun{0%{transform:translateX(-115%) skewX(-16deg)}45%{transform:translateX(0) skewX(-16deg)}62%{transform:translateX(0) skewX(-16deg);opacity:1}100%{transform:translateX(115%) skewX(-16deg);opacity:0}}
+.nburst{position:absolute;inset:0;background:radial-gradient(circle,#fff3c4 0,#ffae3a 24%,#ff4a12 52%,rgba(150,20,0,.75) 76%,rgba(120,10,0,0) 100%);animation:ninthburst 1.3s ease-out both}
+.nspin{position:absolute;top:50%;left:50%;width:170vmax;height:170vmax;margin:-85vmax;border-radius:50%;background:conic-gradient(rgba(255,240,180,.75),rgba(255,70,10,0) 25%,rgba(255,240,180,.75) 50%,rgba(255,70,10,0) 75%,rgba(255,240,180,.75));mix-blend-mode:screen;animation:ninthburst 1.3s ease-out both,calmspin 1.3s linear}
+.sfx-ninth .nk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:34vmin;color:#fff;text-shadow:0 0 30px #ff2a00,0 0 8px #000;animation:ninthstamp 1.3s ease-out both}
+@keyframes ninthburst{0%{opacity:0;scale:.2}28%{opacity:1;scale:1}66%{opacity:1}100%{opacity:0;scale:1.3}}
+@keyframes ninthstamp{0%{opacity:0;scale:2}26%{opacity:1;scale:1}70%{opacity:1;scale:1}100%{opacity:0;scale:1.05}}
+/* One Attack's quick strikes, as one beat (Yoriichi, Type Zero) */
+.stage.flurry .st-by{animation:lunge .3s ease-in-out var(--n)}
+.stage.flurry.rev .st-by{animation:lunge-l .3s ease-in-out var(--n)}
+.stage.flurry .st-on{animation:recoil .3s .08s ease-out var(--n)}
+.stage.flurry.rev .st-on{animation:recoil-l .3s .08s ease-out var(--n)}
+.stage .pop.fl{margin-left:calc((var(--i) - .5) * 40px);animation:floatup 1.2s calc(.1s + var(--i) * .3s) ease-out both}
+/* On the fighter a special lands on */
+.tfx{position:absolute;top:38%;left:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);overflow:visible;pointer-events:none;z-index:2}
+.acard .tfx{top:34%;width:112%}
+.tfx *{animation:tfxin 1.5s var(--d,0s) ease-out both}
+@keyframes tfxin{0%{opacity:0;transform:scale(.6)}28%{opacity:1;transform:none}72%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.08)}}
+.tfx .moon{fill:#c9a6ff;filter:drop-shadow(0 0 5px #8a4dff)}
+.tfx .gust{fill:none;stroke:#c9f5da;stroke-width:3.5;stroke-linecap:round;filter:drop-shadow(0 0 4px #49d48b)}
+.tfx .fly{fill:#c58bff;filter:drop-shadow(0 0 4px #9b5cff);animation:flyin 1.3s var(--d) ease-in both}
+@keyframes flyin{0%{opacity:0;transform:translateY(-16px)}30%{opacity:1}75%{opacity:1;transform:translateY(26px)}100%{opacity:0;transform:translateY(34px)}}
+.tfx .sash{fill:none;stroke:#f06aa6;stroke-width:6;stroke-dasharray:90 30;filter:drop-shadow(0 0 3px #000)}
+.tfx .pflame{fill:#ff6fb5;opacity:.9;filter:drop-shadow(0 0 6px #ff2f92)}
+.tfx .thr{stroke:#f4f4f4;stroke-width:1.2;filter:drop-shadow(0 0 2px #fff)}
+/* Yoriichi: everything stops, one clean gold cut */
+.sdark{position:absolute;inset:0;background:#000;animation:sdark 1.7s ease-in-out both}
+.sline{position:absolute;top:50%;left:-10%;width:120%;height:5px;background:linear-gradient(90deg,transparent,#ffe9a8,#fff,#ffe9a8,transparent);box-shadow:0 0 26px 6px #ffc24a;transform:rotate(-12deg) scaleX(0);animation:sline 1.7s ease-out both}
+@keyframes sdark{0%{opacity:0}22%,58%{opacity:.86}100%{opacity:0}}
+@keyframes sline{0%,52%{transform:rotate(-12deg) scaleX(0);opacity:1}62%{transform:rotate(-12deg) scaleX(1);opacity:1}100%{transform:rotate(-12deg) scaleX(1);opacity:0}}
+/* Muzan's whips */
+.sfx-whips path,.sfx-whips2 path{fill:none;stroke:#b0132a;stroke-width:6;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 5px #ff2a44);stroke-dasharray:600;stroke-dashoffset:600;animation:whip 1.15s var(--d) cubic-bezier(.2,.8,.3,1) both}
+@keyframes whip{0%{stroke-dashoffset:600;opacity:1}38%{stroke-dashoffset:0;opacity:1}72%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+/* Gyomei's flail */
+.fball{inset:auto!important;top:50%!important;left:50%!important;width:34vmin!important;height:34vmin!important;margin:-17vmin;fill:#8d9098;stroke:#2c2d31;stroke-width:1.5;animation:flail 1.2s cubic-bezier(.6,0,.9,.5) both}
+.fchain{position:absolute;top:0;left:50%;width:6px;height:50%;margin-left:-3px;background:repeating-linear-gradient(#a7aab0 0 8px,#3b3c40 8px 12px);transform-origin:top;animation:chain 1.2s cubic-bezier(.6,0,.9,.5) both}
+@keyframes flail{0%{transform:translateY(-90vh) rotate(-30deg)}45%{transform:none}52%{transform:scale(1.08)}82%{transform:none;opacity:1}100%{opacity:0}}
+@keyframes chain{0%{transform:scaleY(0)}45%{transform:none}82%{opacity:1}100%{opacity:0}}
+:has(> .sfx-flail) .reswide,:has(> .sfx-flail) .board{animation:drumshake .5s .5s ease-in-out}
+/* Mitsuri's ribbon blade, Obanai's snake */
+.sfx-ribbon path{fill:none;stroke:#ff8ec7;stroke-width:7;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px #ff4f9e);stroke-dasharray:500;stroke-dashoffset:500;animation:whip 1.3s var(--d) ease-out both}
+.sfx-snake path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;stroke-dasharray:60 1000;stroke-dashoffset:60;animation:slither 1.3s ease-in-out both}
+.sfx-snake .body{stroke:#d9d9e6;stroke-width:15;filter:drop-shadow(0 0 5px #7a7ad0)}
+.sfx-snake .scale{stroke:#4c4c8a;stroke-width:5}
+@keyframes slither{0%{stroke-dashoffset:60;opacity:1}85%{opacity:1}100%{stroke-dashoffset:-150;opacity:0}}
+/* Enmu's sleep: eyelids close over the screen */
+.lid{position:absolute;left:0;right:0;height:52%;background:#07060c;animation:lidt 2s ease-in-out both}
+.lid.t{top:0;transform-origin:top}.lid.b{bottom:0;transform-origin:bottom}
+@keyframes lidt{0%,100%{transform:scaleY(0)}38%,62%{transform:scaleY(1)}}
+.sfx-sleep .spiral{inset:auto;top:50%;left:50%;width:44vmin;height:44vmin;margin:-22vmin;fill:none;stroke:#b28cff;stroke-width:2.2;animation:sleepspin 2s ease-in-out both}
+@keyframes sleepspin{0%,22%{opacity:0;transform:rotate(0)}45%,62%{opacity:1}85%,100%{opacity:0;transform:rotate(300deg)}}
+/* Hantengu breaks into his emotions */
+.sfx-crack polyline{fill:none;stroke:#fff;stroke-width:3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 6px #ff4a2c);stroke-dasharray:300;stroke-dashoffset:300;animation:whip 1.5s ease-out both}
+.sfx-crack b{position:absolute;top:50%;left:50%;font-family:var(--display);font-size:15vmin;color:#ff7a5c;text-shadow:0 0 14px #000;margin:-.6em;animation:emotion 1.6s .25s ease-out both}
+@keyframes emotion{0%{transform:none;opacity:0}40%{transform:translate(var(--x),var(--y));opacity:1}78%{opacity:1;transform:translate(var(--x),var(--y))}100%{opacity:0;transform:translate(var(--x),var(--y))}}
+/* The blow that ends the match, and a team's last fighter */
+.sfx-final{animation:finalflash 2.2s ease-out both}
+.sfx-final i{position:absolute;left:0;right:0;height:13vh;background:#000;animation:barin 2.2s ease-out both}
+.sfx-final i:first-child{top:0}.sfx-final i:nth-child(2){bottom:0}
+.sfx-final b{position:absolute;bottom:15vh;left:0;right:0;text-align:center;font-family:var(--display);font-size:13vmin;color:#fff;text-shadow:0 0 22px #ff3b12;animation:ninthstamp 2.2s .25s ease-out both}
+@keyframes finalflash{0%{background:#fff;backdrop-filter:grayscale(1)}12%{background:transparent;backdrop-filter:grayscale(1)}75%{backdrop-filter:grayscale(1)}100%{backdrop-filter:none}}
+@keyframes barin{0%{transform:scaleY(0)}15%,80%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+.sfx-lone{box-shadow:inset 0 0 120px 30px rgba(0,0,0,.75);animation:lonein 2.2s ease-out both}
+.sfx-lone>span{position:absolute;bottom:17vh;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 16px;white-space:nowrap;border-radius:99px;background:rgba(0,0,0,.8);border:1px solid var(--tc);font-family:var(--display)}
+@keyframes lonein{0%{opacity:0}15%,80%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.sfx,.compassfx,.lotusfx,.tfx{display:none}}
+/* Home: Join a TV, Codex and Settings as one slim row of round icons (CK) */
+.setbar{gap:6px;margin-bottom:-10px}
+.setbar .gear{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;margin:0;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--line-2);color:var(--fg);font-size:.95rem;line-height:1;cursor:pointer}
+.setbar .gear:hover{background:rgba(255,255,255,.12)}
+.setbar .gear.tvbtn,.setbar .gear.tvjoinbtn{display:none}
+@media (min-width:900px){ .setbar .gear.tvbtn{display:inline-flex} }
+@media (max-width:899px){ .setbar .gear.tvjoinbtn{display:inline-flex} }
+.tvsteps{margin:6px 0 8px;padding-left:20px;color:var(--ink-2);font-size:.92rem;line-height:1.45}
+.tvsteps li{margin-bottom:3px}
+/* The Endless Dream */
+.orderlist{grid-template-columns:repeat(3,1fr);gap:10px}
+.ocard{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:12px;background:var(--surface);border:2px solid var(--line-2);color:var(--fg);cursor:pointer}
+.ocard.on{border-color:var(--gold)}
+.ocard.first{box-shadow:0 0 14px rgba(214,165,77,.6)}
+.ocard .onum{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#111;font-weight:800;display:flex;align-items:center;justify-content:center}
+.memories{display:flex;flex-direction:column;gap:10px;margin:10px 0 18px}
+.memory{padding:12px 14px;border-left:3px solid var(--gold);border-radius:4px 10px 10px 4px;background:rgba(214,165,77,.07)}
+.memory h3{margin:2px 0 4px;font-family:var(--display)} .memory p{margin:0;color:var(--ink-2);line-height:1.5}
+.ceremony{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 8px;text-align:center}
+.ceremony .cline{margin:0;font-family:var(--display);font-size:1.1rem}
+.ceremony .titles .seg{flex-wrap:wrap;justify-content:center}
+/* The Sunrise Theme: earned at the Hashira Ceremony */
+body.sunrisetheme{--accent:#d98a2b;background:linear-gradient(180deg,#3a2413 0,#1d1613 42%)}
+body.sunrisetheme .hero .kanji{background:linear-gradient(160deg,#ffc24a,#d9582b)}
+body.sunrisetheme h1{color:#ffe2a8}

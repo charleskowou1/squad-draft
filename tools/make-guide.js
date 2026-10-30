@@ -136,6 +136,8 @@ Special rules on single cards:
 - Yahaba's Vector Arrows (moves first): every hit the chosen enemy throws this round misses.
 - Awakened Nezuko can't Defend (berserk).
 - Yoriichi Type Zero can't be poisoned: it's a puppet.
+- Hakuji's Vow: the first time a teammate falls, he gets +3 PWR for the match.
+- Michikatsu shares a family with Kokushibo, and Hakuji with Akaza: only one version per draft.
 - Yoriichi Type Zero strikes three times per Attack at low PWR (great vs low DEF, poor vs tanks). It's a puppet:
   it doesn't count as Yoriichi, so Muzan isn't scared of it.
 - Second versions share a slot with the original (one or the other is dealt): Demon King Tanjiro (rare),

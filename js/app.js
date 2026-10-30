@@ -1,7 +1,7 @@
 /* ================= APP =================
    Rendering and taps. The only file that touches the DOM. */
 const app = document.getElementById('app'), sheet = document.getElementById('sheet');
-const VIEWS = {credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
+const VIEWS = {ceremony:vCeremony, order:vOrder, credits:vCredits, setup:vSetup, modeset:vModeSet, codex:vCodex, lobby:vLobby, story:vStory, scene:vScene, scout:vScout, spin:vSpin, draft:vDraft, pass:vPass, plan:vPlan, ready:vReady, result:vResult, over:vOver};
 const quickMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 let scored = false, spinShown = null;   // spinShown: the number game already revealed on this screen (for its ding)
 // which screen to draw: online, each phone shows the win screen on its own; a crow re-plan reuses the move screen
@@ -36,6 +36,7 @@ function render(){
   // sunrise (round SUNRISE_ROUND), then it burns hotter each round after (--heat)
   const before=4, sky=fighting && !!S.teams && (st ? !!st.sunrise : S.round>SUNRISE_ROUND-before);
   document.body.classList.toggle('dawn', sky);
+  document.body.classList.toggle('sunrisetheme', !!hashiraTitle());
   if(sky){ const n=st?st.twist.survive:before, from=st?1:SUNRISE_ROUND-before;
     document.body.style.setProperty('--dawn', Math.max(0, Math.min(1, (S.round-from)/(st?n-1:before))).toFixed(3));
     document.body.style.setProperty('--heat', st ? 0 : Math.max(0, Math.min(1, (S.round-SUNRISE_ROUND)/4)).toFixed(3)); }
@@ -82,14 +83,17 @@ function warmClips(){
 function playRound(){
   S.play={k:0, done:false, steps:playSteps(S.log)};
   const step=()=>{
-    if(S.info || S.settings){ S._t=setTimeout(step,300); return; }   // paused while an info card or Settings is open
+    if(S.info || S.settings || S.quitAsk){ S._t=setTimeout(step,300); return; }   // paused while an info card, Settings or Quit is open
     if(S.play.k>=S.play.steps.length-1){ S.play.done=true; if(storyEnd() || storyMid()) return; render(); return; }
     S.play.k++; const [a,b]=S.play.steps[S.play.k], lines=S.log.slice(a,b+1), line=lines[0];
     S.play.clip = b>a || quickMotion() ? null : clipStep(line);   // a move clip for this beat, if the fighter has one
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
-    if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line);
+    const flurry=b>a && line.move==='attack', special=fxName(lines,a), m=momentOf(lines,b,S.log[b]);
+    const noise=()=>{ if(flurry) lines.forEach((l,i)=>setTimeout(()=>sfxForLine(l),i*280)); else if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line); };
+    if(special==='sunslash') setTimeout(noise,950); else noise();   // Yoriichi: silence, then the one clean cut
     render();
-    const t = b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line);
+    const extra=(special==='sunslash'?900:0)+(!m?0:m.k==='final'?1500:m.k==='lone'?900:0);
+    const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
     const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
     S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
   };
@@ -130,7 +134,7 @@ function newPlanTurn(){ S.focus=null; S.info=null; window.scrollTo(0,0); }
 // A story win: save it, remember what it unlocks (first win only), then play the ending scene before the results
 function storyWon_(){
   const st=STAGES[S.stage], id=st.id; S.newUnlocks = loadStory().cleared.includes(id) ? [] : STAGE_UNLOCKS[id]; saveStoryClear(id);
-  S.goalsNow=goalsMet(st); S.starsGot=S.goalsNow.filter(Boolean).length; S.starsBest=stageStars(id); saveStars(id,S.goalsNow);
+  S.goalsNow=goalsMet(st); S.starsGot=S.goalsNow.filter(Boolean).length; S.starsBest=stageStars(id); if(starsOn()) saveStars(id,S.goalsNow);
   Object.assign(S,{phase:'scene', sceneOutro:true, sceneUnlock:false, sceneVs:false, sceneAt:0, sceneInstant:false, sceneShownAt:Date.now()}); sfx('win');
 }
 // After the ending scene: the stars earned (and any unlocks), then the results screen
@@ -172,7 +176,7 @@ const ACTIONS = {
   cfgbans(v){ keepNames(); setCfg('bans',v==='on'); },
   cfgduo(v){ keepNames(); setCfg('duo',v==='on'); },
   start: startDraft,
-  home(){ if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
+  home(){ setCampaign('main'); if(UPDATE_READY) return location.reload(); clearTimeout(S._t); clearTimeout(HANDOFF); HANDOFF=null; if(ONLINE.net){ ONLINE.net.leave(); ONLINE.net=null; ONLINE.last=null; ONLINE.offActs=ONLINE.offState=null; }
     if(S.ctl) ctlStop();
     const tv=S.tv, mode=S.mode==='daily'?'cpu':S.mode; S={tv, phase:tv?'tvhome':'setup',mode,vol:S.vol,speed:S.speed,vibeOn:S.vibeOn,clipsOn:S.clipsOn,install:S.install,names:mode==='local'?localNames():[S.names[S.me||0]||S.names[0]]}; useModeCfg(mode); },
   clips(v){ S.clipsOn=v==='on'; try{ localStorage.setItem('squad-draft-clips',v) }catch(e){} },
@@ -249,6 +253,14 @@ const ACTIONS = {
   volmusic(v){ S.vol={...S.vol, music:+v}; saveVolumes(S.vol); applyVolumes(); },
   volsfx(v){ S.vol={...S.vol, sfx:+v}; saveVolumes(S.vol); applyVolumes(); sfx('pick'); },
   storymap(){ keepNames(); clearTimeout(S._t); S.mode='story'; S.phase='story'; S.storySel=nextStage(); S.storyScroll=true; },
+  campaign(v){ setCampaign(v); S.storySel=nextStage(); S.storyScroll=true; window.scrollTo(0,0); },
+  dreamstart(){ setCampaign('dream'); ACTIONS.storymap(); },
+  orderpick(v){ S.waveOrder=S.waveOrder||[]; const i=S.waveOrder.indexOf(v); if(i>=0) S.waveOrder.splice(i,1); else S.waveOrder.push(v); },
+  orderstart(){ const st=STAGES[S.stage], o=S.waveOrder||[]; S.waveOrder=[...o, ...st.mine.filter(id=>!o.includes(id))]; beginStage(); window.scrollTo(0,0); },
+  ceremony(){ S.phase='ceremony'; S.title=null; window.scrollTo(0,0); },
+  titlepick(v){ S.title=v; },
+  titlesave(){ if(!S.title) return; saveHashiraTitle(S.title); S.titleDone=true; sfx('win'); },
+  cfgdemon(v){ keepNames(); setCfg('demonSide',v==='on'); },
   storysel(v){ S.storySel = S.storySel===+v ? -1 : +v; },
   stage(v){ if(!stageUnlocked(+v)) return; startStage(+v); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
   stagedraft(v){ if(!stageCleared(+v)) return; startStage(+v,true); S.sceneShownAt=Date.now(); S.sceneInstant=false; window.scrollTo(0,0); },
@@ -342,7 +354,7 @@ function findArt(){
 // Place pictures behind the cutscenes: img/places/<battle id>.jpg/png/webp, or <arc id> for a whole arc (optional,
 // see img/README.txt)
 function findPlaces(){
-  [...STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const exts=['jpg','png','webp','jpeg'];
+  [...ALL_STAGES.map(st=>st.id), ...Object.keys(ARCS)].forEach(arc=>{ const exts=['jpg','png','webp','jpeg'];
     const tryNext=()=>{ const ext=exts.shift(); if(!ext) return;
       const im=new Image(); im.onload=()=>{ PLACE_ART[arc]=im.src; if(S.phase==='scene') render(); }; im.onerror=tryNext; im.src=`img/places/${arc}.${ext}`; };
     tryNext(); });
@@ -436,7 +448,7 @@ async function tryTakeOver(){
   }
 }
 async function onlineCreate(){
-  const name=myName(); S.names[0]=name; S.onlineMsg='Connecting…'; render();
+  const name=titled(myName()); S.names[0]=name; S.onlineMsg='Connecting…'; render();
   try{
     const net=await firebaseNet('host'); let code=null;
     for(let i=0;i<8 && !code;i++){ const c=newRoomCode(); if(await net.create(c,name)) code=c; }
@@ -452,7 +464,7 @@ async function onlineJoin(){
   if(/^[A-Z]{6}$/.test(code)) return asyncJoin(code);
   if(/^[A-Z]{4}$/.test(code) && await tvRoom(code)) return ctlJoin(code);   // a TV's code: this phone becomes its controller
   if(!/^[A-Z]{4}$/.test(code)){ S.onlineMsg='Type the code from the other phone (4 or 6 letters).'; return render(); }
-  const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
+  const name=titled(myName()); S.names[0]=name; S.onlineMsg='Joining…'; render();
   try{
     const net=await firebaseNet('guest'), {room, seat}=await net.join(code,name);
     ONLINE.net=net; ONLINE.offActs=ONLINE.offState=null; ONLINE.tookFrom=[];
@@ -482,7 +494,7 @@ function asyncNet(db, code){
   };
 }
 async function asyncCreate(){
-  const name=myName(); S.names[0]=name; S.onlineMsg='Connecting…'; render();
+  const name=titled(myName()); S.names[0]=name; S.onlineMsg='Connecting…'; render();
   try{
     const db=await firebaseReady(), c=useModeCfg('online'), now=Date.now();
     const state=JSON.stringify({phase:'lobby', n:2, names:[name], budget:c.budget, poolType:c.poolType, maxTeam:c.maxTeam, bansOn:!!c.bans, async:true, hostSeat:-1, duo:false, matchNo:0});
@@ -494,7 +506,7 @@ async function asyncCreate(){
 }
 async function asyncJoin(code){
   if(myGame(code)) return openGame(code);
-  const name=myName(); S.names[0]=name; S.onlineMsg='Joining…'; render();
+  const name=titled(myName()); S.names[0]=name; S.onlineMsg='Joining…'; render();
   try{
     const db=await firebaseReady(), snap=await db.ref('games/'+code).get();
     if(!snap.exists()) throw new Error('No game with that code.');

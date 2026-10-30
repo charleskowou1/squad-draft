@@ -174,6 +174,26 @@ add({id:'typezero',name:'Yoriichi Type Zero',short:'Type Zero',g:'傀',type:'Tra
 add({id:'urokodaki',name:'Sakonji Urokodaki',short:'Urokodaki',g:'師',type:'Former Water Hashira',cost:4,hp:26,pow:7,spd:7,def:4,
   passive:'Mentor: Tanjiro, Giyu and Sabito on his team get +1 DEF.',
   sig:{name:'Water Wheel',desc:'Strike for PWR+3.',cd:2,kind:'single'}});
+// The Endless Dream's fighters (CK, Oct 30, 2026). Michikatsu is a version of Kokushibo and Hakuji a version of Akaza:
+// one per draft, and they're dealt half as often as the demon they became.
+add({id:'makomo',name:'Makomo',short:'Makomo',g:'菰',type:'Water · fox mask',cost:3,hp:16,pow:6,spd:11,def:2,
+  sig:{name:'Flowing Step',desc:'Moves early. Slips away so attacks miss her this round, and strikes for PWR.',cd:3,kind:'single'}});
+add({id:'hinatsuru',name:'Hinatsuru',short:'Hinatsuru',g:'雛',type:"Kunoichi · Tengen's wife",cost:2,hp:14,pow:4,spd:8,def:2,
+  sig:{name:'Wisteria Kunai',desc:'Strike for PWR and poison the target for 3 rounds: 4 a round on demons, 2 on humans.',cd:3,kind:'single'}});
+add({id:'makio',name:'Makio',short:'Makio',g:'牧',type:"Kunoichi · Tengen's wife",cost:2,hp:16,pow:5,spd:7,def:2,
+  sig:{name:'Fierce Strike',desc:'Strike for PWR+3.',cd:3,kind:'single'}});
+add({id:'suma',name:'Suma',short:'Suma',g:'須',type:"Kunoichi · Tengen's wife",cost:2,hp:14,pow:3,spd:9,def:2,
+  sig:{name:'Panic Dodge',desc:'Moves first. Dodges everything this round, and flails at a random enemy for PWR.',cd:3,kind:'auto',prio:3}});
+add({id:'michikatsu',fam:'kokushibo',sk:'michikatsu',name:'Michikatsu Tsugikuni',short:'Michikatsu',g:'道',type:'Human swordsman',cost:9,hp:48,pow:15,spd:11,def:5,
+  sig:{name:'Envy of the Sun',desc:'Strike for PWR plus the round number (up to +6). He only gets stronger.',cd:3,kind:'single'}});
+add({id:'hakuji',fam:'akaza',sk:'hakuji',name:'Hakuji',short:'Hakuji',g:'狛',type:'Human · Soryu fists',cost:4,hp:26,pow:8,spd:9,def:2,
+  passive:'Vow: the first time a teammate falls, he gets +3 PWR for the rest of the match.',
+  sig:{name:'Soryu Kick',desc:'Strike for PWR+3.',cd:3,kind:'single'}});
+add({id:'tanjuro',name:'Tanjuro Kamado',short:'Tanjuro',g:'炭',type:'Keeper of the dance',cost:3,hp:18,pow:5,spd:6,def:2,
+  sig:{name:'Hinokami Dance',desc:'His whole team heals 3. He never tires: it recharges in 2 rounds.',cd:2,kind:'self'}});
+// A nameless enemy for one Endless Dream battle: never dealt, not in the Codex
+add({id:'dojo_fighter',name:'Dojo Swordsman',short:'Swordsman',g:'剣',type:'Rival dojo',spawn:true,cost:2,hp:16,pow:6,spd:6,def:2,
+  sig:{name:'Dirty Trick',desc:'Strike for PWR+2.',cd:3,kind:'single'}});
 // Kagaya never attacks: his basic move (in place of Attack) heals the team. His special sacrifices him so the Hashira
 // awaken their Marks (awakenMark() in engine.js). Killed by an enemy first, nobody awakens.
 add({id:'kagaya',name:'Kagaya Ubuyashiki',short:'Kagaya',g:'産',type:'Corps Master',cost:2,hp:18,pow:2,spd:5,def:1,
@@ -195,12 +215,21 @@ add({id:'mice',name:'Muscle Mice',short:'Muscle Mice',g:'鼠',type:"Tengen's mic
   sig:{name:'Flex!',desc:`Every fighter on your team gets +${MICE_PWR} PWR for this round.`,kind:'helper'}});
 add({id:'hotaru',name:'Hotaru Haganezuka',short:'Hotaru',g:'鋼',type:'Swordsmith · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Reforged Blade',desc:'At the end of the round, your fighter with the longest wait for their special has it cut to 1 round (ready the round after next). Works on a special fired that same round, so you can use him in round 1.',kind:'helper'}});
+add({id:'aoi',name:'Aoi Kanzaki',short:'Aoi',g:'葵',type:'Butterfly Estate · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Field Medicine',desc:'Cures all poison on your team, and your most hurt fighter heals 4.',kind:'helper'}});
+add({id:'chuntaro',name:'Chuntaro',short:'Chuntaro',g:'雀',type:"Zenitsu's sparrow · back-pocket helper",helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Wake Up!',desc:'Wakes one stunned fighter so they can act, and your whole team gets +2 SPD this round.',kind:'helper'}});
+add({id:'goto',name:'Goto',short:'Goto',g:'隠',type:'Kakushi · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Carried to Safety',desc:"Carries your most hurt fighter off for a round: they can't be hit, and they can't act.",kind:'helper'}});
+add({id:'tecchin',name:'Tecchin',short:'Tecchin',g:'鉄',type:'Swordsmith chief · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
+  sig:{name:'Masterwork Edge',desc:"Your hardest hitter's attacks ignore DEF this round.",kind:'helper'}});
 // Kiriya (also speaks in the story finale): a trap on one of your fighters for one round
 add({id:'kiriya',name:'Kiriya Ubuyashiki',short:'Kiriya',g:'産',type:'Corps commander · back-pocket helper',helper:true,cost:1,hp:1,pow:0,spd:0,def:0,
   sig:{name:'Ambush Orders',desc:`Pick one of your fighters. This round, every enemy that attacks them takes ${AMBUSH_DMG} damage back.`,kind:'helper'}});
 
 // A few words shown under each fighter's Special button, like "hit one enemy" under Attack
 const SPECIAL_TAGS = {
+  makomo:'dodge + hit', hinatsuru:'hit + poison', makio:'strong hit', suma:'dodge + random hit', michikatsu:'hit grows each round', hakuji:'strong hit', tanjuro:'team heals 3', dojo_fighter:'strong hit',
   yoriichi:'hit all, stops regen', yoriichi_old:'huge hit, ignores DEF',
   muzan:'hit all, heal self', muzan_final:'hit all, heal self', kokushibo:'hit all enemies', doma:'hit all enemies',
   akaza:'big hit', gyutaro:'hit all + poison', daki:'hit all enemies', nakime:'send an enemy away', zohakuten:'hit all, through Defend',
@@ -219,6 +248,7 @@ const SPECIAL_TAGS = {
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });
 // One short line each fighter says when their special fires (shown on the fight stage)
 const SPECIAL_QUOTES = {
+  makomo:'Don’t be stiff. Flow.', hinatsuru:'Hold still. This won’t take long.', makio:'Get out of my way!', suma:'I don’t want to die!', michikatsu:'For once, look at me.', hakuji:'I swore I’d protect them.', tanjuro:'Breathe. Then dance.', dojo_fighter:'Nobody beats our dojo!',
   yoriichi:'Sun Breathing has thirteen forms. This is the last.', yoriichi_old:'Even now, my sword has not dulled.',
   muzan:'I decide who lives.', muzan_final:'I will not die. Not to the sun, not to you.', kokushibo:'Moonlight, cut them down.',
   doma:'Let me save you all.', daki:'How dare you look at me like that!', nakime:'The castle answers to me.',
@@ -244,6 +274,17 @@ const MARK_PASSIVE = 'Mark awakened: boosted stats and the special recharges 1 r
 // Codex lore: a line in the character's voice and a sentence of background, shown on each card in the Codex.
 // Looked up by card id, then by family (so Mark versions share their character's lore).
 const LORE = {
+  makomo: ['Your body is strong. You just haven’t realized it.', 'One of Urokodaki’s lost pupils, she taught Tanjiro from beyond the grave alongside Sabito.'],
+  hinatsuru: ['We’re Lord Tengen’s wives. We can handle this.', 'The eldest of Tengen’s three wives, a calm kunoichi with wisteria kunai.'],
+  makio: ['Quit crying and fight, Suma!', 'Tengen’s fiery second wife, as loud as she is strong.'],
+  suma: ['I don’t want to do this!', 'Tengen’s youngest wife. She panics constantly, and somehow survives everything.'],
+  michikatsu: ['I wanted to be you.', 'Yoriichi’s elder twin, before envy of his brother turned him into Kokushibo.'],
+  hakuji: ['I’ll protect you for the rest of my life.', 'A boy who fought with his bare hands for the people he loved, long before he became Akaza.'],
+  tanjuro: ['There is a place where everything goes clear.', 'Tanjiro’s frail father, who could dance the Hinokami Kagura through a whole winter night.'],
+  aoi: ['Stop moving, or it won’t heal.', 'She runs the Butterfly Estate’s sickroom. Nobody argues with her twice.'],
+  chuntaro: ['Chirp!', 'Zenitsu’s sparrow, and very tired of Zenitsu.'],
+  goto: ['Why is it always me carrying you?', 'A Kakushi who has hauled more injured slayers than anyone alive.'],
+  tecchin: ['A blade is only as good as its maker.', 'The tiny chief of the Swordsmith Village, and its greatest smith.'],
   yoriichi: ['I was born to defeat you.', 'The first Breathing user and the creator of Sun Breathing. In four hundred years, nobody came closer to killing Muzan.'],
   yoriichi_old: ['Are you a demon now, brother?', 'At eighty-five he still faced his twin Kokushibo, and died with his sword raised mid-swing.'],
   muzan: ['I am the closest thing to perfection.', 'The first demon. A thousand years of hiding, afraid only of the sun and the man who wielded it.'],

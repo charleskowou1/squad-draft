@@ -67,6 +67,10 @@ const CLIPS = {
   muzan_final:   {special: 'clips/muzan_final-special.jpg',    // Thorned Flesh Whips: a manga panel, no video exists
                   regen: 'clips/muzan-regen.mp4'},
   yoriichi_old:  {special: 'clips/yoriichi_old-special.jpg'},  // The Last Strike: a single manga panel
+  hakuji:        {special: 'https://media.tenor.com/JOGk6f__jd4AAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},
+  tanjuro:       {special: 'https://media.tenor.com/FjuEaNP16-AAAAPo/demon-slayer-tanjiro.mp4'},       // the Hinokami dance in the snow
+  aoi:           {use: 'https://media.tenor.com/t61s6eT3YwoAAAPo/aoi-kanzaki-aoi.mp4'},
+  chuntaro:      {use: 'https://media.tenor.com/B1PJ7zsydZsAAAPo/zenitsu-spirrow-chuntaro.mp4'},
   // back-pocket helpers: `use` plays when the helper is used (start of the round)
   chachamaru:   {use: 'https://media.tenor.com/_WSjCdYJ3QoAAAPo/chachamaru-kimetsu-no-yaiba.mp4'},
   crow:         {use: 'https://media.tenor.com/Rec9bEkDErUAAAPo/kasugai.mp4'},
@@ -79,7 +83,7 @@ const CLIPS = {
 // A clip's sound plays instead of the usual effect for that moment.
 const CLIP_SOUNDS = {
   akaza:   {special: 'sounds/akaza-special.mp3'},     // "Destructive Death: Compass Needle"
-  gyomei:  {special: 'sounds/gyomei-special.mp3'},    // "Stone Breathing! Third Form! Stone Skin!"
+  gyomei:  {special: 'sounds/gyomei-special.mp3'},    // "Stone Breathing!"
   rengoku: {special: 'sounds/rengoku-special.mp3',    // "Fifth Form! Flame Tiger!"
             ninth:   'sounds/rengoku-ninth.mp3'},     // "The Ninth Form! Rengoku!"
   giyu: {special: 'sounds/giyu-special.mp3'},   // "Dead Calm" (CK's YouTube pick, 0:18.2-0:22.9; covers Giyu ✦)
