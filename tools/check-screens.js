@@ -82,7 +82,7 @@ function check(games){
       vOver();
     }catch(e){ storyErrors++; if(!first) first='story stage '+i+': '+e.stack; errors++; }
   }
-  } setCampaign('main'); try{ S.title='Water'; vCeremony(); S.titleDone=true; vCeremony(); vMemories(); }catch(e){ errors++; first=first||'ceremony: '+e.stack; }
+  } setCampaign('main'); try{ S.title='Water'; vCeremony(); S.titleDone=true; vCeremony(); }catch(e){ errors++; first=first||'ceremony: '+e.stack; }
   return errors ? errors+' runs crashed. First error:\\n'+first : 'All '+games+' games and all '+STAGES.length+' story stages drew every screen without errors ('+mids+' Mark awakening scenes, '+(globalThis.TVN||0)+' TV board beats).';
 }
 `);

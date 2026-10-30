@@ -23,8 +23,7 @@ const CLIPS = {
   rui:          {special: 'https://media.tenor.com/8F1cpYMAkQoAAAPo/demon-slayer-kimetsu-no-yaiba.mp4'},   // Cutting Thread Cage
   shinobu:      {special: 'https://media.tenor.com/ows-n9TDResAAAPo/shinobu-kocho-demon-slayer.mp4'},     // Wisteria Poison (butterfly sting)
   tanjiro_mark: {special: 'https://media.tenor.com/c24bU_rb8lQAAAPo/demon-slayer.mp4',        // Hinokami Kagura (Mark)
-                 selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4',
-                 transparent:'clips/tanjiro-transparent.mp4'},   // attacking from the Selfless State: the Transparent World   // Selfless State
+                 selfless:'https://media.tenor.com/dwK2WAD5wJYAAAPo/tanjiro-infinity-castle.mp4'},   // Selfless State
   tanjiro_demon:{special: 'clips/tanjiro_demon-special.mp4'},   // Demon King's Rampage: CK's Tenor clip, first 4 s
   akaza:        {special: 'https://media.tenor.com/bcnPa1vZe3cAAAPo/akaza-demon-slayer.mp4',  // Destructive Death: Compass Needle
                  annihilation: 'clips/akaza-annihilation.mp4',   // Annihilation Type: CK's GIF, converted, served with the game
@@ -89,10 +88,10 @@ const CLIP_SOUNDS = {
   giyu: {special: 'sounds/giyu-special.mp3'},   // "Dead Calm" (CK's YouTube pick, 0:18.2-0:22.9; covers Giyu ✦)
 };
 // What each moment is called (shown on the clip box)
-const CLIP_ACTS = {transparent:'Transparent World', use:'Back pocket', poison:'Poisoned', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
+const CLIP_ACTS = {use:'Back pocket', poison:'Poisoned', special:'', attack:'Attack', regen:'Regenerates', heal:'Heals', defend:'Guards', ko:'Knockout', fall:'Falls', revive:'Rises again', split:'Splits'};
 // Moments that repeat every round (attacks, guarding, regenerating) show their clip at most once every few rounds
 // per fighter, so long matches don't drag. Specials and one-off moments always play.
-const CLIP_REPEAT = ['attack','defend','regen','poison','transparent'], CLIP_GAP = 3;
+const CLIP_REPEAT = ['attack','defend','regen','poison'], CLIP_GAP = 3;
 // Moments that play every time for a character instead of every CLIP_GAP rounds (CK: Doma's regen and poison)
 const CLIP_ALWAYS = {doma:['regen','poison']};
 
@@ -100,7 +99,6 @@ const clipSet = (src, u) => u && (src[u.id] || (BYID[u.id] && src[BYID[u.id].fam
 // The moment a log line shows and whose it is: {act, u}
 function clipMoment(line){
   // a back-pocket helper isn't on the battlefield: it gets a stand-in with its card id, name and owner
-  if(line.transparent) return {act:'transparent', u:findU(line.on)};
   if(line.helper) return {act:'use', u:{uid:`h-${line.hp}-${line.helper}`, id:line.helper, sk:line.helper, name:BYID[line.helper].short, p:line.hp, helper:true}};
   const by=line.by&&findU(line.by), on=line.on&&findU(line.on), has=(u,a)=>!!(clipSet(CLIPS,u)||{})[a];
   switch(line.fx){

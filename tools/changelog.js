@@ -2,6 +2,7 @@
 // (CACHE 'squad-draft-vNN'), which goes up with every push. tools/make-guide.js prints this at the top of the guide.
 // Add a line here with every push (CK, Oct 28, 2026), then rebuild the guide: node tools/make-guide.js
 module.exports = [
+  [95, '2026-10-30', 'Sound stops when you leave the game; the bottom bar can no longer cover buttons; slayers slash demon cards, each breathing style with its own cut; Yoriichi\'s Thirteen Forms; Genya\'s new card; many more animations; softer final KO; Memories and the Transparent World clip removed.'],
   [94, '2026-10-30', 'The Endless Dream: a second story of 18 battles after the main one, 7 new fighters and 4 new helpers, Memories, Demon Side, and the 72-star reward; many new animations, quick multi-hit attacks, Quit during rounds, slimmer home buttons, TV directions.'],
   [93, '2026-10-30', 'Big update: Slayers and Demons pools, Unlimited points, one online game with the number game, 24 new clips, voice lines, new backgrounds, new special animations, a smarter computer that defends, Nezuko conquers the sun, Type Zero poison-proof, Kagaya 18 HP, Catlove Shower passes Defend.'],
   [92, '2026-10-28', 'Giyu\'s voice line fixed: the "Dead calm" part was cut off, now the whole line plays.'],

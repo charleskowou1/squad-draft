@@ -243,6 +243,7 @@ const SPECIAL_TAGS = {
   tanjiro:'big hit, ignores DEF', nezuko:'hit all enemies', zenitsu:'first, double hit', inosuke:'2 random hits',
   kanao:'early strong hit', genya:'heal + PWR up', tamayo:'heal an ally', yushiro:'hide an ally',
   sabito:'ally +2 PWR', urokodaki:'strong hit', kagaya:'Hashira awaken Marks', murata:'strong hit',
+  aoi:'cure poison + heal', chuntaro:'wake + team +2 SPD', goto:'protect one fighter', tecchin:'one fighter ignores DEF',
   chachamaru:'most hurt heals ½', crow:'see enemy moves', kiriya:`attackers take ${AMBUSH_DMG}`, mice:`team +${MICE_PWR} PWR, 1 round`,
 };
 ROSTER.forEach(c=>{ c.sig.tag = SPECIAL_TAGS[c.sk]; });

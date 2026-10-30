@@ -345,12 +345,13 @@ function vTvBoard(b){
     // a fighter hit down to 0 stays standing at 0% this beat; it falls on its own "falls!" beat (flash 'ko')
     const up=o.hp===undefined ? u.alive : hp>0 || (o.from>0 && o.flash!=='ko');
     const h=hp>0?pct(u,hp):0, from=o.from===undefined?h:Math.max(0,pct(u,o.from)), r=roles.get(u.uid)||{cls:'',fx:''};
-    const state = r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
+    const koLine=beat&&b.lines.find(l=>l.ko===u.uid), cut=!!koLine && slicedBy(koLine,u), dust=crumbleKind(koLine);
+    const state = dust ? ` crumbling ${dust}` : cut ? ` cutdown cut-${cutStyle(koLine)}` : r.cls.includes('kod') || o.flash==='ko' ? ' felled' : !up ? ' dead' : o.flash==='spawn' ? ' spawned' : !r.cls && o.flash==='hit' ? ' struck' : !r.cls && o.flash==='heal' ? ' fx-heal' : '';
     const back = beat && !over && !b.involved.has(u.uid) && !r.cls && !state ? ' back' : '';
-    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">
-      ${o.calm&&b.involved.has(u.uid)?waterRing():''}<div class="aart">${artOf(u)?`<img src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
+    const inner=`${o.calm&&b.involved.has(u.uid)?waterRing():''}<div class="aart">${artOf(u)?`<img src="${artOf(u)}" alt="">`:`<span class="ak">${u.g}</span>`}</div>${r.fx}
       <div class="ainfo"><span class="anm">${esc(u.name)}</span><span class="ahp${up&&h<=LOW?' low':''}"><span class="abar"><i class="${from!==h?'drain':''}" style="width:${h}%;--from:${from}%"></i></span><b>${hp>0||o.hp===undefined&&up?h+'%':'KO'}</b></span></div>
-      ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}</div>`; };
+      ${!playing&&up?statusMarks(u, u.cd===0&&!u.stun):''}`;
+    return `<div class="acard${state}${r.cls}${back}${o.lost?' lost':''}${o.smolder?' smolder':''}${o.hid?' talisman':''}${u.bound?' bound'+u.bound:''}" style="--tc:${pc(u.p)}${r.dx!==undefined?`;--dx:${r.dx}px;--dy:${r.dy}px`:''}">${dust?`<div class="cr-pic">${inner}</div>${crumblePic(dust,'').replace('<span class="cr-pic"></span>','')}`:cut?`<div class="sl-wrapb">${inner}</div><div class="sl-wrapt">${inner}</div>`:inner}</div>`; };
   const big = beat && !over && b.lines.some(bigHit), kos = beat && !over && b.lines.some(l=>l.fx==='ko'||l.ko);
   const wait=tvWaiting(), goal=S.mode==='story'&&STAGES[S.stage]?twistText(STAGES[S.stage]):'';
   const roundOver = !playing && S.phase==='result';
@@ -364,7 +365,7 @@ function vTvBoard(b){
   const heading = playing ? [`Round ${S.round}${b.total?` · ${b.step} of ${b.total}`:''}`, 'The clash'] : [`Round ${S.round}`, roundOver ? 'Round over' : S.phase==='scout' ? 'The crow is back' : 'Choose your moves'];
   return `${topbar(heading[0], heading[1], false)}
     ${strengthBar(me, playing?u=>b.cur.hp[u.uid]:undefined, playing?u=>b.prev.hp[u.uid]:undefined)}
-    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}" style="--w:${W}px;--ch:${BOARD.ch}px">
+    <div class="board${big?' big':''}${kos?' k':''}${over?' covered':''}${playing?'':' bwait'}${playing&&!beat&&S.round===1?' opener':''}" style="--w:${W}px;--ch:${BOARD.ch}px">
       <div class="arow top${calmRow(rowU[0])}">${rowU[0].map(card).join('')}${calmRow(rowU[0])?waterRing():''}</div>
       <div class="aband">${band}</div>
       <div class="arow bot${calmRow(rowU[1])}">${rowU[1].map(card).join('')}${calmRow(rowU[1])?waterRing():''}</div>

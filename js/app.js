@@ -90,9 +90,9 @@ function playRound(){
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
     const flurry=b>a && line.move==='attack', special=fxName(lines,a), m=momentOf(lines,b,S.log[b]);
     const noise=()=>{ if(flurry) lines.forEach((l,i)=>setTimeout(()=>sfxForLine(l),i*280)); else if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line); };
-    if(special==='sunslash') setTimeout(noise,950); else noise();   // Yoriichi: silence, then the one clean cut
+    noise();
     render();
-    const extra=(special==='sunslash'?900:0)+(!m?0:m.k==='final'?1500:m.k==='lone'?900:0);
+    const extra=(special==='thirteen'?350:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
     const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
     const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
     S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
@@ -322,7 +322,10 @@ const ACTIONS = {
 // Wake audio on any touch or key, not only button taps (phones only allow it inside a tap; see unlockSound)
 ['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev, unlockSound, {passive:true}));
 // coming back to the game after switching apps or locking the phone: try to wake audio straight away too
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && AC && AC.state!=='running') try{ AC.resume(); }catch(e){} });
+// Sound stays in the game (CK): leaving it silences everything, and coming back picks up where it left off
+const hushSound = () => { try{ if(AC && AC.state==='running') AC.suspend(); }catch(e){} };
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) hushSound(); else if(AC && AC.state!=='running') try{ AC.resume(); }catch(e){} });
+window.addEventListener('pagehide', hushSound);
 document.addEventListener('click',e=>{
   unlockSound();   // phones only allow sound after a tap
   const b=e.target.closest('[data-a]'); if(!b||b.disabled) return;
@@ -335,7 +338,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||
 // borrows its base character's (giyu_mark → giyu); other versions borrow too (tengen_retired → tengen). No picture: kanji.
 // Pictures that aren't a card's own: Mark Tanjiro in the Selfless State, and in the Transparent World while he strikes from it. (Rengoku's bloodied last smile is only in
 // his ending cutscene, scenes/rengoku-heart.jpg, not on his card: CK, Oct 28, 2026)
-const EXTRA_ART = ['tanjiro_selfless','tanjiro_transparent'];
+const EXTRA_ART = ['tanjiro_selfless','tanjiro_transparent','genya_demon'];
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
   let waiting=ids.length;

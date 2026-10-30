@@ -144,13 +144,14 @@ const ATTACK_SFX = {
   spear:  v=>{ hiss('highpass',2000,5000,.1,.12*v,.2); tone('sine',160,70,.12,.25*v,.3); },
 };
 const sfxOn = () => AC && (S.vol||loadVolumes()).sfx>0;
-function sfx(name){ if(!sfxOn()) return; try{ if(AC.state!=='running') AC.resume(); SFX[name] && SFX[name](); }catch(e){} }
-function styleSfx(style, v){ if(!sfxOn()) return; try{ (STYLE_SFX[style]||STYLE_SFX.slash)(v); }catch(e){} }
+function sfx(name){ if(!sfxOn() || document.hidden) return;   // nothing plays once you've left the game
+  try{ if(AC.state!=='running') AC.resume(); SFX[name] && SFX[name](); }catch(e){} }
+function styleSfx(style, v){ if(!sfxOn() || document.hidden) return; try{ (STYLE_SFX[style]||STYLE_SFX.slash)(v); }catch(e){} }
 // The sound for one playback line: the base sound plus the attacker's breathing style
 // A character's own sound for a clip moment (js/clips.js CLIP_SOUNDS): downloaded once, played at the effects volume
 const CLIP_AUDIO = {};
 function clipSound(url){
-  if(!sfxOn()) return;
+  if(!sfxOn() || document.hidden) return;
   const go=buf=>{ try{ if(AC.state!=='running') AC.resume(); const s=AC.createBufferSource(); s.buffer=buf; s.connect(SFX_OUT); s.start(); }catch(e){} };
   if(CLIP_AUDIO[url] instanceof AudioBuffer) return go(CLIP_AUDIO[url]);
   if(CLIP_AUDIO[url]) return;   // still loading
@@ -164,7 +165,7 @@ function sfxForLine(line){
   const style = by && typeof styleOf==='function' ? styleOf(by, line.move) : null;
   if(line.fx==='special'){ sfx('cutin'); if(style) setTimeout(()=>styleSfx(style, 1), 250); return; }
   // a basic attack: the fighter's own weapon, their breathing style on top
-  if(line.fx==='hit' && by && line.move==='attack' && sfxOn()){
+  if(line.fx==='hit' && by && line.move==='attack' && sfxOn() && !document.hidden){
     const w=WEAPON[by.id] || (by.demon ? 'claw' : 'blade');
     try{ ATTACK_SFX[w](hard?1.25:1); }catch(e){}
     if(style) setTimeout(()=>styleSfx(style, hard?.75:.55), 300);
