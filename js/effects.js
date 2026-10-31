@@ -53,7 +53,7 @@ const FX_ART = {
 // Big moments for a few specials (CK): drawn over the whole screen on the special's first hit, keyed by character (sk).
 // Akaza's and Doma's are drawn on their targets instead, so the eye stays on the damage. Tengen's plays on every hit, like
 // a drum. Rengoku has one for each special (tiger, then ninth for Ninth Form).
-const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
+const SPECIAL_FX = {zenitsu:'bolt', muichiro:'mist', tengen:'drum', inosuke:'claws', tanjiro:'firering', rengoku:'tiger', zohakuten:'dragons', kaigaku:'darkbolt', sanemi:'tornado', gyutaro:'sickles', susamaru:'temari', sekido:'bolt', suma:'kunai', akaza:'annihil', yoriichi:'sunform', yoriichi_old:'sunform',
   muzan:'whips', muzan_final:'whips2', gyomei:'flail', mitsuri:'ribbon', obanai:'snake', enmu:'sleep'};
 const whipArt = n => `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${rep(n, i=>`<path style="--d:${i*.06}s" d="M${i%2?104:-4} ${16+i*(70/n)} C30 ${(i*37)%100} 70 ${100-(i*53)%100} ${i%2?-4:104} ${30+(i*29)%50}"/>`)}</svg>`;
 const SFX_ART = {
@@ -78,11 +78,29 @@ const SFX_ART = {
   biwa: () => rep(3, i=>`<i style="--d:${i*.14}s"></i>`)+'<b>♪</b>',
   tilt: () => '',
   sunsweep: () => '<i></i>',
+  tornado: () => `<span class="twist">${rep(9, i=>`<i style="--i:${i};--w:${26+i*7}vmin"></i>`)}</span><b class="wk">風</b>`,
+  sickles: () => rep(2, i=>`<svg class="sick s${i}" viewBox="0 0 100 100"><path d="M50 8 C86 12 96 54 70 80 C84 50 72 26 50 24 C28 26 16 50 30 80 C4 54 14 12 50 8 Z"/></svg>`),
+  temari: () => '<span class="ball"></span>',
+  kunai: () => rep(8, i=>`<i style="--a:${i*45+12}deg;--d:${i*.04}s"></i>`),
+  somehow: () => '<b class="smh">Somehow!</b>',
+  h_mice: () => rep(5, i=>`<img class="hrun mice" style="--i:${i}" src="${ART.mice||''}" alt="">`),
+  h_crow: () => `<img class="hrun fly" src="${ART.crow||''}" alt="">`,
+  h_chachamaru: () => `<img class="hrun pad" src="${ART.chachamaru||''}" alt=""><b class="hcup">💊</b>`,
+  h_goto: () => `<img class="hrun haul" src="${ART.goto||''}" alt="">`,
+  h_aoi: () => `<b class="hcup tea">🍵</b><span class="hwash"></span>`,
   firering: () => `<span class="firering"><i></i><i></i><i></i></span>`,
 };
 const compassFx = () => `<svg class="compassfx" viewBox="0 0 100 100" aria-hidden="true"><g>${rep(8, i=>`<line x1="50" y1="50" x2="${50+48*Math.cos(i*Math.PI/4)}" y2="${50+48*Math.sin(i*Math.PI/4)}"/>`)}${rep(6, i=>`<polygon points="50,6 54,16 50,26 46,16" transform="rotate(${i*60} 50 50)"/>`)}<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="46"/></g></svg>`;
 // Drawn on each fighter a special lands on, so the eye stays on the damage (views.js targetFx, by character)
 const TARGET_ART = {
+  kanae: () => rep(9, i=>`<ellipse class="tfi fall" style="--d:${i*.08}s" cx="${10+i*10}" cy="${6+(i*37)%30}" rx="4" ry="2.2" transform="rotate(${i*40} ${10+i*10} 20)"/>`),
+  hakuji: () => rep(14, i=>`<g transform="translate(${8+(i*37)%84} ${8+(i*53)%80})"><polygon class="tfi fist" style="--d:${i*.06}s" points="0,-9 3,-3 9,-3 4,1 6,8 0,4 -6,8 -4,1 -9,-3 -3,-3"/></g>`),
+  typezero: () => rep(6, i=>`<g transform="rotate(${i*60} 50 50)"><path class="tfi tzb" style="--d:${i*.07}s" d="M50 50 L54 8 L50 2 L46 8 Z"/></g>`),
+  yahaba: () => rep(5, i=>`<path class="tfi arrow" style="--d:${i*.09}s" d="M2 ${16+i*16} C34 ${4+i*16} 66 ${30+i*14} 94 ${14+i*16} M86 ${10+i*16} L96 ${14+i*16} L88 ${22+i*16}"/>`),
+  karaku: () => rep(3, i=>`<g transform="rotate(${i*120} 50 50)"><path class="tfi gust2" style="--d:${i*.08}s" d="M50 6 C84 10 92 46 74 62"/></g>`),
+  aizetsu: () => `<path class="tfi spear" d="M-30 92 L92 10 M92 10 L78 12 M92 10 L88 24"/>`,
+  urogi: () => rep(3, i=>`<circle class="tfi ringx2" style="--d:${i*.12}s" cx="50" cy="50" r="${18+i*14}"/>`),
+  hinatsuru: () => rep(6, i=>`<circle class="tfi puff" style="--d:${i*.08}s" cx="${22+(i*29)%60}" cy="${26+(i*41)%50}" r="${11+i%3*4}"/>`),
   knit: () => rep(9, i=>`<path class="tfi strand" style="--d:${i*.06}s" d="M${6+i*11} ${i%2?98:2} C${30+i*5} 40 ${70-i*5} 62 ${94-i*11} ${i%2?2:98}"/>`),
   crack: () => `<polyline class="tfi crk" points="50,2 44,24 56,36 42,54 58,70 48,98"/><polyline class="tfi crk" style="--d:.1s" points="44,24 22,32 8,26"/><polyline class="tfi crk" style="--d:.1s" points="56,36 78,44 94,36"/><polyline class="tfi crk" style="--d:.2s" points="42,54 20,64 6,62"/><polyline class="tfi crk" style="--d:.2s" points="58,70 80,74 96,86"/>`,
   charm: () => `<g class="tfi"><rect x="36" y="14" width="28" height="62" rx="2" fill="#f2ead8" stroke="#a33" stroke-width="1.2"/><circle cx="50" cy="44" r="8" fill="none" stroke="#a33" stroke-width="1.6"/><line x1="50" y1="24" x2="50" y2="66" stroke="#a33" stroke-width="1.2"/></g>`,
@@ -90,7 +108,6 @@ const TARGET_ART = {
   vase: () => `<path class="tfi pot" d="M34 6 H66 L62 18 C84 32 88 74 68 94 H32 C12 74 16 32 38 18 Z"/><path class="tfi potl" style="--d:.1s" d="M24 44 C38 52 62 52 76 44"/><path class="tfi potl" style="--d:.1s" d="M22 62 C38 70 62 70 78 62"/>`,
   tamayo: () => rep(7, i=>`<g transform="rotate(${i*360/7} 50 50)"><g class="tfi bloom" style="--d:${i*.07}s"><circle cx="50" cy="12" r="3"/>${rep(5, k=>`<ellipse cx="50" cy="6" rx="3.4" ry="6" transform="rotate(${k*72} 50 12)"/>`)}</g></g>`),
   kokushibo: () => rep(3, i=>`<g transform="rotate(${i*120-20} 50 50)"><path class="tfi moon" style="--d:${i*.12}s" d="M34 8 A22 22 0 1 0 66 8 A17 17 0 1 1 34 8 Z"/></g>`),
-  sanemi: () => rep(3, i=>`<g transform="rotate(${i*120} 50 50)"><path class="tfi gust" style="--d:${i*.08}s" d="M50 4 C86 8 96 44 76 62 C66 70 54 66 52 56"/></g>`),
   shinobu: () => rep(5, i=>`<g transform="rotate(${i*72} 50 50)"><g class="fly" style="--d:${i*.08}s"><ellipse cx="44" cy="10" rx="7" ry="5" transform="rotate(-24 44 10)"/><ellipse cx="56" cy="10" rx="7" ry="5" transform="rotate(24 56 10)"/></g></g>`),
   daki: () => rep(3, i=>`<g transform="rotate(${i*14-14} 50 50)"><ellipse class="tfi sash" style="--d:${i*.1}s" cx="50" cy="${28+i*22}" rx="48" ry="9"/></g>`),
   nezuko: () => rep(7, i=>`<path class="tfi pflame" style="--d:${i*.05}s" d="M${14+i*12} 92 C${6+i*12} 66 ${24+i*12} 54 ${14+i*12} ${26+(i%3)*12} C${32+i*12} 48 ${30+i*12} 72 ${22+i*12} 92 Z"/>`),

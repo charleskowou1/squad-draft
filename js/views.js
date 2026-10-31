@@ -732,14 +732,14 @@ function stage(line){
   const amt=line.t.match(/\[([+-])(\d+%)\]/);
   const pop=amt?`<span class="pop ${amt[1]==='-'?'dmg':'gain'}">${amt[1]==='-'?'−':'+'}${amt[2]}</span>`:'';
   const calm=calmSides(), ring=u=>calm.has(u.p)?waterRing():'';
-  const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line);
-  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u)}${role==='on'&&line.gone?kDoors:''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const cut=type==='ko' && slicedBy(line,on), dust=crumbleKind(line), act=line.move==='special'&&by?' by-'+by.sk:'';
+  const who=(u,role)=>`<div class="st-${role}">${role==='on'&&dust?crumblePic(dust,seal(u,'stg')):role==='on'&&cut?slicePic(u,seal(u,'stg'),cutStyle(line)):seal(u,'stg')}${ring(u)}${role==='on'&&line.gone?kDoors:''}${role==='by'?byFx(line):''}${role==='on'?art+pop+targetFx(line):''}${role==='by'&&type==='special'&&style?fxArt(style,'aura'):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   if(line.helper){ const h=BYID[line.helper];   // a back-pocket helper acting
     return `<div class="stage fx-${type} solo helperfx" aria-hidden="true"><span class="st-mark">${FX_MARK[type]||''}</span><div class="st-on">${seal(h,'stg')}<span class="st-nm">${esc(h.short)}</span></div></div>`; }
   const mark=`<span class="st-mark">${style&&(type==='hit'||type==='special')?STYLE_KANJI[style]:FX_MARK[type]||''}</span>`;
   const solo=on||by;
   if(line.calm && by) return stageCalm(by);
-  return `<div class="stage fx-${type||'none'}${cut||dust?' sliced':''}${line.gone?' goneaway':''} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
+  return `<div class="stage fx-${type||'none'}${cut||dust?' sliced':''}${line.gone?' goneaway':''}${line.shrink?' shrinking':''}${line.cover?' covering':''}${act} ${duo?'duo':'solo'}${rev?' rev':''}${style?' sty sty-'+style:''}" aria-hidden="true">
     ${duo ? (rev ? who(on,'on')+mark+who(by,'by') : who(by,'by')+mark+who(on,'on')) : solo ? mark+who(solo, on?'on':'by') : mark}</div>`;
 }
 // A slayer's killing blow on a demon cuts the card in two: the top half slides off (CK)
@@ -747,7 +747,7 @@ const slicedBy = (l, t) => { const a=l&&l.by&&findU(l.by); return !!(a && !l.wis
 // Each breathing style cuts its own way: its colour and angle (css .cut-<style>)
 const cutStyle = l => { const a=l&&l.by&&findU(l.by); return a ? styleOf(a, l.move==='special'?'special':'attack') : 'slash'; };
 // A demon burned away by the sun turns to ash; one killed by Shinobu turns purple and crumbles
-const crumbleKind = l => l && l.fx==='ko' ? (l.wist?'wist':l.ash?'ash':'') : '';
+const crumbleKind = l => l && l.fx==='ko' ? (l.resolve?'resolve':l.wist?'wist':l.ash?'ash':'') : '';
 const crumblePic = (kind, html) => `<span class="crumble ${kind}"><span class="cr-pic">${html}</span>${rep(10, i=>`<i style="--x:${(i*37)%100}%;--dx:${((i*53)%60)-30}px;--d:${(i%5)*.09}s"></i>`)}</span>`;
 const slicePic = (u, html, style='slash') => `<span class="slice cut-${style}"><span class="sl-b">${html}</span><span class="sl-t">${html}</span><i class="sl-line"></i></span>`;
 // A special's big moment for this beat (effects.js): over the whole screen, on its first hit (every hit for Tengen)
@@ -764,6 +764,8 @@ function fxName(lines, from){
 const beatFx = (lines, from) => { const name=fxName(lines,from); return name ? `<div class="sfx sfx-${name}" aria-hidden="true">${SFX_ART[name]()}</div>` : ''; };
 // The big moments of a match: the blow that ends it, a team down to its last fighter, Hantengu breaking apart
 function momentOf(lines, to, cur){
+  if(lines.some(l=>l.grit)) return {k:'somehow'};
+  const hlp=lines.find(l=>l.helper && SFX_ART['h_'+l.helper]); if(hlp) return {k:'h_'+hlp.helper};
   if(lines.some(l=>l.merged)) return {k:'merge'};
   if(lines.some(l=>l.sunrise)) return {k:'sunsweep'};
   if(lines.some(l=>l.kind==='drum')) return {k:'tilt'};
@@ -783,17 +785,21 @@ const flurryPct = lines => lines.reduce((a,l)=>a+(+((l.t.match(/\[-(\d+)%\]/)||[
 function stageFlurry(lines){
   const by=findU(lines[0].by), t=findU(lines[0].on), style=styleOf(by,'attack'), rev=by.p!==leftSide(), calm=calmSides(), ring=u=>calm.has(u.p)?waterRing():'';
   const pops=lines.map((l,i)=>{ const a=l.t.match(/\[-(\d+%)\]/); return `<span class="pop dmg fl" style="--i:${i}">${a?'−'+a[1]:l.fx==='miss'?'miss':'blocked'}</span>`; }).join('');
-  const side=(u,r)=>`<div class="st-${r}">${seal(u,'stg')}${ring(u)}${r==='on'?fxArt(style)+pops:''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
+  const side=(u,r)=>`<div class="st-${r}">${seal(u,'stg')}${ring(u)}${r==='on'?fxArt(style)+pops+(by.sk==='typezero'?artSvg('typezero'):''):''}<span class="st-nm" style="color:${pc(u.p)}">${esc(u.name)}</span></div>`;
   return `<div class="stage duo flurry sty sty-${style}${rev?' rev':''}" style="--n:${lines.length}" aria-hidden="true">${rev?side(t,'on')+side(by,'by'):side(by,'by')+side(t,'on')}</div>`;
 }
 function flurrySummary(lines){
   const by=findU(lines[0].by), t=findU(lines[0].on), n=lines.length, sum=flurryPct(lines);
   return fmtLog(`${by.name} strikes ${t.name} ${n===2?'twice':n+' times'}${sum?` [-${sum}%]`:''}.`);
 }
+// Drawn on the attacker: Makomo's afterimage, Michikatsu's shadow of what he becomes, the Swamp Demon's dark ripple
+const byFx = l => { const u=l.by&&findU(l.by); if(!u || l.move!=='special' || l.fx!=='hit') return '';
+  return u.sk==='makomo' ? `<span class="ghostcard">${seal(u,'stg')}</span>` : u.sk==='michikatsu' ? `<svg class="tfx sixeyes" viewBox="0 0 100 100" aria-hidden="true">${rep(6, i=>`<ellipse class="tfi" style="--d:${i*.08}s" cx="${i%2?68:32}" cy="${18+Math.floor(i/2)*26}" rx="13" ry="6"/>`)}</svg>` : u.sk==='swamp' ? `<svg class="tfx ripple" viewBox="0 0 100 100" aria-hidden="true">${rep(3, i=>`<ellipse class="tfi" style="--d:${i*.12}s" cx="50" cy="84" rx="${22+i*14}" ry="${6+i*3}"/>`)}</svg>` : ''; };
 // Akaza's Compass Needle opens under his target, Doma's Frozen Lotus around each of his
 const artSvg = k => `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART[k]()}</svg>`;
 const targetFx = l => { const by=l.by&&findU(l.by);
   const k=l.knit?'knit':l.ate?'crack':l.hid?'charm':l.trap?'wires':l.kind==='pot'?'vase':''; if(k) return artSvg(k); if(by && by.sk==='tamayo' && l.fx==='heal') return `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART.tamayo()}</svg>`;
+  if(by && by.sk==='yahaba' && l.move==='special' && l.fx==='stun') return artSvg('yahaba');
   if(!by || l.move!=='special' || !['hit','poison'].includes(l.fx)) return '';
   return by.sk==='akaza' ? (sigFor(l)==='annihilation' ? '' : compassFx()) : by.sk==='doma' ? lotusFx() : TARGET_ART[by.sk] && !['tamayo','knit','crack','charm','wires','vase'].includes(by.sk) ? `<svg class="tfx" viewBox="0 0 100 100" aria-hidden="true">${TARGET_ART[by.sk]()}</svg>` : ''; };
 // The teams under Dead Calm at this moment of the playback (it lasts the whole round)

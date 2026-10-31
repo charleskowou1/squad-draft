@@ -301,11 +301,14 @@ function boardRoles(b, pos){
     add(t, l.fx==='miss'?'dodged':l.fx==='block'?'blocked':'struck', (['hit','ko','burn'].includes(l.fx)&&style?fxArt(style):'')+targetFx(l)+`<span class="amark">${mark}</span>`+popHTML(l)); };
   const first=b.lines[0], by=first.by&&findU(first.by), type=first.fx||'';
   b.lines.forEach(l=>{ if(l.ko) add(findU(l.ko),'kod'); });
-  if(first.gone){ add(findU(first.on),'pulled',kDoors); return roles; }   // Nakime's biwa: dropped through the floor, off the screen
+  if(first.gone){ add(findU(first.on),'pulled',kDoors); return roles; }
+  if(first.shrink){ add(findU(first.on),'shrinking'); return roles; }
+  if(first.cover && by && pos.get(first.on)){ fly(by,pos.get(first.on),.85); add(findU(first.on),'fx-guard'); return roles; }
+  { const f=byFx(first); if(f) add(by,'',f); }   // Nakime's biwa: dropped through the floor, off the screen
   if(b.flurry && by){   // one Attack's quick strikes: one flight, one total
     const t=findU(first.on), sum=flurryPct(b.lines), style=styleOf(by,'attack');
     if(t && pos.get(t.uid)) fly(by, pos.get(t.uid), .8);
-    add(t,'struck',fxArt(style)+`<span class="amark">${STYLE_KANJI[style]||'斬'}</span>`+(sum?`<span class="apop dmg">−${sum}%</span>`:''));
+    add(t,'struck',fxArt(style)+(by.sk==='typezero'?artSvg('typezero'):'')+`<span class="amark">${STYLE_KANJI[style]||'斬'}</span>`+(sum?`<span class="apop dmg">−${sum}%</span>`:''));
     return roles;
   }
   if(b.group && by){   // a special that hits a whole team: the attacker dives at the middle of that row

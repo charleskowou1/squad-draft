@@ -533,7 +533,7 @@ function cpuPlan(p, level='hard'){
 const fx = (type, by, on) => ({fx:type, by:by?by.uid:null, on:on?on.uid:null, move:S.curMove||null});
 function L(t,c='',extra){ const hp={}; allUnits().forEach(u=>{ hp[u.uid]=u.hp; }); S.log.push(Object.assign({t,c,hp},extra)); }
 function target(u,tid){ let t=findU(tid); if(!t||!t.alive||sameSide(t.p,u.p)){ const a=foes(u.p); t=a.length?rnd(a):null; } return t; }
-function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',fx('heal',null,t)); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
+function fall(t,a){ if(t.hp>0) return; if(t.grit){ t.grit=false; t.hp=1; L(`${t.name} somehow survives on ${pct(t)}% health!`,'h',{...fx('heal',null,t), grit:true}); return; } if(t.revive){ t.hp=Math.ceil(t.max*t.revive); t.revive=0; L(`${t.name} falls… and rises again! Seven Hearts ${gained(t,t.hp)}.`,'x',{...fx('revive',null,t), knit:true}); return; }
   // how it fell, for playback: burned away by the sun, or killed by Shinobu's blade or wisteria
   const ash=t.demon && !a && sunUp() && !sunSafe(t), wist=t.demon && ((a&&a.fam==='shinobu') || (!a && t.poison && t.poison.src==='shinobu'));
   t.alive=false; L(`${t.name} falls!`,'k',{ko:t.uid, ash, wist, ...fx('ko',a,t)});
@@ -616,7 +616,7 @@ function special(u,pl){
     case 'gyokko': { const t=target(u,pl.t); if(t&&t.alive){ hit(u,t,u.pow-2,{ignoreDef:true}); stunT(t,'pot'); } break; }
     case 'sabito': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.pow+=2; L(`Sabito trains ${t===u?'himself':t.name}: +2 PWR for the rest of the match.`,'h',fx('buff',u,t)); break; }
     case 'muzan_final': { let n=0; en().forEach(e=>{ if(hit(u,e,u.pow-6,{ignoreDef:true,counter:false})>0) n++; }); if(u.alive&&n){ const h=Math.min(3*n,u.max-u.hp); u.hp+=h; L(`Final Muzan heals ${gained(u,h)}.`,'k',fx('heal',null,u)); } break; }
-    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',fx('guard',u,t)); break; }
+    case 'tengen_retired': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.defending=true; L(`Retired Tengen stands guard over ${t===u?'himself':t.name}. Half damage this round.`,'h',{...fx('guard',u,t), cover:t!==u}); break; }
     case 'yushiro': { let t=findU(pl.t); if(!t||!t.alive||!sameSide(t.p,u.p)) t=u; t.evade=true; L(`${t===u?'Yushiro':t.name} vanishes behind the talisman.`,'h',{...fx('guard',u,t), hid:true}); break; }
     case 'murata': hit(u,target(u,pl.t),u.pow+2); break;
     case 'giyu': players().filter(q=>sameSide(q,u.p)).forEach(q=>{ S.shield[q]=true; }); L(`${u.name}'s team can't be hurt this round.`,'h',{...fx('guard',u,null), calm:true}); break;
@@ -657,12 +657,12 @@ function special(u,pl){
     case 'karaku': hit(u,target(u,pl.t),u.pow+3); break;
     case 'aizetsu': hit(u,target(u,pl.t),u.pow+4); break;
     case 'urogi': hit(u,target(u,pl.t),u.pow+2); break;
-    case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',fx('heal',null,u)); break; }
+    case 'hantengu': { u.evade=true; const h=Math.min(6,u.max-u.hp); u.hp+=h; L(`Hantengu shrinks into hiding and heals ${gained(u,h)}.`,'h',{...fx('heal',null,u), shrink:true}); break; }
     case 'kaigaku': { const t=target(u,pl.t); hit(u,t,u.pow+3); const o=en().filter(e=>e!==t); if(o.length) hit(u,rnd(o),4,{ignoreDef:true}); break; }
     case 'enmu': en().forEach(e=>{ if(S.shield[e.p]||e.evade||hidden(e)) return; e.cd+=2; }); L('The enemy team falls into a deep sleep. Their specials are 2 rounds further away.','k',fx('stun',u,null)); break;
     case 'urokodaki': hit(u,target(u,pl.t),u.pow+3); break;
     case 'kagaya': { const ha=markReady(u); u.hp=0; u.alive=false;
-      L(`Kagaya gives his life for the Corps.`,'k',{ko:u.uid, ...fx('ko',null,u)});
+      L(`Kagaya gives his life for the Corps.`,'k',{ko:u.uid, resolve:true, ...fx('ko',null,u)});
       if(!ha.length){ L(`No Hashira is left to carry his will.`,'x',fx('ko',null,u)); break; }
       const was=ha.map(m=>({uid:m.uid, id:m.id, name:m.name, g:m.g, sk:m.sk, mark:m.mark, max:m.max}));   // playback shows them as they were until this line
       ha.forEach(m=>awakenMark(m,false,null,true));
