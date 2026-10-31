@@ -184,6 +184,7 @@ hr('8. MODES AND SETTINGS');
 out(`- Vs Computer difficulty: Easy (simple, random-ish), Normal (smart but sloppy), Hard (goes for knockouts, spreads
   damage, saves specials, uses helpers well). Hard beats Normal ~59%, Normal beats Easy ~57%.
 - Settings: points (10/20/30/Unlimited), pool (Random/All/Slayers/Demons), playback speed, sound.
+- Online clock: 1 minute per pick, 1 minute to watch a round, 2 minutes for moves. When time runs out the computer picks, and fighters block (those who can't block attack). In 2-player games it only runs while both players are in the game.
 - Online with 2 players: no need to be on at the same time, but it plays live if you are. Each phone drafts or locks in
   moves when it's that player's turn; a resolved round plays back right away, or the next time that player opens the game. The home screen lists
   these games and says whose turn it is. Both phones play the number game to decide who picks first; a tie is a coin flip.

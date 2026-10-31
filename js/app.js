@@ -47,7 +47,10 @@ function render(){
   cloudCheck();   // back up saved progress a few seconds after it changes
   music(ctl ? null : musicFor(view));   // the TV plays the music, not the controller phone   // each kind of screen has its own theme (cross-fades; nothing happens if it's already playing)   // wide landscape layout (tablets) for Local games
   const vids=new Map([...app.querySelectorAll('video[data-k],img[data-k]')].map(v=>[v.dataset.k,v]));   // a clip already playing keeps playing
+  // reuse the picture elements already on screen: a redraw never has to decode them again, so nothing blinks
+  const pics=new Map(); app.querySelectorAll('img:not([data-k])').forEach(im=>{ const k=im.getAttribute('src'); if(!pics.has(k)) pics.set(k,[]); pics.get(k).push(im); });
   beforeAwake(()=>{ app.innerHTML=VIEWS[view](); sheet.innerHTML=vSheet(); });
+  app.querySelectorAll('img:not([data-k])').forEach(im=>{ const old=(pics.get(im.getAttribute('src'))||[]).shift(); if(old){ old.className=im.className; im.replaceWith(old); } });
   app.querySelectorAll('video[data-k],img[data-k]').forEach(v=>{ const old=vids.get(v.dataset.k); if(old) v.replaceWith(old); else if(v.tagName==='VIDEO'){ v.onended=()=>{ if(v.duration<CLIP_LOOP){ v.currentTime=0; playVid(v); } }; playVid(v); } });
   warmClips();
   open.forEach(id=>{ const d=document.getElementById(id); if(d) d.open=true; });
@@ -90,9 +93,9 @@ function playRound(){
     if(lines.some(l=>l.ko) && navigator.vibrate && S.vibeOn!==false) navigator.vibrate([90,50,160]);
     const flurry=b>a && line.move==='attack', special=fxName(lines,a), m=momentOf(lines,b,S.log[b]);
     const noise=()=>{ if(flurry) lines.forEach((l,i)=>setTimeout(()=>sfxForLine(l),i*280)); else if(b>a){ sfx('bighit'); if(lines.some(l=>l.ko)) setTimeout(()=>sfx('ko'),250); } else if(S.play.clip && S.play.clip.sound) clipSound(S.play.clip.sound); else sfxForLine(line); };
-    noise();
+    if(special==='sunform'){ for(let i=0;i<13;i++) setTimeout(()=>sfx('slash'), 60+i*90); setTimeout(noise,1250); } else noise();   // Yoriichi: thirteen cuts, then they all land
     render();
-    const extra=(special==='sunform'?500:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
+    const extra=(special==='sunform'?1300:0)+(!m?0:m.k==='final'?600:m.k==='lone'?500:0);
     const t = extra*pace() + (flurry ? (quickMotion()?400:(1300+320*lines.length)*pace()) : b>a ? groupTime(lines) : line.fx==='awaken' ? Math.max(readTime(line), 3600*pace()) : readTime(line));
     const d=S.play.clip&&CLIP_DUR[S.play.clip.src], full=d&&d>=CLIP_LOOP&&S.speed!=='fast' ? Math.min(CLIP_MAX, d*1000+400) : CLIP_MIN*pace();
     S._t=setTimeout(step, S.play.clip ? Math.max(t, full) : t);   // a clip beat stays up long enough to watch
@@ -340,6 +343,23 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (S.sel||S.info||
 // his ending cutscene, scenes/rengoku-heart.jpg, not on his card: CK, Oct 28, 2026)
 const EXTRA_ART = ['tanjiro_selfless','tanjiro_transparent','genya_demon'];
 const ART_KEEP = [];   // holding the loaded pictures keeps them decoded, so redraws don't blink on phones
+// The online clock: see online.js. Runs while everyone's there; whoever sees time run out acts, and the game ignores repeats.
+const CLOCK = {key:'', at:0, sent:false};
+function clockTick(){
+  const el=document.getElementById('otimer'); if(!el) return;
+  const on=isOnline() && !S.ctl && (!isAsync() || S.oppHere) && !S.final, watch=on && S.phase==='result';
+  const key=watch ? 'r'+(S.roundId||0) : on ? clockKey() : '';
+  if(key!==CLOCK.key){ CLOCK.key=key; CLOCK.at=Date.now(); CLOCK.sent=false; }
+  if(!key){ el.hidden=true; return; }
+  const limit=CLOCK_LIMIT[key[0]], left=Math.max(0, Math.ceil(limit-(Date.now()-CLOCK.at)/1000));
+  el.hidden=false; el.textContent=`⏱ ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`; el.classList.toggle('low', left<=15);
+  if(left>0 || CLOCK.sent) return;
+  if(watch && (isAsync() ? !S.asyncWatching : S.readyNext && S.readyNext[S.me])) return;
+  CLOCK.sent=true;
+  if(watch){ clearTimeout(S._t); if(S.play) S.play.done=true; ACTIONS.next(); return render(); }
+  if(isAsync()) send({a:'timeout', key}); else if(iAmHost()){ timeoutRun(); render(); }
+}
+if(typeof document!=='undefined'){ const t=document.createElement('div'); t.id='otimer'; t.hidden=true; document.body.append(t); setInterval(clockTick,1000); }
 function findArt(){
   const found={}, ids=ROSTER.map(c=>c.id).concat(EXTRA_ART);
   let waiting=ids.length;

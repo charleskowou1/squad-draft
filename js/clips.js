@@ -85,6 +85,7 @@ const CLIPS = {
 // Sounds for the same moments, same shape as CLIPS: files in sounds/ (e.g. 'sounds/doma-special.mp3').
 // A clip's sound plays instead of the usual effect for that moment.
 const CLIP_SOUNDS = {
+  tanjiro_demon: {},   // never Hinokami Kagura
   akaza:   {special: 'sounds/akaza-special.mp3'},     // "Destructive Death: Compass Needle"
   gyomei:  {special: 'sounds/gyomei-special.mp3'},    // "Stone Breathing! Third Form!"
   genya:   {special: 'sounds/genya-special.mp3'},     // "I ate demon flesh earlier"
@@ -97,7 +98,7 @@ const CLIP_SOUNDS = {
   nezuko:  {special: 'sounds/nezuko-special.mp3'},    // "Blood Demon Art: Exploding Blood"
   rui:     {special: 'sounds/rui-special.mp3'},       // "Blood Demon Art: Cutting Thread Cage"
   sabito:  {special: 'sounds/sabito-special.mp3'},    // "You look like you finally belong"
-  sanemi:  {special: 'sounds/sanemi-special.mp3'},    // "Wind Breathing! Rising Dust Storm!"
+  sanemi:  {special: 'sounds/sanemi-special.mp3'},    // "Rising Dust Storm!"
   shinobu: {special: 'sounds/shinobu-special.mp3'},   // "Insect Breathing: Dance of the Bee Sting, True Flutter"
   tanjiro: {special: 'sounds/tanjiro-special.mp3'},   // "Hinokami Kagura! Dance!"
   zenitsu: {special: 'sounds/zenitsu-special.mp3'},   // "Thunder Breathing, First Form: Thunderclap and Flash"

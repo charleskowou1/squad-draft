@@ -35,7 +35,9 @@ function snapshotFor(q=1){
 // Guest: take the host's state, but keep the moves this phone is still choosing
 function applySnapshot(json){
   const o=JSON.parse(json), prevRound=S.roundId, me=S.me;
-  const stillChoosing = (o.phase==='plan' && !(o.movesLocked&&o.movesLocked[me])) || S.scouting;
+  // a new round starts clean: last round's moves must never carry over (CK: specials repeated, targets already down)
+  const sameRound = o.round===S.round && o.roundId===S.roundId;
+  const stillChoosing = sameRound && ((o.phase==='plan' && !(o.movesLocked&&o.movesLocked[me])) || S.scouting);
   const mine = stillChoosing && S.plans ? {plans:S.plans[me], helpers:S.helperPlan&&S.helperPlan[me]} : null;
   Object.assign(S, o);
   S.planFor=me; S.lastPlans=S.lastPlans||players().map(()=>null);
@@ -65,8 +67,32 @@ function hostFight(){
 function hostMaybeNextRound(){
   if(!S.readyNext.every(Boolean) || S.final) return;
   S.round++; S.phase='plan'; S.movesLocked=players().map(p=>!alive(p).length); S.readyNext=players().map(()=>false); S.hostNote=null;
+  S.plans=players().map(()=>({})); S.helperPlan=players().map(()=>[]);
 }
 function hostRematch(){ S.final=false; S.localOver=false; S.winner=undefined; S.phase='spin'; S.spin=newGuess(); }
+// What a phone sent is only a request: a special still recharging becomes Attack, Defend is Attack for anyone who can't
+// guard, and a target that's already down is dropped (resolve() picks a live one)
+function cleanPlans(p, plans){
+  const out={}; if(plans && plans.ambush) out.ambush=plans.ambush;
+  alive(p).forEach(u=>{ const pl=plans&&plans[u.uid]; if(!pl) return out[u.uid]=restPlan(u);
+    const q={...pl}; if(q.type==='special' && u.cd>0) q.type='attack'; if(q.type==='defend' && u.noDefend) q.type='attack';
+    if(q.t){ const t=findU(q.t); if(!t || !t.alive) delete q.t; } out[u.uid]=q; });
+  return out;
+}
+// A fighter with no move: Block, or Attack for anyone who can't guard (Awakened Nezuko)
+const restPlan = u => u.noDefend ? {type:'attack', t:(foes(u.p).slice().sort((a,b)=>a.hp-b.hp)[0]||{}).uid} : {type:'defend'};
+/* ---------- the clock (CK): 1 minute per pick, 2 for moves, 1 to watch a round ----------
+   Each phone counts from when it saw this step begin; a timeout names the step, so a late one does nothing.
+   The clock only runs when everyone's there: an own-pace game with one player away still waits for them. */
+const CLOCK_LIMIT = {d:60, s:60, p:120, c:60, r:60};
+const clockKey = () => S.phase==='draft' ? `d${S.k}.${(S.bans||[]).length}.${S.banning?1:0}.${allPicks().length}`
+  : S.phase==='spin' ? 's'+(S.spin&&S.spin.state) : S.phase==='plan' ? 'p'+S.round : S.phase==='scout' ? `c${S.round}.${S.scoutP}` : '';
+function timeoutRun(){
+  if(S.phase==='draft') return S.banning ? cpuBan() : cpuDraftStep('normal');
+  if(S.phase==='spin'){ if(S.spin.state==='done') return newDraft(S.spin.r); players().forEach(q=>{ if(!S.spin.picks[q]) cpuGuess(q); }); return; }
+  if(S.phase==='scout') return hostNextScout();
+  if(S.phase==='plan'){ players().filter(q=>alive(q).length && !S.movesLocked[q]).forEach(q=>{ S.plans[q]=cleanPlans(q,null); S.helperPlan[q]=[]; S.movesLocked[q]=true; }); hostAfterLocks(); }
+}
 // An action from a guest phone (msg.p = its seat). Anything out of turn is ignored.
 function hostHandle(msg){
   const p=msg.p;
@@ -77,9 +103,9 @@ function hostHandle(msg){
     case 'lock': if(S.phase==='draft' && turn()===p && fighterIds(p).length) doLock(p); break;
     case 'undo': { const u=undoable(); if(u && u.p===p) undoPick(); break; }
     case 'moves':
-      if(msg.scout){ if(S.phase==='scout' && S.scoutP===p){ S.plans[p]=msg.plans||{}; hostNextScout(); } break; }
+      if(msg.scout){ if(S.phase==='scout' && S.scoutP===p){ S.plans[p]=cleanPlans(p,msg.plans); hostNextScout(); } break; }
       if(S.phase==='plan' && !S.movesLocked[p]){
-        S.plans[p]=msg.plans||{};
+        S.plans[p]=cleanPlans(p,msg.plans);
         S.helperPlan[p]=(msg.helperPlan||[]).filter(h=>(S.helpers[p]||[]).includes(h));
         S.movesLocked[p]=true; hostAfterLocks();
       }
@@ -88,6 +114,7 @@ function hostHandle(msg){
     case 'keep': if(S.phase==='scout' && S.scoutP===p) hostNextScout(); break;
     case 'next': if(S.phase==='result'){ S.readyNext[p]=true; hostMaybeNextRound(); } break;
     case 'rematch': if(S.phase==='result' && S.final) hostRematch(); break;
+    case 'timeout': if(msg.key===clockKey()) timeoutRun(); break;
   }
 }
 // Host hand-off: when the host has been away a long time, the next player still in the room takes over hosting.
@@ -139,7 +166,7 @@ function onlineLockMoves(){
     return;
   }
   S.movesLocked[me]=true;
-  if(iAmHost()) hostAfterLocks(); else send({a:'moves', plans:S.plans[me], helperPlan:S.helperPlan[me]||[]});
+  if(iAmHost()){ S.plans[me]=cleanPlans(me,S.plans[me]); hostAfterLocks(); } else send({a:'moves', plans:S.plans[me], helperPlan:S.helperPlan[me]||[]});
 }
 function onlineKeepMoves(){ if(iAmHost()) hostNextScout(); else send({a:'keep'}); }
 function onlineNext(){
@@ -188,9 +215,9 @@ function asyncApply(json, msg){
     else if(msg.a==='guess'){ if(S.phase!=='spin' || !guessPick(msg.p, msg.n)) return null; }
     else if(msg.a==='todraft'){ if(S.phase!=='spin' || S.spin.state!=='done') return null; newDraft(S.spin.r); }
     else {
-      const before=JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId]);
+      const before=JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId, S.spin]);
       hostHandle(msg);
-      if(JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId])===before) return null;
+      if(JSON.stringify([S.phase, S.k, S.picks, S.bans, S.locked, S.movesLocked, S.scoutP, S.roundId, S.spin])===before) return null;
       if(S.phase==='result' && !S.final){ S.readyNext=players().map(()=>true); hostMaybeNextRound(); }   // straight on to the next round
     }
     const ended = !wasFinal && S.final ? {pool:S.pool, poolType:S.poolType, teams:players().map(p=>S.teams[p].filter(u=>!u.spawn).map(u=>u.id)),

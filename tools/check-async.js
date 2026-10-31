@@ -76,6 +76,11 @@ function match(seed) {
         if (Math.random() < .5) ph.onlineKeepMoves(); else { ph.S_().scouting = true; ph.cpuPlan(q, 'hard'); ph.onlineLockMoves(); }
       }
       rounds++;
+      // a new round starts clean: yesterday's moves can't carry over, and a special still recharging can't be fired
+      if (!st().final && st().phase === 'plan') {
+        const s2 = st(); if (Object.keys(s2.plans[0] || {}).length || Object.keys(s2.plans[1] || {}).length) problems.push('last round\'s moves carried over');
+        phones.forEach((ph, q) => { if (Object.keys(ph.S_().plans[q] || {}).length) problems.push('a phone kept last round\'s moves'); });
+      }
       if (!st().final && st().phase !== 'plan') problems.push('round did not move on (' + st().phase + ')');
     }
     if (!st().final) { problems.push('match did not finish'); break; }
